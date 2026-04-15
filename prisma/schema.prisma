@@ -1,0 +1,789 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  CREATIVE_DIRECTOR
+  SENIOR_ART_DIRECTOR
+  SALES
+  CLIENT_SERVICING
+  JUNIOR_ART_DIRECTOR
+  GRAPHIC_DESIGNER
+  JUNIOR_DESIGNER
+  DESIGNER_3D
+  DIGITAL_MARKETING
+  CLIENT
+  AI_SALES_AGENT
+  AI_CS_AGENT
+}
+
+enum AdPlatform {
+  FACEBOOK
+  INSTAGRAM
+  TIKTOK
+  GOOGLE
+  LINKEDIN
+  YOUTUBE
+  OTHER
+}
+
+enum AdObjective {
+  AWARENESS
+  ENGAGEMENT
+  LEADS
+  CONVERSION
+  RETARGETING
+}
+
+enum AdStatus {
+  DRAFT
+  READY
+  ACTIVE
+  PAUSED
+  ENDED
+  ARCHIVED
+}
+
+enum AIAgentActionType {
+  LEAD_SCORED
+  LEAD_QUALIFIED
+  PROSPECT_MESSAGE_DRAFTED
+  AD_STRATEGY_GENERATED
+  HOOK_PLANNED
+  PROPOSAL_DRAFTED
+  CLIENT_UPDATE_DRAFTED
+  CLIENT_FEEDBACK_HANDLED
+  REVISION_BRIEF_GENERATED
+  INVOICE_FOLLOWUP_DRAFTED
+  SATISFACTION_DETECTED
+  REPLACEMENT_REPORT_GENERATED
+  LEAD_CONVERTED
+  AUTO_RESPONSE_SENT
+}
+
+enum ClientTier {
+  PLATINUM
+  GOLD
+  SILVER
+  BRONZE
+}
+
+enum LeadScore {
+  HOT
+  WARM
+  COLD
+}
+
+enum LeadStatus {
+  NEW
+  QUALIFIED
+  PROPOSAL_SENT
+  NEGOTIATING
+  WON
+  LOST
+  NURTURE
+}
+
+enum ProposalStatus {
+  DRAFT
+  SENT
+  OPENED
+  WON
+  LOST
+}
+
+enum ProjectStatus {
+  PROJECTED
+  ONGOING
+  COMPLETED
+  BILLED
+  PAID
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  RUSH
+}
+
+enum ItemType {
+  BANNER
+  BROCHURE
+  LOGO
+  SOCIAL
+  PRINT
+  THREE_D
+  VIDEO
+  OTHER
+}
+
+enum DeliverableStatus {
+  PENDING
+  IN_PROGRESS
+  WIP_UPLOADED
+  QC_REVIEW
+  APPROVED
+  DELIVERED
+  FA_SIGNED
+}
+
+enum BrandAssetType {
+  LOGO
+  FONT
+  GUIDELINE
+  COLOUR_PALETTE
+  OTHER
+}
+
+enum LarkFolderStage {
+  WIP
+  APPROVED
+  FA
+  SIGNED
+  AUDIT
+}
+
+enum RevisionStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  WAIVED
+  REJECTED
+}
+
+enum InvoiceType {
+  DEPOSIT
+  BALANCE
+  EXTRA_REVISION
+  FULL
+}
+
+enum InvoiceStatus {
+  PENDING
+  SENT
+  PAID
+  OVERDUE
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum BukkuSyncType {
+  INVOICE
+  PAYMENT
+  CONTACT
+  QUOTE
+}
+
+enum FreelancerStatus {
+  AVAILABLE
+  ON_PROJECT
+  UNAVAILABLE
+}
+
+enum ChatSenderType {
+  CS
+  SALES
+  CLIENT
+  SYSTEM
+}
+
+model User {
+  id          String   @id @default(cuid())
+  name        String
+  email       String   @unique
+  password    String
+  role        Role
+  avatar      String?
+  active      Boolean  @default(true)
+  larkOpenId  String?  @unique   // Lark open_id — set during staff sync
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  assignedCSClients     Client[]             @relation("CSToClient")
+  assignedSalesClients  Client[]             @relation("SalesToClient")
+  assignedSalesLeads    Lead[]               @relation("SalesToLead")
+  assignedCSProjects    Project[]            @relation("CSToProject")
+  assignedDeliverables  DeliverableItem[]    @relation("DesignerToDeliverable")
+  uploadedFiles         FileVersion[]        @relation("UploaderToFile")
+  requestedRevisions    Revision[]           @relation("RequesterToRevision")
+  waivedRevisions       Revision[]           @relation("WaiverToRevision")
+  performedQCChecks     QCCheck[]            @relation("QCCheckerToCheck")
+  sentChatMessages      ChatMessage[]        @relation("SenderToMessage")
+  kpiRecords            KPIRecord[]
+  setTargets            Target[]             @relation("SetterToTarget")
+  workloadSlots         WorkloadSlot[]
+  auditLogs             AuditLog[]           @relation("PerformerToAuditLog")
+  briefsCompleted       ProjectBrief[]       @relation("CSToProjectBrief")
+
+  @@map("users")
+}
+
+model Client {
+  id              String     @id @default(cuid())
+  companyName     String
+  contactPerson   String
+  email           String     @unique
+  phone           String?
+  tier            ClientTier @default(BRONZE)
+  ltv             Float      @default(0)
+  assignedCSId    String?
+  assignedSalesId String?
+  larkFolderId    String?
+  bukkuContactId  String?
+  createdAt       DateTime   @default(now())
+
+  // Relations
+  assignedCS    User?    @relation("CSToClient", fields: [assignedCSId], references: [id])
+  assignedSales User?    @relation("SalesToClient", fields: [assignedSalesId], references: [id])
+  projects      Project[]
+  brandAssets   BrandAsset[]
+  proposals     Proposal[]
+
+  @@map("clients")
+}
+
+model BrandAsset {
+  id             String         @id @default(cuid())
+  clientId       String
+  type           BrandAssetType
+  filename       String
+  url            String
+  larkFileToken  String?
+  createdAt      DateTime       @default(now())
+
+  // Relations
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@map("brand_assets")
+}
+
+model Lead {
+  id              String     @id @default(cuid())
+  name            String
+  company         String
+  email           String
+  phone           String?
+  source          String?
+  score           LeadScore  @default(COLD)
+  status          LeadStatus @default(NEW)
+  assignedSalesId String?
+  notes           String?
+  bukkuContactId  String?
+  createdAt       DateTime   @default(now())
+
+  // Relations
+  assignedSales User?      @relation("SalesToLead", fields: [assignedSalesId], references: [id])
+  proposals     Proposal[]
+
+  @@map("leads")
+}
+
+model Proposal {
+  id       String         @id @default(cuid())
+  leadId   String?
+  clientId String?
+  title    String
+  amount   Float
+  status   ProposalStatus @default(DRAFT)
+  sentAt   DateTime?
+  openedAt DateTime?
+  createdAt DateTime      @default(now())
+
+  // Relations
+  lead   Lead?   @relation(fields: [leadId], references: [id])
+  client Client? @relation(fields: [clientId], references: [id])
+
+  @@map("proposals")
+}
+
+model Project {
+  id              String        @id @default(cuid())
+  code            String        @unique
+  clientId        String?
+  briefId         String?       @unique
+  status          ProjectStatus @default(PROJECTED)
+  assignedCSId    String?
+  quotedAmount    Float         @default(0)
+  billedAmount    Float         @default(0)
+  paidAmount      Float         @default(0)
+  bukkuInvoiceId  String?
+  bukkuQuoteId    String?
+  larkFolderId    String?
+  larkChatId      String?     // Lark group chat ID for this project
+  deadline        DateTime?
+  pitchDate       DateTime?   // Pitching / presentation date
+  upfrontPercent  Float?      // Deposit % e.g. 50 means 50% billed upfront
+  profitability   Float?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  // Relations
+  client           Client?           @relation(fields: [clientId], references: [id])
+  assignedCS       User?             @relation("CSToProject", fields: [assignedCSId], references: [id])
+  brief            ProjectBrief?
+  deliverableItems DeliverableItem[]
+  fileVersions     FileVersion[]
+  invoices         Invoice[]
+  quotations       Quotation[]
+  chatMessages     ChatMessage[]
+  auditLogs        AuditLog[]
+  faSignOffs       FASignOff[]
+  freelancerAssignments FreelancerAssignment[]
+
+  @@map("projects")
+}
+
+model ProjectBrief {
+  id                  String    @id @default(cuid())
+  projectId           String    @unique
+  packageType         String?
+  specialInstructions String?
+  styleNotes          String?
+  priority            Priority  @default(NORMAL)
+  qualityGateScore    Int?
+  qualityGatePassed   Boolean?
+  completedByCSAt     DateTime?
+  completedByCSId     String?
+  createdAt           DateTime  @default(now())
+
+  // Relations
+  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  completedByCS User? @relation("CSToProjectBrief", fields: [completedByCSId], references: [id])
+
+  @@map("project_briefs")
+}
+
+model DeliverableItem {
+  id                 String            @id @default(cuid())
+  projectId          String
+  itemType           ItemType
+  description        String?
+  quantity           Int               @default(1)
+  revisionLimit      Int               @default(2)
+  revisionCount      Int               @default(0)
+  status             DeliverableStatus @default(PENDING)
+  assignedDesignerId String?
+  estimatedMinutes   Int?
+  actualMinutes      Int?
+  deadline           DateTime?
+  createdAt          DateTime          @default(now())
+
+  // Relations
+  project          Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  assignedDesigner User?          @relation("DesignerToDeliverable", fields: [assignedDesignerId], references: [id])
+  fileVersions     FileVersion[]
+  revisions        Revision[]
+  qcChecks         QCCheck[]
+  freelancerAssignments FreelancerAssignment[]
+  auditLogs        AuditLog[]
+
+  @@map("deliverable_items")
+}
+
+model FileVersion {
+  id                 String          @id @default(cuid())
+  deliverableItemId  String
+  projectId          String
+  version            Int             @default(1)
+  filename           String
+  url                String
+  larkFileToken      String?
+  larkFolderStage    LarkFolderStage @default(WIP)
+  uploadedById       String
+  fileSize           Int?
+  createdAt          DateTime        @default(now())
+
+  // Relations
+  deliverableItem DeliverableItem @relation(fields: [deliverableItemId], references: [id], onDelete: Cascade)
+  project         Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  uploadedBy      User            @relation("UploaderToFile", fields: [uploadedById], references: [id])
+  qcChecks        QCCheck[]
+
+  @@map("file_versions")
+}
+
+model Revision {
+  id                 String         @id @default(cuid())
+  deliverableItemId  String
+  revisionNumber     Int
+  requestedById      String
+  feedback           String
+  annotationData     Json?
+  status             RevisionStatus @default(PENDING)
+  waivedById         String?
+  waivedReason       String?
+  chargedAmount      Float?
+  bukkuInvoiceLineId String?
+  createdAt          DateTime       @default(now())
+
+  // Relations
+  deliverableItem DeliverableItem @relation(fields: [deliverableItemId], references: [id], onDelete: Cascade)
+  requestedBy     User            @relation("RequesterToRevision", fields: [requestedById], references: [id])
+  waivedBy        User?           @relation("WaiverToRevision", fields: [waivedById], references: [id])
+
+  @@map("revisions")
+}
+
+model QCCheck {
+  id                String   @id @default(cuid())
+  deliverableItemId String
+  fileVersionId     String
+  checkedById       String
+  passed            Boolean
+  notes             String?
+  createdAt         DateTime @default(now())
+
+  // Relations
+  deliverableItem DeliverableItem @relation(fields: [deliverableItemId], references: [id], onDelete: Cascade)
+  fileVersion     FileVersion     @relation(fields: [fileVersionId], references: [id], onDelete: Cascade)
+  checkedBy       User            @relation("QCCheckerToCheck", fields: [checkedById], references: [id])
+
+  @@map("qc_checks")
+}
+
+model FASignOff {
+  id                  String    @id @default(cuid())
+  projectId           String
+  pdfUrl              String
+  larkFileToken       String?
+  clientName          String
+  clientIP            String?
+  disclaimerAccepted  Boolean   @default(false)
+  bothPartiesChecked  Boolean   @default(false)
+  signedAt            DateTime?
+  emailSentAt         DateTime?
+  createdAt           DateTime  @default(now())
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("fa_sign_offs")
+}
+
+model AuditLog {
+  id                String   @id @default(cuid())
+  projectId         String?
+  deliverableItemId String?
+  action            String
+  performedById     String
+  metadata          Json?
+  createdAt         DateTime @default(now())
+
+  // Relations (append-only — no updates/deletes)
+  project         Project?         @relation(fields: [projectId], references: [id])
+  deliverableItem DeliverableItem? @relation(fields: [deliverableItemId], references: [id])
+  performedBy     User             @relation("PerformerToAuditLog", fields: [performedById], references: [id])
+
+  @@map("audit_logs")
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  projectId      String
+  bukkuInvoiceId String?       // Bukku internal ID
+  invoiceNumber  String?       // Human-readable number e.g. "INV-2025-001"
+  type           InvoiceType
+  amount         Float
+  status         InvoiceStatus @default(PENDING)
+  dueAt          DateTime?
+  paidAt         DateTime?
+  notifiedAt     DateTime?
+  createdAt      DateTime      @default(now())
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("invoices")
+}
+
+model Quotation {
+  id            String          @id @default(cuid())
+  projectId     String
+  quoteNumber   String?         // Human-readable: "QUO-2025-001"
+  bukkuQuoteId  String?         // Bukku internal ID
+  amount        Float           @default(0)
+  status        QuotationStatus @default(DRAFT)
+  issuedAt      DateTime?
+  acceptedAt    DateTime?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@map("quotations")
+}
+
+model BukkuSyncLog {
+  id           String        @id @default(cuid())
+  type         BukkuSyncType
+  bukkuId      String
+  lastSyncedAt DateTime      @default(now())
+  data         Json
+
+  @@map("bukku_sync_logs")
+}
+
+model WorkloadSlot {
+  id               String   @id @default(cuid())
+  userId           String
+  date             DateTime @db.Date
+  committedMinutes Int      @default(0)
+  capacityMinutes  Int      @default(480)
+  createdAt        DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("workload_slots")
+}
+
+model Freelancer {
+  id          String           @id @default(cuid())
+  name        String
+  email       String           @unique
+  skills      String[]
+  hourlyRate  Float
+  status      FreelancerStatus @default(AVAILABLE)
+  createdAt   DateTime         @default(now())
+
+  // Relations
+  assignments FreelancerAssignment[]
+
+  @@map("freelancers")
+}
+
+model FreelancerAssignment {
+  id                String    @id @default(cuid())
+  freelancerId      String
+  projectId         String
+  deliverableItemId String?
+  startedAt         DateTime?
+  completedAt       DateTime?
+
+  // Relations
+  freelancer      Freelancer       @relation(fields: [freelancerId], references: [id], onDelete: Cascade)
+  project         Project          @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  deliverableItem DeliverableItem? @relation(fields: [deliverableItemId], references: [id])
+
+  @@map("freelancer_assignments")
+}
+
+model ChatMessage {
+  id               String          @id @default(cuid())
+  projectId        String
+  senderId         String
+  content          String
+  senderType       ChatSenderType
+  larkMessageId    String?
+  whatsappMessageId String?
+  createdAt        DateTime        @default(now())
+
+  // Relations
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  sender  User    @relation("SenderToMessage", fields: [senderId], references: [id])
+
+  @@map("chat_messages")
+}
+
+model KPIRecord {
+  id        String   @id @default(cuid())
+  userId    String
+  metric    String
+  value     Float
+  period    String
+  createdAt DateTime @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("kpi_records")
+}
+
+model Target {
+  id           String   @id @default(cuid())
+  setById      String
+  metric       String
+  targetValue  Float
+  currentValue Float    @default(0)
+  period       String
+  deadline     DateTime?
+  createdAt    DateTime @default(now())
+
+  // Relations
+  setBy User @relation("SetterToTarget", fields: [setById], references: [id])
+
+  @@map("targets")
+}
+
+// ─── AI AGENT MODELS ────────────────────────────────────────────────────────
+
+model AIAgentLog {
+  id         String              @id @default(cuid())
+  agentRole  Role
+  actionType AIAgentActionType
+  entityId   String?             // leadId, clientId, projectId, campaignId, etc.
+  entityType String?             // "Lead" | "Client" | "Project" | "AdCampaign"
+  input      Json?
+  output     String?
+  tokensUsed Int?
+  durationMs Int?
+  success    Boolean             @default(true)
+  createdAt  DateTime            @default(now())
+
+  @@map("ai_agent_logs")
+}
+
+model AdCampaign {
+  id              String      @id @default(cuid())
+  clientId        String?
+  leadId          String?
+  platform        AdPlatform
+  objective       AdObjective
+  targetAudience  String?
+  budget          Float?
+  hookAngle       String?
+  adCopy          String?
+  visualConcept   String?
+  callToAction    String?
+  status          AdStatus    @default(DRAFT)
+  aiGenerated     Boolean     @default(true)
+  impressions     Int         @default(0)
+  clicks          Int         @default(0)
+  leadsGenerated  Int         @default(0)
+  conversions     Int         @default(0)
+  spend           Float       @default(0)
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@map("ad_campaigns")
+}
+
+model ProspectConversation {
+  id            String   @id @default(cuid())
+  leadId        String
+  channel       String   // WHATSAPP | EMAIL | INSTAGRAM_DM
+  stage         String   // AWARENESS | INTEREST | CONSIDERATION | DECISION | CLOSED
+  messagesSent  Int      @default(0)
+  aiDrafted     Boolean  @default(true)
+  lastMessageAt DateTime?
+  converted     Boolean  @default(false)
+  convertedAt   DateTime?
+  notes         String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  messages ProspectMessage[]
+
+  @@map("prospect_conversations")
+}
+
+model ProspectMessage {
+  id               String               @id @default(cuid())
+  conversationId   String
+  direction        String               // OUTBOUND | INBOUND
+  content          String
+  aiDrafted        Boolean              @default(true)
+  sentAt           DateTime?
+  readAt           DateTime?
+  createdAt        DateTime             @default(now())
+
+  conversation ProspectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@map("prospect_messages")
+}
+
+model AIRoleReport {
+  id              String   @id @default(cuid())
+  role            String   // role label e.g. "Sales Executive"
+  period          String   // "2026-Q2", "2026-04", etc.
+  efficiencyScore Float    // 0-100
+  automationScore Float    // 0-100 — how much can be automated
+  tasksAnalyzed   Int      @default(0)
+  tasksAutomated  Int      @default(0)
+  humanHoursSaved Float    @default(0)
+  reportData      Json     // full analysis JSON
+  createdAt       DateTime @default(now())
+
+  @@map("ai_role_reports")
+}
+
+// ─── System Settings ─────────────────────────────────────────────────────────
+// Singleton row (id = "singleton") storing global operational settings.
+
+model SystemSettings {
+  id                   String   @id @default("singleton")
+  // Autopilot = fully automated; Copilot = AI suggests, human confirms
+  autopilotMode        Boolean  @default(false)
+  // Auto-assign deliverables to least-loaded designer on project creation
+  autoAssignEnabled    Boolean  @default(true)
+  // Send Gantt chart card to Lark on project creation
+  larkGanttEnabled     Boolean  @default(true)
+  // Send project brief summary card to Lark on project creation
+  larkBriefEnabled     Boolean  @default(true)
+  // Auto-import accepted Bukku quotations without manual confirmation
+  autoImportQuotes     Boolean  @default(false)
+  // Auto-import Bukku invoices without manual confirmation
+  autoImportInvoices   Boolean  @default(false)
+  // Workload overload threshold (%) — alert when designer exceeds this
+  overloadThreshold    Int      @default(90)
+  // Weekly capacity digest day (0=Sun, 1=Mon … 6=Sat)
+  weeklyDigestDay      Int      @default(1)
+  // Sales autopilot: AI handles prospect responses & lead progression automatically
+  salesAutopilotEnabled Boolean @default(false)
+
+  updatedAt            DateTime @updatedAt
+  updatedById          String?
+
+  @@map("system_settings")
+}
+
+// ─── Lark Group Exclusions ────────────────────────────────────────────────────
+// Tracks Lark chat_ids that were manually deleted from Envision OS so the
+// sync endpoint won't re-import them.
+
+model LarkGroupExclusion {
+  chatId     String   @id
+  excludedAt DateTime @default(now())
+
+  @@map("lark_group_exclusions")
+}
+
+model SocialPlatformStat {
+  id             String   @id @default(cuid())
+  platformId     String   @unique // e.g. "instagram", "tiktok"
+  platformName   String   // display name
+  followers      Int      @default(0)
+  followerGrowth Float    @default(0)   // % change vs last period
+  reach          Int      @default(0)   // weekly unique reach
+  engagement     Float    @default(0)   // engagement rate %
+  leads          Int      @default(0)   // leads attributed this week
+  posts          Int      @default(0)   // posts this week
+  likes          Int      @default(0)   // total likes this week
+  comments       Int      @default(0)   // total comments this week
+  score          Int      @default(0)   // AI platform health score 0-100
+  bestTime       String   @default("")  // e.g. "Tue & Thu 8-9 AM"
+  updatedAt      DateTime @updatedAt
+  updatedBy      String   @default("manual") // "manual" | "api"
+
+  @@map("social_platform_stats")
+}

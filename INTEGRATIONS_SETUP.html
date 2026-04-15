@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Envision OS — Integration Setup Guide</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0f; color: #e4e4e7; line-height: 1.6; }
+  .container { max-width: 860px; margin: 0 auto; padding: 48px 24px; }
+  h1 { font-size: 26px; font-weight: 700; color: #f4f4f5; margin-bottom: 6px; }
+  .subtitle { color: #71717a; font-size: 14px; margin-bottom: 40px; }
+  .section { border: 1px solid #27272a; border-radius: 16px; overflow: hidden; margin-bottom: 32px; }
+  .section-header { padding: 20px 24px; display: flex; align-items: center; gap: 14px; border-bottom: 1px solid #27272a; }
+  .icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .icon-wa  { background: #25d36614; }
+  .icon-lark { background: #1677ff14; }
+  .section-title { font-size: 18px; font-weight: 600; color: #f4f4f5; }
+  .section-sub { font-size: 12px; color: #71717a; margin-top: 2px; }
+  .section-body { padding: 24px; }
+  .step { display: flex; gap: 16px; margin-bottom: 20px; }
+  .step:last-child { margin-bottom: 0; }
+  .step-num { width: 26px; height: 26px; border-radius: 50%; background: #6366f1; color: white; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+  .step-content h3 { font-size: 14px; font-weight: 600; color: #e4e4e7; margin-bottom: 4px; }
+  .step-content p { font-size: 13px; color: #a1a1aa; }
+  .step-content a { color: #818cf8; text-decoration: none; }
+  .step-content a:hover { text-decoration: underline; }
+  .env-box { background: #18181b; border: 1px solid #3f3f46; border-radius: 8px; padding: 14px 16px; margin-top: 8px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 12px; color: #a1a1aa; }
+  .env-box .key { color: #818cf8; }
+  .env-box .comment { color: #52525b; }
+  .tag { display: inline-flex; align-items: center; gap-6px; background: #3f3f46; border-radius: 4px; padding: 2px 8px; font-size: 11px; font-weight: 600; color: #d4d4d8; margin-right: 6px; }
+  .tag-green { background: #16a34a20; color: #4ade80; }
+  .tag-amber { background: #d9770620; color: #fbbf24; }
+  .divider { border: none; border-top: 1px solid #27272a; margin: 20px 0; }
+  .notice { background: #6366f110; border: 1px solid #6366f130; border-radius: 10px; padding: 14px 16px; font-size: 13px; color: #a5b4fc; margin-bottom: 24px; }
+  .notice strong { color: #c7d2fe; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 12px; }
+  .card { background: #18181b; border: 1px solid #3f3f46; border-radius: 10px; padding: 14px 16px; }
+  .card h4 { font-size: 12px; font-weight: 600; color: #71717a; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .card p { font-size: 13px; color: #d4d4d8; }
+  @media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Integration Setup Guide</h1>
+  <p class="subtitle">Step-by-step instructions to connect WhatsApp and Lark to Envision OS</p>
+
+  <div class="notice">
+    <strong>Before you start:</strong> Make sure your dev server is running and you have access to your <code>.env</code> file in the project root. After editing the <code>.env</code>, restart the server for changes to take effect.
+  </div>
+
+  <!-- ======== WHATSAPP ======== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="icon icon-wa">💬</div>
+      <div>
+        <div class="section-title">WhatsApp (via 360dialog)</div>
+        <div class="section-sub">Send &amp; receive WhatsApp messages from clients inside Envision OS</div>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Create a 360dialog account</h3>
+          <p>Go to <a href="https://hub.360dialog.com" target="_blank">hub.360dialog.com</a> and sign up. You need an existing <strong>WhatsApp Business number</strong> to connect — this is the number your clients will message.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Get your API key</h3>
+          <p>Inside the 360dialog Hub: go to <strong>Developers → API Key → Generate API Key</strong>. Copy the key.</p>
+          <div class="env-box">
+            <span class="comment"># .env</span><br/>
+            <span class="key">WHATSAPP_360DIALOG_API_KEY</span>=your_api_key_here
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Register the webhook URL</h3>
+          <p>In 360dialog Hub → <strong>Webhooks → Add Webhook</strong>, enter your public URL:</p>
+          <div class="env-box">https://yourdomain.com/api/whatsapp/webhook</div>
+          <p style="margin-top:8px;">For local development use <a href="https://ngrok.com" target="_blank">ngrok</a>: run <code>ngrok http 3000</code> and use the HTTPS URL it gives you.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h3>Restart the server &amp; test</h3>
+          <p>Stop and restart <code>npm run dev</code>. Then send a WhatsApp message to your registered number — it will appear in <strong>Sales → WhatsApp</strong> inside the app.</p>
+        </div>
+      </div>
+
+      <hr class="divider" />
+      <div class="grid2">
+        <div class="card">
+          <h4>What works</h4>
+          <p>Send &amp; receive text messages, AI-drafted replies, attach conversation to a client project, WhatsApp page in Sales module</p>
+        </div>
+        <div class="card">
+          <h4>Limitations</h4>
+          <p>Outbound messaging to new contacts requires an approved WhatsApp message template. Media (images, files) not yet wired up.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ======== LARK ======== -->
+  <div class="section">
+    <div class="section-header">
+      <div class="icon icon-lark">🪶</div>
+      <div>
+        <div class="section-title">Lark (Feishu)</div>
+        <div class="section-sub">Auto-create project folders in Lark Drive, send rich card notifications to team channels</div>
+      </div>
+    </div>
+    <div class="section-body">
+
+      <div class="step">
+        <div class="step-num">1</div>
+        <div class="step-content">
+          <h3>Create a Lark app</h3>
+          <p>Go to <a href="https://open.larksuite.com/app" target="_blank">open.larksuite.com/app</a> (or <a href="https://open.feishu.cn/app" target="_blank">open.feishu.cn/app</a> for the China version) → <strong>Create App → Custom App</strong>. Give it a name like "Envision OS".</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">2</div>
+        <div class="step-content">
+          <h3>Copy App ID &amp; App Secret</h3>
+          <p>From your app's <strong>Credentials &amp; Basic Info</strong> tab, copy the App ID and App Secret.</p>
+          <div class="env-box">
+            <span class="key">LARK_APP_ID</span>=cli_xxxxxxxxxxxxxx<br/>
+            <span class="key">LARK_APP_SECRET</span>=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">3</div>
+        <div class="step-content">
+          <h3>Enable permissions</h3>
+          <p>In your app → <strong>Permissions &amp; Scopes</strong>, add these:</p>
+          <div style="margin-top:8px; display:flex; flex-wrap:wrap; gap:6px;">
+            <span class="tag">im:message:send_as_bot</span>
+            <span class="tag">drive:drive</span>
+            <span class="tag">drive:file</span>
+            <span class="tag">drive:folder</span>
+          </div>
+          <p style="margin-top:8px;">Then go to <strong>Version Management → Create Version → Submit for Release</strong> to apply the permissions.</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">4</div>
+        <div class="step-content">
+          <h3>Set up the webhook &amp; verification tokens</h3>
+          <p>In your app → <strong>Event Subscriptions → Request URL</strong>, enter:</p>
+          <div class="env-box">https://yourdomain.com/api/lark/webhook</div>
+          <p style="margin-top:8px;">Lark will give you a <strong>Verification Token</strong> and <strong>Encrypt Key</strong> on this page. Copy them:</p>
+          <div class="env-box">
+            <span class="key">LARK_VERIFY_TOKEN</span>=xxxxxxxxxxxxxxxx<br/>
+            <span class="key">LARK_ENCRYPT_KEY</span>=xxxxxxxxxxxxxxxx
+          </div>
+          <p style="margin-top:8px;">Subscribe to the event: <span class="tag">im.message.receive_v1</span></p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">5</div>
+        <div class="step-content">
+          <h3>Set up the root Drive folder</h3>
+          <p>In Lark Drive, create a folder called "Envision OS Projects". Open it — the URL contains the folder token: <code>https://…/drive/folder/<strong>FolderToken</strong></code>. Copy it.</p>
+          <div class="env-box">
+            <span class="key">LARK_ROOT_FOLDER_TOKEN</span>=fldcnXXXXXXXXXX
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">6</div>
+        <div class="step-content">
+          <h3>Connect team notification channels</h3>
+          <p>For each team group chat in Lark, right-click → <strong>Get Chat Info</strong> → copy the Chat ID. Paste into:</p>
+          <div class="env-box">
+            <span class="key">LARK_CHANNEL_CREATIVE</span>=oc_xxxxxxxx<br/>
+            <span class="key">LARK_CHANNEL_CS</span>=oc_xxxxxxxx<br/>
+            <span class="key">LARK_CHANNEL_SALES</span>=oc_xxxxxxxx<br/>
+            <span class="key">LARK_CHANNEL_MANAGEMENT</span>=oc_xxxxxxxx
+          </div>
+          <p style="margin-top:8px;">Make sure you've added the bot to each group chat (<strong>+ Add Bot → Envision OS</strong>).</p>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="step-num">7</div>
+        <div class="step-content">
+          <h3>Restart &amp; test</h3>
+          <p>Restart the dev server. Create a new project in <strong>Admin → Projects</strong> — it will automatically create a structured folder tree in your Lark Drive root folder and send a notification to the CS channel.</p>
+        </div>
+      </div>
+
+      <hr class="divider" />
+      <div class="grid2">
+        <div class="card">
+          <h4>What works</h4>
+          <p>Auto-create project folders (Brief, WIP, Approved, FA, Audit), upload files to correct stage folder, rich card notifications to team channels, receive messages from Lark groups</p>
+        </div>
+        <div class="card">
+          <h4>Notes</h4>
+          <p>Use <strong>Lark International</strong> (open.larksuite.com) if your team is outside mainland China. Use <strong>Feishu</strong> (open.feishu.cn) for China users. The API endpoints are different.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <p style="text-align:center; font-size:12px; color:#52525b; margin-top:16px;">
+    Need help? Check <code>src/services/whatsapp.ts</code> and <code>src/services/lark.ts</code> for the full implementation.
+  </p>
+</div>
+</body>
+</html>
