@@ -21,7 +21,7 @@ export async function sendFAConfirmation(params: {
         <p>This email confirms that you have signed off on the final artwork for project <strong>${params.projectCode}</strong> on ${params.signedAt.toLocaleDateString('en-MY', { dateStyle: 'long' })}.</p>
         <p>You can download your signed FA document here:</p>
         <p><a href="${params.faDownloadUrl}" style="background:#6366f1;color:#fff;padding:10px 20px;border-radius:6px;text-decoration:none;display:inline-block">Download FA Document</a></p>
-        <p style="color:#666;font-size:12px;margin-top:24px">This is an automated confirmation from Envision OS. Please retain this email for your records.</p>
+        <p style="color:#666;font-size:12px;margin-top:24px">This is an automated confirmation from Envicion OS. Please retain this email for your records.</p>
       </div>
     `,
   })
@@ -103,7 +103,7 @@ export async function sendNewLeadNotification(params: {
           <tr><td style="padding:8px;border-bottom:1px solid #eee">Score</td><td style="padding:8px;border-bottom:1px solid #eee"><strong style="color:${scoreColor}">${params.score}</strong></td></tr>
           <tr><td style="padding:8px">Source</td><td style="padding:8px">${params.source}</td></tr>
         </table>
-        <p>Log in to Envision OS to take action on this lead.</p>
+        <p>Log in to Envicion OS to take action on this lead.</p>
       </div>
     `,
   })

@@ -270,7 +270,7 @@ export async function GET(): Promise<NextResponse> {
     {
       id: 'a11',
       title: '1 Year Strong',
-      desc: 'Completed 12 months with Envision Studios',
+      desc: 'Completed 12 months with Envicion Studios',
       icon: '🎂',
       category: 'milestone',
       unlocked: has1Year,

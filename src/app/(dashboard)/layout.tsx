@@ -400,7 +400,7 @@ export default function DashboardLayout({
               <Zap className="h-4 w-4 text-white" />
             </div>
             <div>
-              <span className="text-sm font-semibold tracking-tight text-zinc-100">Envision OS</span>
+              <span className="text-sm font-semibold tracking-tight text-zinc-100">Envicion OS</span>
               <p className="text-[10px] text-zinc-500 leading-none mt-0.5">Agency Platform</p>
             </div>
           </div>

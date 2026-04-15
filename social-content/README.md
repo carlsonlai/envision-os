@@ -1,6 +1,6 @@
-# Envision Social Media Content Folder
+# Envicion Social Media Content Folder
 
-This folder is managed by the Envision OS app.
+This folder is managed by the Envicion OS app.
 All generated content, scheduled posts, and reports are saved here automatically.
 
 ## Structure
@@ -39,5 +39,5 @@ social-content/
 
 To copy this folder to your Desktop, run:
 ```bash
-cp -r /Users/laichanchean/Desktop/Jobs/envision-os/social-content ~/Desktop/"Envision Social Media"
+cp -r /Users/laichanchean/Desktop/Jobs/envision-os/social-content ~/Desktop/"Envicion Social Media"
 ```

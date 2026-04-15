@@ -55,8 +55,8 @@ function addSecurityHeaders(res: NextResponse): NextResponse {
   return res
 }
 
-// ── Middleware ────────────────────────────────────────────────────────────────
-export function middleware(req: NextRequest): NextResponse {
+// ── Proxy ────────────────────────────────────────────────────────────────
+export function proxy(req: NextRequest): NextResponse {
   const { pathname } = req.nextUrl
 
   if (pathname.startsWith('/api/')) {

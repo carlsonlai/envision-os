@@ -4,7 +4,7 @@
  * to the social-content/ folder inside the project.
  *
  * The folder lives at: <project-root>/social-content/
- * and mirrors to ~/Desktop/Envision Social Media/ if the user runs the sync script.
+ * and mirrors to ~/Desktop/Envicion Social Media/ if the user runs the sync script.
  */
 
 import { NextRequest, NextResponse } from 'next/server'

@@ -52,10 +52,10 @@ function buildPrompt(req: GenerateRequest): string {
 
   const goalGuide = GOAL_GUIDANCE[req.goal] ?? req.goal
 
-  return `You are a senior social media strategist for Envision Studios, a premium branding and creative agency based in Malaysia. Generate high-converting social media content.
+  return `You are a senior social media strategist for Envicion Studios, a premium branding and creative agency based in Malaysia. Generate high-converting social media content.
 
 AGENCY CONTEXT:
-- Envision Studios specialises in brand identity, visual design, and creative campaigns
+- Envicion Studios specialises in brand identity, visual design, and creative campaigns
 - Clients: SMEs, startups, and corporate brands across Malaysia & Southeast Asia
 - Brand voice: Confident, expert, direct, premium but not arrogant. No corporate fluff.
 

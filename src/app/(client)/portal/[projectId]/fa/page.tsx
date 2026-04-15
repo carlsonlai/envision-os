@@ -20,7 +20,7 @@ const DISCLAIMER_TEXT = `By signing off this Final Artwork (FA) package, you con
 4. All copy, text, and messaging have been reviewed and approved by the appropriate stakeholders in your organisation.
 5. All imagery, logos, and graphical elements are approved for use.
 6. You accept that any amendments required after this FA sign-off will constitute additional work subject to additional charges.
-7. Envision Software shall bear no responsibility for errors discovered after this sign-off has been completed.
+7. Envicion Software shall bear no responsibility for errors discovered after this sign-off has been completed.
 8. This signed FA constitutes a legally binding acceptance of the artwork as presented.`
 
 export default function FASignOffPage({

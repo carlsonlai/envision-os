@@ -34,7 +34,7 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
           <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-gradient-to-br from-[#6366f1] to-[#8b5cf6]">
             <Zap className="h-4 w-4 text-white" />
           </div>
-          <span className="text-sm font-semibold tracking-tight text-zinc-900">Envision</span>
+          <span className="text-sm font-semibold tracking-tight text-zinc-900">Envicion</span>
           <span className="text-xs text-zinc-400 hidden sm:block">Client Portal</span>
         </Link>
 
@@ -58,9 +58,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
       {/* Footer */}
       <footer className="mt-16 border-t border-zinc-200 py-6 px-6">
         <div className="max-w-5xl mx-auto flex items-center justify-between text-xs text-zinc-400">
-          <span>Powered by Envision OS</span>
+          <span>Powered by Envicion OS</span>
           <a
-            href="mailto:hello@envision.com"
+            href="mailto:hello@envicionstudio.com.my"
             className="flex items-center gap-1 hover:text-zinc-600 transition-colors"
           >
             Contact us <ExternalLink className="h-3 w-3" />

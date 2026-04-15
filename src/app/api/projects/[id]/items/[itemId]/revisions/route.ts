@@ -116,7 +116,7 @@ export async function POST(
           title: 'Revision Limit Reached',
           body: `Project **${item.project.code}** — ${item.itemType} has reached the revision limit (${item.revisionLimit}). CS action required.`,
           projectCode: item.project.code,
-          actionLabel: 'Review in Envision OS',
+          actionLabel: 'Review in Envicion OS',
           actionUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/cs/projects/${projectId}`,
         })
         await notify('MANAGEMENT', {

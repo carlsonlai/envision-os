@@ -1,7 +1,7 @@
 /**
  * POST /api/admin/reconcile
  *
- * Bridges the two entry paths into Envision OS:
+ * Bridges the two entry paths into Envicion OS:
  *   • Lark group sync  → creates Clients with larkFolderId but no Bukku link
  *   • Bukku sync       → creates Clients with bukkuContactId but no Lark link
  *

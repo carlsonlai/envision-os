@@ -103,7 +103,7 @@ function getWeeklySchedule(): { platform: string; day: string; time: string; sch
 // ─── Task: Generate weekly content ───────────────────────────────────────────
 
 async function taskGenerate(perf: Awaited<ReturnType<typeof fetchCurrentPerformance>>) {
-  const prompt = `You are an autonomous social media AI for Envision Studios, a premium branding & creative agency in Malaysia.
+  const prompt = `You are an autonomous social media AI for Envicion Studios, a premium branding & creative agency in Malaysia.
 
 CURRENT PERFORMANCE:
 ${perf.recentStats}
@@ -149,7 +149,7 @@ Respond ONLY in valid JSON:
 // ─── Task: Auto-optimise hashtags ────────────────────────────────────────────
 
 async function taskOptimiseHashtags(perf: Awaited<ReturnType<typeof fetchCurrentPerformance>>) {
-  const prompt = `As a social media strategist for Envision Studios (Malaysian branding agency), generate optimised hashtag sets for 2026.
+  const prompt = `As a social media strategist for Envicion Studios (Malaysian branding agency), generate optimised hashtag sets for 2026.
 
 Platform performance context: ${perf.recentStats}
 
@@ -180,7 +180,7 @@ Respond ONLY in valid JSON:
 // ─── Task: Optimise strategy based on performance ────────────────────────────
 
 async function taskOptimiseStrategy(perf: Awaited<ReturnType<typeof fetchCurrentPerformance>>) {
-  const prompt = `Analyse this social media performance data for Envision Studios and provide specific optimisation actions.
+  const prompt = `Analyse this social media performance data for Envicion Studios and provide specific optimisation actions.
 
 DATA: ${perf.recentStats}
 Average engagement: ${perf.avgEngagement}%

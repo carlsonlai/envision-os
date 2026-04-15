@@ -29,7 +29,7 @@ interface DbOnlyProject {
  * POST /api/admin/sync-lark-projects
  *
  * Fetches all project folders from Lark Drive root and reconciles them
- * with Envision OS database projects.
+ * with Envicion OS database projects.
  *
  * Actions taken:
  *  - If a Lark folder name matches a DB project code → sets larkFolderId on the project

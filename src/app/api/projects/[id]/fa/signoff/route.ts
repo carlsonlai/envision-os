@@ -141,7 +141,7 @@ export async function POST(
         const { Resend } = await import('resend')
         const resend = new Resend(process.env.RESEND_API_KEY)
         await resend.emails.send({
-          from: `Envision Software <noreply@${process.env.NEXT_PUBLIC_APP_URL?.replace('https://', '') ?? 'envision.com'}>`,
+          from: `Envicion Software <noreply@${process.env.NEXT_PUBLIC_APP_URL?.replace('https://', '') ?? 'envicionstudio.com.my'}>`,
           to: [project.client.email],
           subject: `Final Artwork Sign-Off Confirmation — ${project.code}`,
           html: `
@@ -156,7 +156,7 @@ export async function POST(
             </ul>
             <p>By completing this sign-off, you have confirmed that all artwork has been reviewed and approved by your organisation. Any amendments required after this sign-off will constitute additional work subject to additional charges.</p>
             <p>Your invoice will be issued shortly.</p>
-            <p>Best regards,<br/>Envision Software</p>
+            <p>Best regards,<br/>Envicion Software</p>
           `,
         })
         await prisma.fASignOff.update({

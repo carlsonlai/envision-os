@@ -161,7 +161,7 @@ export async function uploadDeliverableFile(
       title: 'New File Uploaded',
       body: `A new file has been uploaded for project **${item.project.code}** (v${nextVersion}).\nFile: ${versionedFilename}`,
       projectCode: item.project.code,
-      actionLabel: 'Review in Envision OS',
+      actionLabel: 'Review in Envicion OS',
       actionUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/cs/projects/${projectId}`,
     })
   } catch (err) {

@@ -1,4 +1,4 @@
-# Deployment Guide — Envision OS
+# Deployment Guide — Envicion OS
 
 ## Quick Deploy to Railway (Recommended)
 

@@ -123,7 +123,7 @@ export default function MyCareerPage() {
             <TrendingUp className="h-5 w-5 text-[#818cf8]" />
             Career Path & Achievements
           </h1>
-          <p className="text-sm text-zinc-500 mt-0.5">Your growth journey at Envision Studios</p>
+          <p className="text-sm text-zinc-500 mt-0.5">Your growth journey at Envicion Studios</p>
         </div>
         <p className="text-xs text-zinc-600">
           Logged in as <span className="text-zinc-400">{session?.user?.name}</span>
@@ -142,7 +142,7 @@ export default function MyCareerPage() {
               <span className="rounded-full border border-[#6366f1]/30 bg-[#6366f1]/10 px-2 py-0.5 text-[10px] font-semibold text-[#818cf8]">Level {currentLevel}</span>
             </div>
             <p className="text-xs text-zinc-400">
-              {monthsAtCompany} month{monthsAtCompany !== 1 ? 's' : ''} at Envision Studios · KPI Score:{' '}
+              {monthsAtCompany} month{monthsAtCompany !== 1 ? 's' : ''} at Envicion Studios · KPI Score:{' '}
               <span className={`font-bold ${kpiScore >= 80 ? 'text-emerald-400' : kpiScore >= 65 ? 'text-amber-400' : 'text-red-400'}`}>
                 {kpiScore > 0 ? kpiScore : '—'}
               </span>

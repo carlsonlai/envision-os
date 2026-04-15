@@ -307,7 +307,7 @@ export default function LarkImportPage() {
           <h1 className="text-xl font-semibold text-zinc-100">Lark Import</h1>
         </div>
         <p className="text-sm text-zinc-500 ml-[52px]">
-          Sync your team and jobs from Lark into Envision OS. Run each sync independently.
+          Sync your team and jobs from Lark into Envicion OS. Run each sync independently.
         </p>
       </div>
 
@@ -324,7 +324,7 @@ export default function LarkImportPage() {
       <SyncCard
         icon={Users}
         title="Import Staff (Users)"
-        description="Fetches all active members from your Lark directory and creates or updates their accounts in Envision OS. Roles are mapped automatically from Lark job titles."
+        description="Fetches all active members from your Lark directory and creates or updates their accounts in Envicion OS. Roles are mapped automatically from Lark job titles."
         state={staffState}
         onSync={runStaffSync}
         accent="indigo"
@@ -383,7 +383,7 @@ export default function LarkImportPage() {
       <SyncCard
         icon={Briefcase}
         title="Import Jobs (Projects)"
-        description="Scans all Lark group chats the bot belongs to and creates a Project + Client record for each group not already in Envision OS. Use the months filter to limit how far back to look."
+        description="Scans all Lark group chats the bot belongs to and creates a Project + Client record for each group not already in Envicion OS. Use the months filter to limit how far back to look."
         state={jobsState}
         onSync={runJobsSync}
         accent="sky"
@@ -462,7 +462,7 @@ export default function LarkImportPage() {
       <SyncCard
         icon={FolderSync}
         title="Link Drive Folders"
-        description="Matches Lark Drive project folders (by folder name = project code) to existing Envision OS projects and stores the folder token for file uploads."
+        description="Matches Lark Drive project folders (by folder name = project code) to existing Envicion OS projects and stores the folder token for file uploads."
         state={driveState}
         onSync={runDriveSync}
         accent="violet"

@@ -86,7 +86,7 @@ export async function POST(_req: NextRequest): Promise<NextResponse> {
     .map(m => `[${m.platform}/${m.sentiment}] ${m.author}: "${m.text.slice(0, 100)}"`)
     .join('\n')
 
-  const prompt = `You are a reputation analyst for Envision Studios, a creative agency.
+  const prompt = `You are a reputation analyst for Envicion Studios, a creative agency.
 Generate a concise weekly reputation report based on the data below.
 
 PERIOD: Last 30 days

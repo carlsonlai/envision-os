@@ -380,7 +380,7 @@ function SummaryPage({ project }: { project: FAProject }) {
     React.createElement(
       View,
       { style: styles.footer },
-      React.createElement(Text, { style: styles.footerText }, `Envision OS — ${project.code}`),
+      React.createElement(Text, { style: styles.footerText }, `Envicion OS — ${project.code}`),
       React.createElement(
         Text,
         { style: styles.footerText, render: ({ pageNumber, totalPages }: { pageNumber: number; totalPages: number }) =>
@@ -469,7 +469,7 @@ function ItemPage({ item, projectCode }: { item: FAItem; projectCode: string }) 
     React.createElement(
       View,
       { style: styles.footer },
-      React.createElement(Text, { style: styles.footerText }, `Envision OS — ${projectCode}`),
+      React.createElement(Text, { style: styles.footerText }, `Envicion OS — ${projectCode}`),
       React.createElement(
         Text,
         { style: styles.footerText,
@@ -536,7 +536,7 @@ function RevisionHistoryPage({ items, projectCode }: { items: FAItem[]; projectC
     React.createElement(
       View,
       { style: styles.footer },
-      React.createElement(Text, { style: styles.footerText }, `Envision OS — ${projectCode}`),
+      React.createElement(Text, { style: styles.footerText }, `Envicion OS — ${projectCode}`),
       React.createElement(
         Text,
         { style: styles.footerText,
@@ -576,7 +576,7 @@ function DisclaimerPage({
         '4. All copy, text, and messaging have been reviewed and approved by the appropriate stakeholders in your organisation.',
         '5. All imagery, logos, and graphical elements are approved for use.',
         '6. You accept that any amendments required after this FA sign-off will constitute additional work subject to additional charges.',
-        '7. Envision Software shall bear no responsibility for errors discovered after this sign-off has been completed.',
+        '7. Envicion Software shall bear no responsibility for errors discovered after this sign-off has been completed.',
         '8. This signed FA constitutes a legally binding acceptance of the artwork as presented.',
       ].map((line, i) =>
         React.createElement(Text, { key: i, style: styles.disclaimerText }, line)
@@ -659,7 +659,7 @@ function DisclaimerPage({
     React.createElement(
       View,
       { style: styles.footer },
-      React.createElement(Text, { style: styles.footerText }, `Envision OS — ${project.code}`),
+      React.createElement(Text, { style: styles.footerText }, `Envicion OS — ${project.code}`),
       React.createElement(
         Text,
         { style: styles.footerText,
@@ -678,7 +678,7 @@ function FADocument({ project }: { project: FAProject }) {
     Document,
     {
       title: `Final Artwork — ${project.code}`,
-      author: 'Envision OS',
+      author: 'Envicion OS',
       subject: `FA Package for ${project.client?.companyName ?? project.code}`,
     },
     React.createElement(CoverPage, { project }),

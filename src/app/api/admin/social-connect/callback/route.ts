@@ -107,7 +107,7 @@ ${igId ? `INSTAGRAM_BUSINESS_ACCOUNT_ID=${igId}\nINSTAGRAM_ACCESS_TOKEN=${page.a
     `
   }).join('')
 
-  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Social Connect — Envision OS</title>
+  return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Social Connect — Envicion OS</title>
 <style>
   *{box-sizing:border-box;}
   body{font-family:system-ui;background:#09090b;color:#f4f4f5;padding:32px 16px;margin:0;}

@@ -758,7 +758,7 @@ model SystemSettings {
 }
 
 // ─── Lark Group Exclusions ────────────────────────────────────────────────────
-// Tracks Lark chat_ids that were manually deleted from Envision OS so the
+// Tracks Lark chat_ids that were manually deleted from Envicion OS so the
 // sync endpoint won't re-import them.
 
 model LarkGroupExclusion {

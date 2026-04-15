@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 })
 
 export const metadata: Metadata = {
-  title: 'Envision OS',
+  title: 'Envicion OS',
   description: 'Agency management platform by Envicion Software',
 }
 

@@ -254,7 +254,7 @@ export async function generateAdStrategy(params: {
   goal: string
 }): Promise<AdStrategy> {
   const text = await callClaude(
-    `You are an expert digital marketing strategist for a Malaysian creative agency called Envision Studios.
+    `You are an expert digital marketing strategist for a Malaysian creative agency called Envicion Studios.
 Generate a complete ad strategy. Reply JSON only.
 Service:${params.service} Industry:${params.targetIndustry} Budget:${params.budget} Goal:${params.goal}
 JSON: {"platform":"FB|IG|TIKTOK|GOOGLE","objective":"LEADS|AWARENESS|CONVERSION","targetAudience":"<description>","budget":"<allocation>","duration":"<timeframe>","hooks":["hook1","hook2","hook3"],"adCopy":"<2-3 sentences>","visualConcept":"<visual description>","callToAction":"<CTA text>","kpis":["kpi1","kpi2","kpi3"]}`,
@@ -321,7 +321,7 @@ export async function draftProspectConversation(params: {
   context: string
 }): Promise<ProspectConversationScript> {
   const text = await callClaude(
-    `You are an AI sales agent for Envision Studios, a Malaysian creative agency.
+    `You are an AI sales agent for Envicion Studios, a Malaysian creative agency.
 Draft a ${params.channel} conversation script for a prospect at the ${params.stage} stage.
 Reply JSON only: {"stage":"${params.stage}","openingMessage":"<msg>","followUpMessages":["<f1>","<f2>"],"objectionHandlers":[{"objection":"<obj>","response":"<res>"}],"closingMessage":"<msg>"}
 Lead:${params.leadName} Company:${params.company} Context:${params.context}`,
@@ -434,7 +434,7 @@ Client:${params.clientName} Company:${params.company} Industry:${params.industry
   )
   return parseJSON<ProposalDraft>(text, {
     subject: `Creative Partnership Proposal for ${params.company}`,
-    executiveSummary: `We understand ${params.company} needs impactful ${params.projectType} that drives real business results. Envision Studios specialises in exactly this.`,
+    executiveSummary: `We understand ${params.company} needs impactful ${params.projectType} that drives real business results. Envicion Studios specialises in exactly this.`,
     problemStatement: `Many ${params.industry} businesses struggle with inconsistent brand identity that fails to convert. This costs revenue and credibility.`,
     proposedSolution: `We propose a comprehensive ${params.projectType} solution tailored to ${params.industry}. Our process ensures brand consistency, market differentiation, and measurable results.`,
     deliverables: [`${params.projectType} design files`, 'Brand guidelines', '3 revision rounds', 'Final delivery in all required formats'],

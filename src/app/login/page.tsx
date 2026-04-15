@@ -79,7 +79,7 @@ export default function LoginPage() {
             <Zap className="h-6 w-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-zinc-100">Envision OS</h1>
+            <h1 className="text-2xl font-bold tracking-tight text-zinc-100">Envicion OS</h1>
             <p className="text-sm text-zinc-500 mt-1">Agency management platform</p>
           </div>
         </div>
@@ -152,7 +152,7 @@ export default function LoginPage() {
         </div>
 
         <p className="text-center text-xs text-zinc-700">
-          Envision Software · Internal Platform
+          Envicion Software · Internal Platform
         </p>
       </div>
     </div>

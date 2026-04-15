@@ -406,7 +406,7 @@ export default function AIReportPage() {
       <div className="rounded-xl border border-purple-500/20 bg-purple-500/5 p-5 space-y-3">
         <div className="flex items-center gap-2">
           <Bot className="h-4 w-4 text-purple-400" />
-          <h2 className="text-sm font-semibold text-zinc-200">How AI Self-Improves in Envision OS</h2>
+          <h2 className="text-sm font-semibold text-zinc-200">How AI Self-Improves in Envicion OS</h2>
         </div>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           {[
@@ -443,7 +443,7 @@ export default function AIReportPage() {
       <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5 space-y-3">
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-4 w-4 text-emerald-400" />
-          <h2 className="text-sm font-semibold text-zinc-200">AI Agents Already Deployed in Envision OS</h2>
+          <h2 className="text-sm font-semibold text-zinc-200">AI Agents Already Deployed in Envicion OS</h2>
         </div>
         <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
           {[

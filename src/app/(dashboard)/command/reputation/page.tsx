@@ -96,8 +96,8 @@ const SENTIMENT_CONFIG: Record<string, { color: string; bg: string; icon: string
 async function generateAIResponse(type: 'review' | 'mention', content: string, author: string, isNegative: boolean): Promise<string> {
   try {
     const prompt = type === 'review'
-      ? `Draft a professional, warm reply to this ${isNegative ? 'negative' : 'positive'} Google review from "${author}": "${content}". Reply as Envision Studios Malaysia. Keep it under 80 words, empathetic and on-brand.`
-      : `Draft a social media response to this ${isNegative ? 'critical' : 'positive'} mention from "${author}": "${content}". Reply as Envision Studios Malaysia. Keep it under 60 words, professional and genuine.`
+      ? `Draft a professional, warm reply to this ${isNegative ? 'negative' : 'positive'} Google review from "${author}": "${content}". Reply as Envicion Studios Malaysia. Keep it under 80 words, empathetic and on-brand.`
+      : `Draft a social media response to this ${isNegative ? 'critical' : 'positive'} mention from "${author}": "${content}". Reply as Envicion Studios Malaysia. Keep it under 60 words, professional and genuine.`
 
     const res = await fetch('/api/ai/sales-agent', {
       method: 'POST',
@@ -114,14 +114,14 @@ async function generateAIResponse(type: 'review' | 'mention', content: string, a
 
 function generateFallback(isNegative: boolean, author: string, type: 'review' | 'mention'): string {
   if (isNegative && type === 'review') {
-    return `Dear ${author}, thank you for your honest feedback. We sincerely apologise for the experience and take this seriously. Our director would like to speak with you directly to understand what happened and make it right. Please reach out to us at hello@envisionstudios.my — we are committed to doing better.`
+    return `Dear ${author}, thank you for your honest feedback. We sincerely apologise for the experience and take this seriously. Our director would like to speak with you directly to understand what happened and make it right. Please reach out to us at hello@envicionstudio.com.my — we are committed to doing better.`
   }
   if (!isNegative && type === 'review') {
     return `Thank you so much, ${author}! 🙏 Your kind words truly mean the world to our team. It was a pleasure working with you and we look forward to creating more amazing work together in the future. Please don't hesitate to refer us to anyone who needs creative excellence!`
   }
   if (type === 'mention') {
     return isNegative
-      ? `Thank you for sharing your experience. We'd love to chat directly and understand more — please DM us or email hello@envisionstudios.my. We're always looking to improve.`
+      ? `Thank you for sharing your experience. We'd love to chat directly and understand more — please DM us or email hello@envicionstudio.com.my. We're always looking to improve.`
       : `Thank you so much for the kind mention! 🔥 We loved working on this project. Excited to see the new brand in action! ✨`
   }
   return 'Thank you for your feedback! We appreciate you taking the time to share your thoughts.'
@@ -276,7 +276,7 @@ export default function ReputationPage() {
         `Reply to ${unrepliedNegative} pending negative reviews today using AI drafts`,
         'Request reviews from 3 recently delivered projects (Sunway, TM, Eco Brand)',
         'Post award win on all social channels for reputation amplification',
-        'Set up Google Alerts for "Envision Studios" to catch new mentions faster',
+        'Set up Google Alerts for "Envicion Studios" to catch new mentions faster',
       ],
     })
     setGeneratingReport(false)
@@ -442,7 +442,7 @@ export default function ReputationPage() {
                 { icon: unrepliedNegative > 0 ? '🚨' : '✅', text: unrepliedNegative > 0 ? `Reply to ${unrepliedNegative} negative reviews urgently — AI has drafts ready` : 'All negative reviews addressed — great reputation hygiene' },
                 { icon: '📣', text: 'Request reviews from 3 recently completed projects to increase volume' },
                 { icon: '💡', text: 'Amplify the award win coverage — share across LinkedIn, IG, website' },
-                { icon: '🔍', text: 'Set up alerts for "Envision Studios Malaysia" — AI will notify you of new mentions' },
+                { icon: '🔍', text: 'Set up alerts for "Envicion Studios Malaysia" — AI will notify you of new mentions' },
               ].map((rec, i) => (
                 <div key={i} className="flex items-start gap-2.5 rounded-lg bg-zinc-900/50 border border-zinc-800/30 px-3 py-2">
                   <span className="text-sm flex-shrink-0">{rec.icon}</span>

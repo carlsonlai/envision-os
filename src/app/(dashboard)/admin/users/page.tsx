@@ -412,7 +412,7 @@ export default function AdminUsersPage() {
                   value={formEmail}
                   onChange={(e) => setFormEmail(e.target.value)}
                   required
-                  placeholder="jane@envision.com"
+                  placeholder="jane@envicionstudio.com.my"
                   className="bg-zinc-800/70 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 transition-colors"
                 />
               </div>
