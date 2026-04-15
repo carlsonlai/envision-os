@@ -1,9 +1,13 @@
 {
-  "functions": {
-    "src/app/api/ai/**": { "maxDuration": 60 },
-    "src/app/api/projects/*/fa/**": { "maxDuration": 30 },
-    "src/app/api/bukku/**": { "maxDuration": 30 },
-    "src/app/api/admin/import-job-track/**": { "maxDuration": 30 },
-    "src/app/api/cron/**": { "maxDuration": 60 }
-  }
+    "regions": ["sin1"],
+    "functions": {
+          "src/app/api/ai/**": { "maxDuration": 60 },
+          "src/app/api/projects/*/fa/**": { "maxDuration": 30 },
+          "src/app/api/bukku/**": { "maxDuration": 30 },
+          "src/app/api/admin/import-job-track/**": { "maxDuration": 30 },
+          "src/app/api/cron/**": { "maxDuration": 60 }
+    },
+    "crons": [
+          { "path": "/api/cron/sync-lark", "schedule": "0 * * * *" }
+    ]
 }
