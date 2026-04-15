@@ -4,7 +4,11 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { isDesignerRole } from '@/lib/permissions'
 
 function createPrismaClient(): PrismaClient {
-  const connectionString = process.env.DATABASE_URL ?? 'postgresql://laichanchean@localhost:5432/envision_os'
+  // Prefer Neon pooled connection (PgBouncer) for serverless runtime — falls back to DATABASE_URL for migrations/local dev.
+  const connectionString =
+    process.env.POSTGRES_PRISMA_URL ??
+    process.env.DATABASE_URL ??
+    'postgresql://laichanchean@localhost:5432/envision_os'
   const adapter = new PrismaPg({ connectionString })
   return new PrismaClient({
     adapter,
