@@ -190,6 +190,7 @@ export async function autoAssign(deliverableItem: DeliverableItem): Promise<User
       createdAt: true,
       updatedAt: true,
       password: true,
+      larkOpenId: true,
     },
   })
 
