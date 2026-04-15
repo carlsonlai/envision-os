@@ -337,37 +337,25 @@ export default function DashboardLayout({
   const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false)
 
+  // Auth + role-based redirects are now handled by `src/middleware.ts` at the
+  // edge, so the layout no longer needs to gate rendering on `status`. We keep
+  // a defensive client-side redirect for the rare case where the JWT expires
+  // mid-session, but we DO NOT block FCP on it.
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/login')
     }
-    // Clients belong in the portal, not the internal dashboard
-    if (status === 'authenticated' && session?.user?.role === 'CLIENT') {
-      router.replace('/portal')
-    }
-  }, [status, session, router])
+  }, [status, router])
 
   // Close mobile nav on route change
   useEffect(() => {
     setMobileOpen(false)
   }, [pathname])
 
-  if (status === 'loading') {
-    return (
-      <div className="flex h-screen items-center justify-center bg-[#0a0a0f]">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#6366f1] border-t-transparent" />
-          <span className="text-sm text-zinc-500">Loading...</span>
-        </div>
-      </div>
-    )
-  }
-
-  if (!session) {
-    return null
-  }
-
-  const userRole = session.user.role
+  // Render the dashboard shell immediately — middleware guarantees the user is
+  // authenticated, so the worst case here is a one-frame render with empty nav
+  // while `useSession()` rehydrates from the cookie. This keeps FCP fast.
+  const userRole = session?.user?.role ?? ''
   const navGroups = NAV_BY_ROLE[userRole] ?? []
   const allNavItems = flatNavItems(navGroups)
 
@@ -455,12 +443,14 @@ export default function DashboardLayout({
         <div className="border-t border-zinc-800/60 p-3">
           <div className="flex items-center gap-2.5 rounded-md px-2 py-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] text-xs font-semibold text-white flex-shrink-0">
-              {session.user.name?.[0]?.toUpperCase() ?? '?'}
+              {session?.user?.name?.[0]?.toUpperCase() ?? '?'}
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-xs font-medium text-zinc-200">{session.user.name}</p>
+              <p className="truncate text-xs font-medium text-zinc-200">
+                {session?.user?.name ?? ''}
+              </p>
               <p className="truncate text-[10px] text-zinc-500">
-                {ROLE_LABELS[userRole] ?? userRole}
+                {userRole ? (ROLE_LABELS[userRole] ?? userRole) : ''}
               </p>
             </div>
             <button type="button"

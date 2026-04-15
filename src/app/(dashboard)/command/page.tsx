@@ -178,9 +178,13 @@ export default function CommandPage() {
   useEffect(() => {
     async function load() {
       try {
-        const [revenueRes, teamRes] = await Promise.all([
+        // Fire all three KPI requests in parallel — the previous code awaited
+        // /api/targets sequentially after the Promise.all, adding a full
+        // round-trip to the dashboard's time-to-content.
+        const [revenueRes, teamRes, targetsRes] = await Promise.all([
           fetch('/api/kpi/revenue?period=MONTH'),
           fetch('/api/kpi/team'),
+          fetch('/api/targets'),
         ])
 
         if (revenueRes.ok) {
@@ -196,8 +200,6 @@ export default function CommandPage() {
           setUtilisation(data.data.byDesigner)
         }
 
-        // Load targets
-        const targetsRes = await fetch('/api/targets')
         if (targetsRes.ok) {
           const data = (await targetsRes.json()) as { data: Target[] }
           setTargets(data.data)

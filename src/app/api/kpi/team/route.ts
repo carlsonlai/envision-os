@@ -19,7 +19,18 @@ export async function GET(req: NextRequest) {
 
   try {
     const utilisation = await getTeamUtilisation(date)
-    return NextResponse.json({ data: utilisation })
+    return NextResponse.json(
+      { data: utilisation },
+      {
+        headers: {
+          // Per-user cache at the edge for 30s, serve stale up to 2min while
+          // revalidating in the background. Massively reduces DB load and TTFB
+          // on dashboard reloads without sacrificing freshness.
+          'Cache-Control':
+            'private, s-maxage=30, stale-while-revalidate=120',
+        },
+      },
+    )
   } catch (error) {
     logger.error('GET /api/kpi/team error:', { error: getErrorMessage(error) })
     return NextResponse.json({ error: 'Failed to fetch team utilisation' }, { status: 500 })

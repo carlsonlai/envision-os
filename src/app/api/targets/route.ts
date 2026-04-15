@@ -25,7 +25,18 @@ export async function GET(req: NextRequest) {
       include: { setBy: { select: { name: true } } },
       orderBy: { createdAt: 'desc' },
     })
-    return NextResponse.json({ data: targets })
+    return NextResponse.json(
+      { data: targets },
+      {
+        headers: {
+          // Targets change rarely (admin-set goals). Cache aggressively at the
+          // edge per-user; POST/PUT handlers don't need to invalidate because
+          // the 60s TTL is short enough.
+          'Cache-Control':
+            'private, s-maxage=60, stale-while-revalidate=300',
+        },
+      },
+    )
   } catch (error) {
     logger.error('GET /api/targets error', { error: getErrorMessage(error) })
     return NextResponse.json({ error: 'Failed to fetch targets' }, { status: 500 })

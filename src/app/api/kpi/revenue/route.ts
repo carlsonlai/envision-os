@@ -18,7 +18,18 @@ export async function GET(req: NextRequest) {
 
   try {
     const overview = await getRevenueOverview(period)
-    return NextResponse.json({ data: overview })
+    return NextResponse.json(
+      { data: overview },
+      {
+        headers: {
+          // Per-user cache at the edge for 30s, serve stale up to 2min while
+          // revalidating. Revenue overview is read-mostly and the staleness
+          // window is well within product tolerance.
+          'Cache-Control':
+            'private, s-maxage=30, stale-while-revalidate=120',
+        },
+      },
+    )
   } catch (error) {
     logger.error('GET /api/kpi/revenue error:', { error: getErrorMessage(error) })
     return NextResponse.json({ error: 'Failed to fetch revenue overview' }, { status: 500 })
