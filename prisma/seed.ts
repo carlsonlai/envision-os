@@ -18,12 +18,12 @@ async function main() {
 
   // Create Carlson (Admin)
   const carlson = await prisma.user.upsert({
-    where: { email: 'carlson@envicion.com' },
+    where: { email: 'carlson@envicionstudio.com.my' },
     update: {},
     create: {
       name: 'Carlson',
-      email: 'carlson@envicion.com',
-      password: hashPassword('Admin123!'),
+      email: 'carlson@envicionstudio.com.my',
+      password: hashPassword('Envicion@2026!'),
       role: Role.ADMIN,
       active: true,
     },
@@ -32,12 +32,12 @@ async function main() {
 
   // Create test CS user
   const csUser = await prisma.user.upsert({
-    where: { email: 'cs@envicion.com' },
+    where: { email: 'cs@envicionstudio.com.my' },
     update: {},
     create: {
       name: 'Sarah Chen',
-      email: 'cs@envicion.com',
-      password: hashPassword('CS123!'),
+      email: 'cs@envicionstudio.com.my',
+      password: hashPassword('Envicion@2026!'),
       role: Role.CLIENT_SERVICING,
       active: true,
     },
@@ -46,12 +46,12 @@ async function main() {
 
   // Create test designer
   const designer = await prisma.user.upsert({
-    where: { email: 'designer@envicion.com' },
+    where: { email: 'designer@envicionstudio.com.my' },
     update: {},
     create: {
       name: 'Alex Wong',
-      email: 'designer@envicion.com',
-      password: hashPassword('Design123!'),
+      email: 'designer@envicionstudio.com.my',
+      password: hashPassword('Envicion@2026!'),
       role: Role.GRAPHIC_DESIGNER,
       active: true,
     },
@@ -60,12 +60,12 @@ async function main() {
 
   // Create test sales user
   const salesUser = await prisma.user.upsert({
-    where: { email: 'sales@envicion.com' },
+    where: { email: 'sales@envicionstudio.com.my' },
     update: {},
     create: {
       name: 'Ryan Lim',
-      email: 'sales@envicion.com',
-      password: hashPassword('Sales123!'),
+      email: 'sales@envicionstudio.com.my',
+      password: hashPassword('Envicion@2026!'),
       role: Role.SALES,
       active: true,
     },
