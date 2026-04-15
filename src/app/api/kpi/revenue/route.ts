@@ -22,11 +22,10 @@ export async function GET(req: NextRequest) {
       { data: overview },
       {
         headers: {
-          // Per-user cache at the edge for 30s, serve stale up to 2min while
-          // revalidating. Revenue overview is read-mostly and the staleness
-          // window is well within product tolerance.
-          'Cache-Control':
-            'private, s-maxage=30, stale-while-revalidate=120',
+          // Browser-only cache (`private`). `s-maxage` is intentionally
+          // omitted because it conflicts with `private` on shared caches.
+          // 20s is a safe window for revenue reads.
+          'Cache-Control': 'private, max-age=20',
         },
       },
     )

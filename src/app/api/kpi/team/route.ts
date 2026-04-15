@@ -23,11 +23,12 @@ export async function GET(req: NextRequest) {
       { data: utilisation },
       {
         headers: {
-          // Per-user cache at the edge for 30s, serve stale up to 2min while
-          // revalidating in the background. Massively reduces DB load and TTFB
-          // on dashboard reloads without sacrificing freshness.
-          'Cache-Control':
-            'private, s-maxage=30, stale-while-revalidate=120',
+          // Browser-only cache. `private` keeps sensitive per-user data out
+          // of shared/CDN caches (which means s-maxage is intentionally
+          // omitted — combining `private` with `s-maxage` is contradictory
+          // and Vercel's edge won't cache it anyway). 20s is short enough
+          // that dashboard refreshes feel live.
+          'Cache-Control': 'private, max-age=20',
         },
       },
     )

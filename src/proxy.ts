@@ -1,4 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getToken } from 'next-auth/jwt'
+
+// ── Protected dashboard route prefixes ────────────────────────────────────────
+// Only page routes listed here trigger the server-side auth redirect. API
+// routes, webhooks, crons, and /login are intentionally excluded — each
+// enforces its own auth, and redirecting them to /login would break them.
+const PROTECTED_PREFIXES: readonly string[] = [
+  '/command',
+  '/admin',
+  '/cd',
+  '/cs',
+  '/crm',
+  '/sales',
+  '/designer',
+  '/kpi',
+  '/hr',
+  '/social-hub',
+  '/media',
+  '/calendar',
+  '/my',
+  '/ai-sales',
+  '/ai-cs',
+  '/portal',
+]
+
+function isProtectedPage(pathname: string): boolean {
+  return PROTECTED_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  )
+}
 
 // ── In-memory rate limiter ────────────────────────────────────────────────────
 // For multi-server deployments swap this for Upstash Redis.
@@ -56,9 +86,10 @@ function addSecurityHeaders(res: NextResponse): NextResponse {
 }
 
 // ── Proxy ────────────────────────────────────────────────────────────────
-export function proxy(req: NextRequest): NextResponse {
+export async function proxy(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl
 
+  // 1. Rate limiting for /api/* (unchanged)
   if (pathname.startsWith('/api/')) {
     const key = clientKey(req)
     const isAuth = pathname.startsWith('/api/auth')
@@ -74,6 +105,31 @@ export function proxy(req: NextRequest): NextResponse {
             'Retry-After': '60',
           },
         }
+      )
+    }
+  }
+
+  // 2. Server-side auth gate for dashboard page routes. This replaces the
+  //    client-side `useSession()` spinner in (dashboard)/layout.tsx which was
+  //    causing ~17s FCP. Unauthenticated users are redirected to /login at
+  //    the edge before any HTML is rendered.
+  if (isProtectedPage(pathname)) {
+    const token = await getToken({
+      req,
+      secret: process.env.NEXTAUTH_SECRET,
+    })
+
+    if (!token) {
+      const loginUrl = new URL('/login', req.url)
+      loginUrl.searchParams.set('callbackUrl', pathname)
+      return addSecurityHeaders(NextResponse.redirect(loginUrl))
+    }
+
+    // Clients belong in /portal, not in the internal dashboard.
+    const role = typeof token.role === 'string' ? token.role : undefined
+    if (role === 'CLIENT' && !pathname.startsWith('/portal')) {
+      return addSecurityHeaders(
+        NextResponse.redirect(new URL('/portal', req.url)),
       )
     }
   }

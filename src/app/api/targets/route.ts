@@ -29,11 +29,10 @@ export async function GET(req: NextRequest) {
       { data: targets },
       {
         headers: {
-          // Targets change rarely (admin-set goals). Cache aggressively at the
-          // edge per-user; POST/PUT handlers don't need to invalidate because
-          // the 60s TTL is short enough.
-          'Cache-Control':
-            'private, s-maxage=60, stale-while-revalidate=300',
+          // Targets change rarely. Browser-only cache (`private`) for 60s;
+          // admins editing targets will see their change on the next
+          // navigation or refresh after TTL.
+          'Cache-Control': 'private, max-age=60',
         },
       },
     )
