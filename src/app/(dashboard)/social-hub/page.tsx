@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { SocialScoreBadge } from '@/components/ui/SocialScoreBadge'
+import { VisibilityBooster } from '@/components/social/VisibilityBooster'
 import {
   TrendingUp,
   TrendingDown,
@@ -494,6 +495,9 @@ export default function SocialHubPage() {
           })}
         </div>
       </div>
+
+      {/* Envicion Visibility Booster */}
+      <VisibilityBooster />
 
       {/* Platform cards */}
       <div>

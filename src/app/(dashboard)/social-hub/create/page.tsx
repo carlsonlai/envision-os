@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { MediaLibrary, type MediaAsset } from '@/components/social/MediaLibrary'
 import {
   Sparkles,
   Loader2,
@@ -93,6 +94,7 @@ export default function ContentStudioPage() {
     })
   }, [])
   const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>(['instagram', 'linkedin'])
+  const [selectedMedia, setSelectedMedia] = useState<MediaAsset[]>([])
   const [contentType, setContentType] = useState<ContentType>('post')
   const [goal, setGoal] = useState<Goal>('lead_gen')
   const [topic, setTopic] = useState('')
@@ -608,6 +610,20 @@ export default function ContentStudioPage() {
               })()}
             </div>
           )}
+
+          {/* Drive-backed media library — upload + pick attachments for posts */}
+          <div className="mt-6">
+            <MediaLibrary
+              selectedIds={selectedMedia.map(m => m.id)}
+              onSelect={asset => setSelectedMedia(prev => [...prev, asset])}
+              onDeselect={asset => setSelectedMedia(prev => prev.filter(m => m.id !== asset.id))}
+            />
+            {selectedMedia.length > 0 && (
+              <p className="mt-2 text-xs text-amber-300/80">
+                {selectedMedia.length} attachment{selectedMedia.length === 1 ? '' : 's'} selected — they&apos;ll ride along with your next scheduled post.
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>

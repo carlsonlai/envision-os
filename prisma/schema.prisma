@@ -786,3 +786,36 @@ model SocialPlatformStat {
 
   @@map("social_platform_stats")
 }
+
+// ─── Asset (Google Drive backed media) ────────────────────────────────────────
+// Postgres metadata + Drive bytes. Used by the Social Hub media library for
+// scheduled posts, campaigns, and brand visibility content.
+
+enum AssetKind {
+  IMAGE
+  VIDEO
+  DOCUMENT
+  AUDIO
+  OTHER
+}
+
+model Asset {
+  id             String     @id @default(cuid())
+  driveFileId    String     @unique
+  name           String
+  mimeType       String
+  sizeBytes      Int        @default(0)
+  kind           AssetKind  @default(OTHER)
+  webViewLink    String?
+  webContentLink String?
+  thumbnailLink  String?
+  uploaderId     String?
+  platform       String?    // optional hint: "instagram" | "tiktok" | ...
+  tags           String[]   @default([])
+  createdAt      DateTime   @default(now())
+
+  @@index([uploaderId])
+  @@index([platform])
+  @@index([createdAt])
+  @@map("assets")
+}

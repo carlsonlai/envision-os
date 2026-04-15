@@ -122,7 +122,7 @@ async function upsertProject(code: string, clientId: string, quotedAmount: numbe
     `INSERT INTO "projects" (id, code, "clientId", status, "quotedAmount", "billedAmount", "paidAmount", "createdAt", "updatedAt")
      VALUES (gen_random_uuid()::text, $1, $2, 'ONGOING'::"ProjectStatus", $3, 0, 0, NOW(), NOW())
      ON CONFLICT (code) DO UPDATE
-       SET "quotedAmount" = EXCLUDED."quotedAmount", "updatedAt" = NOW()
+       SET "updatedAt" = "projects"."updatedAt"
      RETURNING id`,
     code, clientId, quotedAmount
   )
@@ -151,11 +151,7 @@ async function upsertItem(
        (gen_random_uuid()::text, $1, 'OTHER'::"ItemType", $2, $3, 2, 0,
         'PENDING'::"DeliverableStatus", $4, $5, ($4 IS NOT NULL), NOW())
      ON CONFLICT ("projectId", description) WHERE description IS NOT NULL
-       DO UPDATE SET
-         "quoteNo"     = COALESCE(EXCLUDED."quoteNo", "deliverable_items"."quoteNo"),
-         "qteAmount"   = EXCLUDED."qteAmount",
-         quantity      = EXCLUDED.quantity,
-         "isConfirmed" = (COALESCE(EXCLUDED."quoteNo", "deliverable_items"."quoteNo") IS NOT NULL)`,
+       DO NOTHING`,
     projectId, description.slice(0, 500), quantity, quoteNo, amount
   )
 }
@@ -165,18 +161,20 @@ async function applyInvoice(
   itemId: string, invoiceNo: string, payStatus: string,
   eta: string | null, invoiceDate: string, amount: number, quantity: number
 ): Promise<void> {
+  // Insert-only philosophy: never overwrite existing invoice data.
+  // Only fill in invoice fields when the row has no invoiceNo yet.
   await prisma.$executeRawUnsafe(
     `UPDATE "deliverable_items"
      SET "invoiceNo"     = $1,
          "paymentStatus" = $2,
          "paymentEta"    = $3::date,
          "invoiceDate"   = $4::date,
-         "qteAmount"     = $5,
-         quantity        = $6,
          "isConfirmed"   = TRUE
-     WHERE id = $7`,
-    invoiceNo, payStatus, eta, invoiceDate, amount, quantity, itemId
+     WHERE id = $5 AND ("invoiceNo" IS NULL OR "invoiceNo" = '')`,
+    invoiceNo, payStatus, eta, invoiceDate, itemId
   )
+  // suppress unused-param warnings — amount/quantity retained for future use
+  void amount; void quantity
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────
@@ -279,14 +277,7 @@ export async function POST(): Promise<NextResponse> {
              (gen_random_uuid()::text, $1, 'OTHER'::"ItemType", $2, $3, 2, 0,
               'PENDING'::"DeliverableStatus", $4, $5, $6, $7::date, $8::date, TRUE, NOW())
            ON CONFLICT ("projectId", description) WHERE description IS NOT NULL
-             DO UPDATE SET
-               "invoiceNo"     = EXCLUDED."invoiceNo",
-               "qteAmount"     = EXCLUDED."qteAmount",
-               "paymentStatus" = EXCLUDED."paymentStatus",
-               "paymentEta"    = EXCLUDED."paymentEta",
-               "invoiceDate"   = EXCLUDED."invoiceDate",
-               quantity        = EXCLUDED.quantity,
-               "isConfirmed"   = TRUE`,
+             DO NOTHING`,
           projectId, desc, li.quantity ?? 1,
           inv.number, amount, payStatus, eta, inv.date
         ).then(() => { itemsUpserted++ }).catch(() => {})

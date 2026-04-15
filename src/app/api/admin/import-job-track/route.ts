@@ -115,23 +115,29 @@ export async function POST(): Promise<NextResponse> {
 
     let projectId: string
     if (existingProject) {
+      // Insert-only: never overwrite an existing project's quotedAmount or status.
+      // Manual edits in the Job Track UI are the source of truth once a project exists.
       projectId = existingProject.id
-      await prisma.$executeRawUnsafe(
-        `UPDATE "projects" SET "quotedAmount" = $1, "updatedAt" = NOW() WHERE id = $2`,
-        totalQuoted, projectId
-      ).catch(() => {})
     } else {
       const [proj] = await prisma.$queryRawUnsafe<{ id: string }[]>(
         `INSERT INTO "projects" (id, code, "clientId", status, "quotedAmount", "billedAmount", "paidAmount", "createdAt", "updatedAt")
          VALUES (gen_random_uuid()::text, $1, $2, $3::"ProjectStatus", $4, 0, 0, NOW(), NOW())
-         ON CONFLICT (code) DO UPDATE
-           SET "quotedAmount" = EXCLUDED."quotedAmount", "updatedAt" = NOW()
+         ON CONFLICT (code) DO NOTHING
          RETURNING id`,
         code, clientId || null, projectStatus, totalQuoted
       )
-      projectId = proj.id
-      projectsUpserted++
+      projectId = proj?.id ?? ''
+      if (projectId) projectsUpserted++
+      else {
+        // Another concurrent import won the race — fetch the existing row
+        const existing = await prisma.$queryRawUnsafe<{ id: string }[]>(
+          `SELECT id FROM "projects" WHERE code = $1 LIMIT 1`,
+          code
+        ).catch(() => [] as { id: string }[])
+        projectId = existing[0]?.id ?? ''
+      }
     }
+    if (!projectId) continue
 
     // 3. Upsert deliverable items
     for (const row of accountRows) {

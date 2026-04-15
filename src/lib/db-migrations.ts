@@ -204,5 +204,43 @@ export async function ensureSchemaUpToDate(): Promise<string[]> {
      ON "clients" ("companyName")`
   )
 
+  // ── Drive-backed media assets (Social Hub media library) ─────────────────
+  await step(
+    'enum AssetKind',
+    `DO $$ BEGIN
+       CREATE TYPE "AssetKind" AS ENUM ('IMAGE','VIDEO','DOCUMENT','AUDIO','OTHER');
+     EXCEPTION WHEN duplicate_object THEN NULL; END $$`
+  )
+  await step(
+    'table assets',
+    `CREATE TABLE IF NOT EXISTS "assets" (
+       "id"              TEXT PRIMARY KEY,
+       "driveFileId"     TEXT NOT NULL UNIQUE,
+       "name"            TEXT NOT NULL,
+       "mimeType"        TEXT NOT NULL,
+       "sizeBytes"       BIGINT,
+       "kind"            "AssetKind" NOT NULL DEFAULT 'OTHER',
+       "webViewLink"     TEXT,
+       "webContentLink"  TEXT,
+       "thumbnailLink"   TEXT,
+       "uploaderId"      TEXT,
+       "platform"        TEXT,
+       "tags"            TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
+       "createdAt"       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+     )`
+  )
+  await step(
+    'idx assets(uploaderId)',
+    `CREATE INDEX IF NOT EXISTS "assets_uploaderId_idx" ON "assets" ("uploaderId")`
+  )
+  await step(
+    'idx assets(platform)',
+    `CREATE INDEX IF NOT EXISTS "assets_platform_idx" ON "assets" ("platform")`
+  )
+  await step(
+    'idx assets(createdAt)',
+    `CREATE INDEX IF NOT EXISTS "assets_createdAt_idx" ON "assets" ("createdAt")`
+  )
+
   return log
 }
