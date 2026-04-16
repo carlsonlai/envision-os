@@ -9,7 +9,7 @@ import {
   MessageSquare, ExternalLink, Pencil, X, Save, Users, UserCheck,
 } from 'lucide-react'
 
-type ViewMode = 'grouped' | 'table' | 'live'
+type ViewMode = 'grouped' | 'pipeline' | 'table' | 'live'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -800,10 +800,10 @@ export default function JobTrackPage() {
         <div className="flex items-center gap-2 flex-wrap">
           {/* View toggle */}
           <div className="flex items-center rounded-lg border border-zinc-700 bg-zinc-800/60 p-0.5">
-            {(['grouped', 'table', 'live'] as ViewMode[]).map((v, i) => {
-              const icons = [LayoutGrid, List, Database]
+            {(['grouped', 'pipeline', 'table', 'live'] as ViewMode[]).map((v, i) => {
+              const icons = [LayoutGrid, TrendingUp, List, Database]
               const Icon = icons[i]
-              const titles = ['Grouped view', 'Table view', 'Live Bukku']
+              const titles = ['Grouped view', 'Billing Pipeline', 'Table view', 'Live Bukku']
               return (
                 <button
                   key={v}
@@ -1065,6 +1065,117 @@ export default function JobTrackPage() {
                   : 'No items match your filters.'}
               </p>
             </div>
+          ) : view === 'pipeline' ? (
+            /* ── Billing Pipeline view ───────────────────────────────── */
+            (() => {
+              // Map item status + revision count to a creative stage label
+              const getCreativeStage = (item: JobItem): string => {
+                if (item.status === 'FA_SIGNED') return 'FA'
+                if (item.status === 'APPROVED' || item.status === 'DELIVERED') return 'FA'
+                if (item.status === 'PENDING' && (!item.quantity || item.quantity === 0)) return 'Brief'
+                if (item.status === 'PENDING') return 'Brief'
+                if (item.status === 'IN_PROGRESS') return 'Started'
+                if (item.status === 'WIP_UPLOADED' || item.status === 'QC_REVIEW') {
+                  const rev = Number((item as unknown as Record<string, unknown>).revisionCount) || 0
+                  return rev === 0 ? 'V1' : `V${rev}`
+                }
+                return 'Brief'
+              }
+
+              // Collect all items across all groups with their project info
+              type PipelineItem = JobItem & { client: string; account: string }
+              const allItems: PipelineItem[] = displayGroups.flatMap(g =>
+                g.items.map(i => ({ ...i, client: g.client, account: g.account }))
+              )
+
+              // Payment buckets
+              const buckets = [
+                { key: 'HALF_PAID', label: 'Half Paid', color: 'lime', items: allItems.filter(i => i.paymentStatus === 'HALF_PAID') },
+                { key: 'FULL_PAID', label: 'Full Paid', color: 'emerald', items: allItems.filter(i => i.paymentStatus === 'FULL_PAID' || i.paymentStatus === 'PAID') },
+                { key: 'COLLECTED', label: 'Collected', color: 'cyan', items: [] as PipelineItem[] },
+              ]
+              // "Collected" = items that are FULL_PAID + FA signed off
+              buckets[2].items = allItems.filter(i =>
+                (i.paymentStatus === 'FULL_PAID' || i.paymentStatus === 'PAID') &&
+                (i.status === 'FA_SIGNED' || i.status === 'DELIVERED' || i.status === 'APPROVED')
+              )
+              // Remove collected items from Full Paid so no duplicates
+              const collectedIds = new Set(buckets[2].items.map(i => i.id))
+              buckets[1].items = buckets[1].items.filter(i => !collectedIds.has(i.id))
+
+              // Creative stages order
+              const STAGES = ['Brief', 'Started', 'V1', 'V2', 'V3', 'V4', 'V5', 'FA']
+
+              const colorMap: Record<string, { bg: string; border: string; text: string; headerBg: string }> = {
+                lime:    { bg: 'bg-lime-500/5',    border: 'border-lime-500/30',    text: 'text-lime-400',    headerBg: 'bg-lime-500/10' },
+                emerald: { bg: 'bg-emerald-500/5',  border: 'border-emerald-500/30',  text: 'text-emerald-400',  headerBg: 'bg-emerald-500/10' },
+                cyan:    { bg: 'bg-cyan-500/5',    border: 'border-cyan-500/30',    text: 'text-cyan-400',    headerBg: 'bg-cyan-500/10' },
+              }
+
+              return (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                  {buckets.map(bucket => {
+                    const c = colorMap[bucket.color]
+                    // Group items by creative stage
+                    const stageGroups = STAGES.map(stage => ({
+                      stage,
+                      items: bucket.items.filter(i => getCreativeStage(i) === stage),
+                    })).filter(sg => sg.items.length > 0)
+
+                    const totalAmt = bucket.items.reduce((s, i) => s + (i.qteAmount ?? 0), 0)
+
+                    return (
+                      <div key={bucket.key} className={`rounded-xl border ${c.border} ${c.bg} overflow-hidden`}>
+                        {/* Bucket header */}
+                        <div className={`${c.headerBg} px-4 py-3 border-b ${c.border}`}>
+                          <div className="flex items-center justify-between">
+                            <h3 className={`text-sm font-bold ${c.text}`}>{bucket.label}</h3>
+                            <span className={`text-xs font-semibold ${c.text}`}>{bucket.items.length} items</span>
+                          </div>
+                          <p className={`text-lg font-bold ${c.text} mt-1`}>{fmt(totalAmt)}</p>
+                        </div>
+
+                        {/* Stage groups */}
+                        <div className="p-3 space-y-3">
+                          {stageGroups.length === 0 ? (
+                            <p className="text-xs text-zinc-600 text-center py-4">No items</p>
+                          ) : (
+                            stageGroups.map(sg => (
+                              <div key={sg.stage}>
+                                <div className="flex items-center gap-2 mb-2">
+                                  <span className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">{sg.stage}</span>
+                                  <span className="text-[10px] text-zinc-600">({sg.items.length})</span>
+                                  <div className="flex-1 h-px bg-zinc-800" />
+                                </div>
+                                <div className="space-y-1.5">
+                                  {sg.items.map(item => (
+                                    <div key={item.id} className="rounded-lg border border-zinc-800 bg-zinc-900/80 px-3 py-2">
+                                      <div className="flex items-center justify-between gap-2">
+                                        <div className="min-w-0 flex-1">
+                                          <p className="text-xs font-medium text-zinc-200 truncate">{item.client}</p>
+                                          <p className="text-[10px] text-zinc-500 truncate">{item.description || item.account}</p>
+                                        </div>
+                                        <div className="text-right flex-shrink-0">
+                                          <p className="text-xs font-semibold text-zinc-300">{fmt(item.qteAmount ?? 0)}</p>
+                                          <PayBadge status={item.paymentStatus} />
+                                        </div>
+                                      </div>
+                                      {item.invoiceNo && (
+                                        <p className="text-[10px] text-violet-400 mt-1">INV: {item.invoiceNo}</p>
+                                      )}
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )
+            })()
           ) : view === 'table' ? (
             /* ── Flat table view ─────────────────────────────────────── */
             <div className="rounded-xl border border-zinc-800 overflow-hidden">
