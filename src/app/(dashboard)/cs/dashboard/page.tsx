@@ -1,16 +1,16 @@
 'use client'
 
-/* CS Dashboard — real-time project overview for Client Servicing */
+/* CS Dashboard â real-time project overview for Client Servicing */
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import {
   LayoutDashboard, Clock, AlertTriangle, CheckCircle2,
   ChevronRight, Loader2, RefreshCw, Activity,
   FileText, Eye, MessageSquare, Zap, Users,
-  TrendingUp, Bell, ArrowRight,
+  TrendingUp, Bell, ArrowRight, Hand, UserCheck,
 } from 'lucide-react'
 
-// ─── Types ───────────────────────────────────────────────────────────────────
+// âââ Types âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 interface DashboardItem {
   id: string
@@ -24,6 +24,12 @@ interface DashboardItem {
   latestFileUrl: string | null
 }
 
+interface ClaimInfo {
+  userId: string
+  name: string
+  claimedAt: string
+}
+
 interface DashboardProject {
   id: string
   code: string
@@ -32,6 +38,8 @@ interface DashboardProject {
   quotedAmount: number
   deadline: string | null
   updatedAt: string
+  claimedBy: ClaimInfo[]
+  isMyClaim: boolean
   items: DashboardItem[]
 }
 
@@ -50,7 +58,7 @@ interface ActivityItem {
   itemType: string | null
 }
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
+// âââ Helpers âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 function fmt(n: number): string {
   return `RM ${n.toLocaleString('en-MY', { minimumFractionDigits: 0 })}`
@@ -120,13 +128,17 @@ function getActionColor(action: string): string {
   return 'bg-zinc-700/60 text-zinc-400 border border-zinc-600/40'
 }
 
-// ─── Main Component ──────────────────────────────────────────────────────────
+type FilterTab = 'all' | 'mine' | 'unclaimed'
+
+// âââ Main Component ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 export default function CSDashboardPage() {
   const [projects, setProjects] = useState<DashboardProject[]>([])
   const [activity, setActivity] = useState<ActivityItem[]>([])
   const [loading, setLoading] = useState(true)
   const [activityLoading, setActivityLoading] = useState(true)
+  const [claiming, setClaiming] = useState<string | null>(null)
+  const [filter, setFilter] = useState<FilterTab>('all')
 
   const loadProjects = useCallback(async () => {
     setLoading(true)
@@ -144,7 +156,7 @@ export default function CSDashboardPage() {
   const loadActivity = useCallback(async () => {
     setActivityLoading(true)
     try {
-      const res = await fetch('/api/cs/activity?scope=mine&limit=30')
+      const res = await fetch('/api/cs/activity?limit=30')
       const json = await res.json() as { data?: ActivityItem[] }
       setActivity(json.data ?? [])
     } catch {
@@ -159,8 +171,50 @@ export default function CSDashboardPage() {
     void loadActivity()
   }, [loadProjects, loadActivity])
 
+  // âââ Claim / Unclaim ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  const handleClaim = async (projectId: string) => {
+    setClaiming(projectId)
+    try {
+      await fetch('/api/cs/claim', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      })
+      await loadProjects()
+    } catch {
+      // silent
+    } finally {
+      setClaiming(null)
+    }
+  }
+
+  const handleUnclaim = async (projectId: string) => {
+    setClaiming(projectId)
+    try {
+      await fetch('/api/cs/claim', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId }),
+      })
+      await loadProjects()
+    } catch {
+      // silent
+    } finally {
+      setClaiming(null)
+    }
+  }
+
+  // âââ Filtered projects ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  const filteredProjects = projects.filter((p) => {
+    if (filter === 'mine') return p.isMyClaim
+    if (filter === 'unclaimed') return p.claimedBy.length === 0
+    return true
+  })
+
   // Computed stats
+  const myProjects = projects.filter(p => p.isMyClaim)
   const activeProjects = projects.filter(p => p.status === 'ONGOING')
+  const unclaimedProjects = projects.filter(p => p.claimedBy.length === 0)
   const allItems = projects.flatMap(p => p.items)
   const needsAttention = allItems.filter(i =>
     i.status === 'QC_REVIEW' || i.status === 'WIP_UPLOADED' ||
@@ -180,7 +234,7 @@ export default function CSDashboardPage() {
             <LayoutDashboard className="h-5 w-5 text-blue-400" />
             CS Dashboard
           </h1>
-          <p className="text-sm text-zinc-500 mt-0.5">Real-time overview of your projects and deliverables</p>
+          <p className="text-sm text-zinc-500 mt-0.5">All projects â claim the ones you&apos;re handling</p>
         </div>
         <button
           type="button"
@@ -196,9 +250,9 @@ export default function CSDashboardPage() {
       {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
         {[
-          { label: 'Active Projects', value: activeProjects.length, icon: Zap, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
-          { label: 'Items In Progress', value: inProgress.length, icon: TrendingUp, color: 'text-violet-400', bg: 'bg-violet-500/10 border-violet-500/20' },
-          { label: 'Needs Attention', value: needsAttention.length, icon: Bell, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
+          { label: 'My Projects', value: myProjects.length, icon: UserCheck, color: 'text-blue-400', bg: 'bg-blue-500/10 border-blue-500/20' },
+          { label: 'Active Projects', value: activeProjects.length, icon: Zap, color: 'text-violet-400', bg: 'bg-violet-500/10 border-violet-500/20' },
+          { label: 'Unclaimed', value: unclaimedProjects.length, icon: Hand, color: 'text-amber-400', bg: 'bg-amber-500/10 border-amber-500/20' },
           { label: 'Awaiting Feedback', value: awaitingFeedback.length, icon: MessageSquare, color: 'text-teal-400', bg: 'bg-teal-500/10 border-teal-500/20' },
           { label: 'Overdue', value: overdueItems.length, icon: AlertTriangle, color: overdueItems.length > 0 ? 'text-rose-400' : 'text-emerald-400', bg: overdueItems.length > 0 ? 'bg-rose-500/10 border-rose-500/20' : 'bg-emerald-500/10 border-emerald-500/20' },
         ].map((s) => {
@@ -215,22 +269,44 @@ export default function CSDashboardPage() {
         })}
       </div>
 
+      {/* Filter Tabs */}
+      <div className="flex items-center gap-1 border-b border-zinc-700/50 pb-px">
+        {([
+          { key: 'all' as FilterTab, label: 'All Projects', count: projects.length },
+          { key: 'mine' as FilterTab, label: 'My Claims', count: myProjects.length },
+          { key: 'unclaimed' as FilterTab, label: 'Unclaimed', count: unclaimedProjects.length },
+        ]).map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => setFilter(tab.key)}
+            className={`px-3 py-2 text-xs font-medium rounded-t-md transition-colors ${
+              filter === tab.key
+                ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-500/5'
+                : 'text-zinc-500 hover:text-zinc-300'
+            }`}
+          >
+            {tab.label} ({tab.count})
+          </button>
+        ))}
+      </div>
+
       {loading ? (
         <div className="flex items-center justify-center py-20 text-zinc-500">
-          <Loader2 className="h-5 w-5 animate-spin mr-2" />Loading projects…
+          <Loader2 className="h-5 w-5 animate-spin mr-2" />Loading projectsâ¦
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
 
-          {/* Left: My Projects + Needs Attention */}
+          {/* Left: Projects */}
           <div className="lg:col-span-2 space-y-5">
 
             {/* Needs Attention */}
-            {needsAttention.length > 0 && (
+            {needsAttention.length > 0 && filter !== 'unclaimed' && (
               <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-4">
                 <h2 className="text-sm font-semibold text-amber-400 flex items-center gap-2 mb-3">
                   <AlertTriangle className="h-4 w-4" />
-                  Needs Your Attention ({needsAttention.length})
+                  Needs Attention ({needsAttention.length})
                 </h2>
                 <div className="space-y-2">
                   {needsAttention.slice(0, 8).map((item) => {
@@ -266,27 +342,31 @@ export default function CSDashboardPage() {
               </div>
             )}
 
-            {/* Active Projects */}
+            {/* Projects List */}
             <div>
               <h2 className="text-sm font-semibold text-zinc-300 flex items-center gap-2 mb-3">
                 <Users className="h-4 w-4 text-blue-400" />
-                My Projects ({projects.length})
+                {filter === 'mine' ? 'My Claims' : filter === 'unclaimed' ? 'Unclaimed Projects' : 'All Projects'} ({filteredProjects.length})
               </h2>
               <div className="space-y-2">
-                {projects.map((proj) => {
+                {filteredProjects.map((proj) => {
                   const done = proj.items.filter(i => ['APPROVED', 'DELIVERED', 'FA_SIGNED'].includes(i.status)).length
                   const total = proj.items.length
                   const pct = total > 0 ? Math.round((done / total) * 100) : 0
                   const hasOverdue = proj.items.some(i => isOverdue(i.deadline) && !['DELIVERED', 'FA_SIGNED', 'APPROVED'].includes(i.status))
+                  const isClaimLoading = claiming === proj.id
 
                   return (
-                    <Link
+                    <div
                       key={proj.id}
-                      href={`/cs/projects/${proj.id}`}
-                      className="block rounded-xl border border-zinc-700/50 bg-zinc-800/30 p-4 hover:bg-zinc-800/60 transition-colors group"
+                      className={`rounded-xl border p-4 transition-colors ${
+                        proj.isMyClaim
+                          ? 'border-blue-500/30 bg-blue-500/5'
+                          : 'border-zinc-700/50 bg-zinc-800/30'
+                      }`}
                     >
                       <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
+                        <Link href={`/cs/projects/${proj.id}`} className="min-w-0 flex-1 group">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-xs font-mono font-semibold text-blue-400">{proj.code}</span>
                             <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-medium ${STATUS_STYLES[proj.status] ?? 'bg-zinc-700 text-zinc-400'}`}>
@@ -298,19 +378,52 @@ export default function CSDashboardPage() {
                               </span>
                             )}
                           </div>
-                          <p className="text-sm text-zinc-300 mt-0.5">{proj.clientName}</p>
-                        </div>
-                        <div className="text-right flex-shrink-0">
-                          <p className="text-xs font-semibold text-zinc-300">{fmt(proj.quotedAmount)}</p>
-                          {proj.deadline && (
-                            <p className={`text-[10px] ${isOverdue(proj.deadline) ? 'text-rose-400' : 'text-zinc-500'}`}>
-                              Due {new Date(proj.deadline).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })}
-                            </p>
-                          )}
+                          <p className="text-sm text-zinc-300 mt-0.5 group-hover:text-zinc-100 transition-colors">{proj.clientName}</p>
+                        </Link>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <div className="text-right">
+                            <p className="text-xs font-semibold text-zinc-300">{fmt(proj.quotedAmount)}</p>
+                            {proj.deadline && (
+                              <p className={`text-[10px] ${isOverdue(proj.deadline) ? 'text-rose-400' : 'text-zinc-500'}`}>
+                                Due {new Date(proj.deadline).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })}
+                              </p>
+                            )}
+                          </div>
+                          {/* Claim / Unclaim button */}
+                          <button
+                            type="button"
+                            disabled={isClaimLoading}
+                            onClick={() => proj.isMyClaim ? handleUnclaim(proj.id) : handleClaim(proj.id)}
+                            className={`flex items-center gap-1 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-all ${
+                              proj.isMyClaim
+                                ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30 hover:bg-rose-500/15 hover:text-rose-400 hover:border-rose-500/30'
+                                : 'bg-zinc-700/60 text-zinc-400 border border-zinc-600/40 hover:bg-blue-500/15 hover:text-blue-400 hover:border-blue-500/30'
+                            } disabled:opacity-50`}
+                            title={proj.isMyClaim ? 'Remove yourself from this project' : 'Claim this project'}
+                          >
+                            {isClaimLoading ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : proj.isMyClaim ? (
+                              <><CheckCircle2 className="h-3 w-3" /> Claimed</>
+                            ) : (
+                              <><Hand className="h-3 w-3" /> Claim</>
+                            )}
+                          </button>
                         </div>
                       </div>
+
+                      {/* Who claimed */}
+                      {proj.claimedBy.length > 0 && (
+                        <div className="mt-2 flex items-center gap-1.5">
+                          <UserCheck className="h-3 w-3 text-zinc-500" />
+                          <span className="text-[10px] text-zinc-500">
+                            Handled by: {proj.claimedBy.map(c => c.name).join(', ')}
+                          </span>
+                        </div>
+                      )}
+
                       {/* Progress bar */}
-                      <div className="mt-3 flex items-center gap-3">
+                      <div className="mt-2.5 flex items-center gap-3">
                         <div className="flex-1 h-1.5 rounded-full bg-zinc-700/60">
                           <div
                             className={`h-1.5 rounded-full transition-all ${pct === 100 ? 'bg-emerald-400' : pct >= 50 ? 'bg-blue-400' : 'bg-zinc-500'}`}
@@ -325,7 +438,7 @@ export default function CSDashboardPage() {
                           <span
                             key={item.id}
                             className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${STATUS_STYLES[item.status] ?? 'bg-zinc-700 text-zinc-400'}`}
-                            title={`${item.description ?? item.itemType} — ${item.status}`}
+                            title={`${item.description ?? item.itemType} â ${item.status}`}
                           >
                             {item.itemType.replace(/_/g, ' ')}
                           </span>
@@ -334,11 +447,13 @@ export default function CSDashboardPage() {
                           <span className="text-[10px] text-zinc-500">+{proj.items.length - 5} more</span>
                         )}
                       </div>
-                    </Link>
+                    </div>
                   )
                 })}
-                {projects.length === 0 && (
-                  <p className="text-sm text-zinc-500 text-center py-8">No projects assigned to you yet.</p>
+                {filteredProjects.length === 0 && (
+                  <p className="text-sm text-zinc-500 text-center py-8">
+                    {filter === 'mine' ? 'You haven\'t claimed any projects yet. Claim a project to get started!' : 'No projects found.'}
+                  </p>
                 )}
               </div>
             </div>
@@ -352,7 +467,7 @@ export default function CSDashboardPage() {
             </h2>
             {activityLoading ? (
               <div className="flex items-center justify-center py-10 text-zinc-500">
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />Loading…
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />Loadingâ¦
               </div>
             ) : activity.length === 0 ? (
               <p className="text-xs text-zinc-500 text-center py-10">No recent activity.</p>
@@ -377,7 +492,7 @@ export default function CSDashboardPage() {
                     {a.performerName && (
                       <p className="text-[10px] text-zinc-500 mt-0.5">
                         by {a.performerName}
-                        {a.itemDescription && <> · {a.itemDescription}</>}
+                        {a.itemDescription && <> Â· {a.itemDescription}</>}
                       </p>
                     )}
                   </Link>
