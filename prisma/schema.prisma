@@ -231,6 +231,7 @@ model User {
   workloadSlots         WorkloadSlot[]
   auditLogs             AuditLog[]           @relation("PerformerToAuditLog")
   briefsCompleted       ProjectBrief[]       @relation("CSToProjectBrief")
+  csClaimedProjects     ProjectCSAssignment[] @relation("CSClaimedProjects")
 
   @@map("users")
 }
@@ -353,6 +354,7 @@ model Project {
   auditLogs        AuditLog[]
   faSignOffs       FASignOff[]
   freelancerAssignments FreelancerAssignment[]
+  csAssignments         ProjectCSAssignment[]
 
   @@index([clientId])
   @@index([assignedCSId])
@@ -360,6 +362,21 @@ model Project {
   @@index([status, clientId])
   @@index([deadline])
   @@map("projects")
+}
+
+/// Many-to-many: multiple CS staff can claim a project
+model ProjectCSAssignment {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  claimedAt DateTime @default(now())
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user    User    @relation("CSClaimedProjects", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+  @@index([userId])
+  @@map("project_cs_assignments")
 }
 
 model ProjectBrief {
