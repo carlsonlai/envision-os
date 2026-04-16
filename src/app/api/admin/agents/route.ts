@@ -47,7 +47,7 @@ export async function GET(): Promise<NextResponse> {
         ])
         return {
           agent,
-          implemented: agent === 'DEMAND_INTEL',
+          implemented: true,
           config: cfg,
           lastRun,
           pendingCount,
