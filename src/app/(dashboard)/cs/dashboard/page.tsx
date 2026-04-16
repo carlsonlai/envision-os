@@ -1,5 +1,6 @@
 'use client'
 
+/* CS Dashboard — real-time project overview for Client Servicing */
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import {
