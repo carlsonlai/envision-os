@@ -125,8 +125,10 @@ const BILLING_STAGES: Record<string, { label: string; cls: string }> = {
   PARTIALLY_BILLED: { label: 'Partially Billed', cls: 'bg-orange-500/15 text-orange-400 border border-orange-500/30' },
   COMPLETED:        { label: 'Completed',         cls: 'bg-teal-500/15 text-teal-400 border border-teal-500/30' },
   BILLED:           { label: 'Billed',            cls: 'bg-violet-500/15 text-violet-400 border border-violet-500/30' },
-  PAID:             { label: 'Paid',              cls: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' },
+  HALF_PAID:        { label: 'Half Paid',         cls: 'bg-lime-500/15 text-lime-400 border border-lime-500/30' },
+  FULL_PAID:        { label: 'Full Paid',         cls: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' },
   // Legacy values
+  PAID:             { label: 'Paid',              cls: 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30' },
   PENDING:          { label: 'Pending',           cls: 'bg-amber-500/15 text-amber-400 border border-amber-500/30' },
   PROGRESS:         { label: 'In Progress',       cls: 'bg-blue-500/15 text-blue-400 border border-blue-500/30' },
 }
@@ -141,7 +143,8 @@ function PayBadge({ status }: { status: string | null }) {
   )
   return (
     <span className={`inline-flex items-center gap-1 rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${stage.cls}`}>
-      {status === 'PAID' && <CheckCircle2 className="h-2.5 w-2.5" />}
+      {(status === 'PAID' || status === 'FULL_PAID') && <CheckCircle2 className="h-2.5 w-2.5" />}
+      {status === 'HALF_PAID' && <Clock className="h-2.5 w-2.5" />}
       {status === 'BILLED' && <Receipt className="h-2.5 w-2.5" />}
       {status === 'COMPLETED' && <CheckCircle2 className="h-2.5 w-2.5" />}
       {status === 'STARTED' && <TrendingUp className="h-2.5 w-2.5" />}
@@ -461,7 +464,8 @@ function EditDrawer({ editState, csStaff, designers, onClose, onSaved }: EditDra
                   <option value="STARTED">Started</option>
                   <option value="PROGRESS">In Progress / Pitching</option>
                   <option value="PENDING">Pending Decision</option>
-                  <option value="PAID">Won</option>
+                  <option value="HALF_PAID">Half Paid</option>
+                  <option value="FULL_PAID">Full Paid (Won)</option>
                 </select>
               </div>
               <div className="space-y-1.5">
@@ -575,7 +579,8 @@ function EditDrawer({ editState, csStaff, designers, onClose, onSaved }: EditDra
                       <option value="PARTIALLY_BILLED">Partially Billed</option>
                       <option value="COMPLETED">Completed</option>
                       <option value="BILLED">Billed</option>
-                      <option value="PAID">Paid</option>
+                      <option value="HALF_PAID">Half Paid</option>
+                      <option value="FULL_PAID">Full Paid</option>
                     </select>
                   </div>
                 </div>
@@ -1004,7 +1009,8 @@ export default function JobTrackPage() {
               <option value="PARTIALLY_BILLED">Partially Billed</option>
               <option value="COMPLETED">Completed</option>
               <option value="BILLED">Billed</option>
-              <option value="PAID">Paid</option>
+              <option value="HALF_PAID">Half Paid</option>
+              <option value="FULL_PAID">Full Paid</option>
               <option value="UNPAID">No Status</option>
             </select>
             <select
@@ -1147,7 +1153,8 @@ export default function JobTrackPage() {
             <div className="space-y-2">
               {displayGroups.map(group => {
                 const isOpen = expanded.has(group.projectId)
-                const paidCount = group.items.filter(i => i.paymentStatus === 'PAID').length
+                const fullPaidCount = group.items.filter(i => i.paymentStatus === 'FULL_PAID' || i.paymentStatus === 'PAID').length
+                const halfPaidCount = group.items.filter(i => i.paymentStatus === 'HALF_PAID').length
                 const pendingCount = group.items.filter(i => i.paymentStatus === 'PENDING').length
                 const pitchingCount = group.items.filter(i => !isJobConfirmed(i)).length
                 const confirmedCount = group.items.filter(i => isJobConfirmed(i)).length
@@ -1175,8 +1182,11 @@ export default function JobTrackPage() {
                           {confirmedCount > 0 && (
                             <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded px-1.5 py-0.5">{confirmedCount} confirmed</span>
                           )}
-                          {paidCount > 0 && (
-                            <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded px-1.5 py-0.5">{paidCount} paid</span>
+                          {fullPaidCount > 0 && (
+                            <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded px-1.5 py-0.5">{fullPaidCount} full paid</span>
+                          )}
+                          {halfPaidCount > 0 && (
+                            <span className="text-[10px] text-lime-400 bg-lime-500/10 border border-lime-500/20 rounded px-1.5 py-0.5">{halfPaidCount} half paid</span>
                           )}
                           {pendingCount > 0 && (
                             <span className="text-[10px] text-amber-400 bg-amber-500/10 border border-amber-500/20 rounded px-1.5 py-0.5">{pendingCount} pending</span>

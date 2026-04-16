@@ -5,7 +5,7 @@
  * for the Job Track dashboard used by Client Servicing.
  *
  * Query params:
- *   paymentStatus  — filter: PAID | PENDING | PROGRESS | UNPAID
+ *   paymentStatus  — filter: HALF_PAID | FULL_PAID | PAID | PENDING | PROGRESS | UNPAID
  *   search         — search by account/project name
  */
 
@@ -145,8 +145,10 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
         // Use project.quotedAmount as the contract total (aligns with CS Hub)
         const contractQuoted = Number(proj.quotedAmount) || 0
-        const totalPaid = filteredItems.filter(i => i.paymentStatus === 'PAID')
+        const totalPaid = filteredItems.filter(i => i.paymentStatus === 'FULL_PAID' || i.paymentStatus === 'PAID')
           .reduce((s, i) => s + (i.qteAmount ?? 0), 0)
+          + filteredItems.filter(i => i.paymentStatus === 'HALF_PAID')
+          .reduce((s, i) => s + ((i.qteAmount ?? 0) * 0.5), 0)
         const totalPending = filteredItems.filter(i => i.paymentStatus === 'PENDING')
           .reduce((s, i) => s + (i.qteAmount ?? 0), 0)
 

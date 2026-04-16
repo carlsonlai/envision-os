@@ -43,8 +43,8 @@ function toProjectCode(account: string): string {
 
 function toProjectStatus(rows: SeedRow[]): string {
   const statuses = rows.map(r => r.paymentStatus).filter(Boolean)
-  if (statuses.every(s => s === 'PAID')) return 'PAID'
-  if (statuses.some(s => s === 'PAID' || s === 'PROGRESS')) return 'ONGOING'
+  if (statuses.every(s => s === 'FULL_PAID' || s === 'PAID')) return 'PAID'
+  if (statuses.some(s => s === 'FULL_PAID' || s === 'HALF_PAID' || s === 'PAID' || s === 'PROGRESS')) return 'ONGOING'
   return 'PROJECTED'
 }
 
@@ -176,7 +176,8 @@ export async function POST(): Promise<NextResponse> {
 
       // Also create Invoice record if has INV NO
       if (row.invoiceNo) {
-        const invStatus = row.paymentStatus === 'PAID' ? 'PAID'
+        const invStatus = (row.paymentStatus === 'FULL_PAID' || row.paymentStatus === 'PAID') ? 'PAID'
+          : row.paymentStatus === 'HALF_PAID' ? 'SENT'
           : row.invoiceSentStatus === 'SENT' ? 'SENT'
           : 'PENDING'
         await prisma.$executeRawUnsafe(
@@ -185,7 +186,7 @@ export async function POST(): Promise<NextResponse> {
            ON CONFLICT DO NOTHING`,
           projectId, row.invoiceNo, row.qteAmount ?? 0, invStatus,
           row.paymentEta ?? null,
-          row.paymentStatus === 'PAID' ? (row.invoiceDate ?? new Date().toISOString().slice(0, 10)) : null
+          (row.paymentStatus === 'FULL_PAID' || row.paymentStatus === 'PAID') ? (row.invoiceDate ?? new Date().toISOString().slice(0, 10)) : null
         ).catch(() => {})
       }
     }

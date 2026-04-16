@@ -85,10 +85,10 @@ function toCode(contactName: string, suffix: string): string {
 
 function mapPaymentStatus(status: string): string {
   const s = status.toLowerCase()
-  if (s === 'paid')    return 'PAID'
+  if (s === 'paid')    return 'FULL_PAID'
+  if (s === 'partial') return 'HALF_PAID'
   if (s === 'overdue') return 'BILLED'
   if (s === 'sent')    return 'BILLED'
-  if (s === 'partial') return 'PARTIALLY_BILLED'
   return 'STARTED'
 }
 
