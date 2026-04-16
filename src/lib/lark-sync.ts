@@ -45,6 +45,9 @@ export function larkTitleToRole(
   // DESIGNER_3D
   if (t.includes('3d') || t.includes('motion') || t.includes('animator')) return Role.DESIGNER_3D
 
+  // MULTIMEDIA_DESIGNER
+  if (t.includes('multimedia') || t.includes('video editor') || t.includes('videographer')) return Role.MULTIMEDIA_DESIGNER
+
   // JUNIOR_DESIGNER
   if (t.includes('junior designer') || t.includes('junior graphic')) return Role.JUNIOR_DESIGNER
 
