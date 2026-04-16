@@ -1,4 +1,4 @@
-import { inngest } from '@/lib/inngest'
+import { inngest, AGENT_EVENTS } from '@/lib/inngest'
 import { prisma } from '@/lib/db'
 import { startRun } from './run'
 import { recordDecision, markDecisionResult, markDecisionFailed } from './decision-log'
@@ -82,6 +82,8 @@ export async function runLeadEngine(
           })
           loadMap.set(bestId, (loadMap.get(bestId) ?? 0) + 1)
           await markDecisionResult(decision.id, { routed: true, repId: bestId })
+          // Chain: notify Sales Agent a lead was routed
+          await inngest.send({ name: AGENT_EVENTS.leadRouted, data: { leadId: lead.id, assignedSalesId: bestId } })
           routed++
         } catch (error: unknown) {
           await markDecisionFailed(decision.id, error)
@@ -136,10 +138,13 @@ export const leadEngineFn = inngest.createFunction(
     triggers: [
       { cron: '*/15 * * * *' },
       { event: 'lead-engine/lead.created' },
+      { event: 'demand-intel/lead.scored' },
     ],
   },
   async ({ event, step }) => {
-    const triggerKind: 'cron' | 'event' = event.name === 'lead-engine/lead.created' ? 'event' : 'cron'
+    const triggerKind: 'cron' | 'event' =
+      event.name === 'lead-engine/lead.created' || event.name === 'demand-intel/lead.scored'
+        ? 'event' : 'cron'
     return step.run('run-lead-engine', () =>
       runLeadEngine({ triggerKind, triggerRef: event.id ?? event.name }),
     )

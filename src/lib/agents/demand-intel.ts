@@ -1,4 +1,4 @@
-import { inngest } from '@/lib/inngest'
+import { inngest, AGENT_EVENTS } from '@/lib/inngest'
 import { prisma } from '@/lib/db'
 import { startRun } from './run'
 import { recordDecision, markDecisionResult, markDecisionFailed } from './decision-log'
@@ -117,6 +117,8 @@ export async function runDemandIntel(
             data: { score: scored.recommendedScore },
           })
           await markDecisionResult(decision.id, { applied: true, newScore: scored.recommendedScore })
+          // Chain: notify Lead Engine that a lead was rescored
+          await inngest.send({ name: AGENT_EVENTS.demandIntelLeadScored, data: { leadId: lead.id, newScore: scored.recommendedScore } })
           changed++
         } catch (error: unknown) {
           await markDecisionFailed(decision.id, error)

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { convertLeadToClient } from '@/services/crm'
 import { z } from 'zod'
 import { logger, getErrorMessage } from '@/lib/logger'
+import { inngest, AGENT_EVENTS } from '@/lib/inngest'
 
 const ConvertSchema = z.object({
   csId: z.string().min(1),
@@ -27,6 +28,8 @@ export async function POST(
     const body: unknown = await req.json()
     const { csId, salesId } = ConvertSchema.parse(body)
     const client = await convertLeadToClient(id, csId, salesId)
+    // Notify agent layer: lead converted → Onboarding Agent
+    inngest.send({ name: AGENT_EVENTS.onboardingLeadWon, data: { leadId: id } }).catch(() => {})
     return NextResponse.json({ data: client }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {

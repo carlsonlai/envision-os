@@ -6,6 +6,7 @@ import { notify } from '@/services/lark'
 import type { LarkFolderMap } from '@/services/lark'
 import { uploadFile as uploadToLark } from '@/services/lark'
 import { logger, getErrorMessage } from '@/lib/logger'
+import { inngest, AGENT_EVENTS } from '@/lib/inngest'
 
 export interface UploadResult {
   url: string
@@ -129,6 +130,9 @@ export async function uploadDeliverableFile(
       data: { status: 'WIP_UPLOADED' },
     })
   }
+
+  // 8b. Notify QA Agent about the upload
+  inngest.send({ name: AGENT_EVENTS.qaDeliverableUploaded, data: { deliverableItemId: itemId, fileVersionId: fileVersion.id } }).catch(() => {})
 
   // 9. Create AuditLog
   await createAuditLog({

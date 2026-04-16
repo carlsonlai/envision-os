@@ -171,6 +171,25 @@ export default function AgentControlPage() {
     }
   }, [load])
 
+  const [busyDecision, setBusyDecision] = useState<string | null>(null)
+
+  const reviewDecision = useCallback(async (id: string, action: 'approve' | 'reject') => {
+    setBusyDecision(id)
+    try {
+      const res = await fetch(`/api/admin/agents/decisions/${id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      await load()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Review failed')
+    } finally {
+      setBusyDecision(null)
+    }
+  }, [load])
+
   const totals = useMemo(() => {
     if (!data) return { live: 0, paused: 0, pending: 0, planned: 0 }
     let live = 0, paused = 0, pending = 0, planned = 0
@@ -270,9 +289,27 @@ export default function AgentControlPage() {
                   </div>
                   <p className="text-zinc-400 mt-1 truncate">{d.rationale}</p>
                 </div>
-                <div className="text-right text-xs text-zinc-500 shrink-0">
+                <div className="text-right text-xs text-zinc-500 shrink-0 flex flex-col items-end gap-1">
                   <div>{(d.confidence * 100).toFixed(0)}%</div>
-                  <div className="mt-0.5">{new Date(d.createdAt).toLocaleString()}</div>
+                  <div>{new Date(d.createdAt).toLocaleString()}</div>
+                  {d.status === 'PENDING_APPROVAL' && (
+                    <div className="flex gap-1 mt-1">
+                      <button
+                        disabled={busyDecision === d.id}
+                        onClick={() => reviewDecision(d.id, 'approve')}
+                        className="px-2 py-0.5 rounded bg-emerald-600/80 hover:bg-emerald-600 text-white text-[10px] disabled:opacity-50"
+                      >
+                        {busyDecision === d.id ? '…' : 'Approve'}
+                      </button>
+                      <button
+                        disabled={busyDecision === d.id}
+                        onClick={() => reviewDecision(d.id, 'reject')}
+                        className="px-2 py-0.5 rounded bg-rose-600/80 hover:bg-rose-600 text-white text-[10px] disabled:opacity-50"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  )}
                 </div>
               </li>
             ))}

@@ -114,10 +114,13 @@ export const salesAgentFn = inngest.createFunction(
     triggers: [
       { cron: '30 8 * * *' },
       { event: 'sales-agent/proposal.needed' },
+      { event: 'lead-engine/lead.routed' },
     ],
   },
   async ({ event, step }) => {
-    const triggerKind: 'cron' | 'event' = event.name === 'sales-agent/proposal.needed' ? 'event' : 'cron'
+    const triggerKind: 'cron' | 'event' =
+      event.name === 'sales-agent/proposal.needed' || event.name === 'lead-engine/lead.routed'
+        ? 'event' : 'cron'
     return step.run('run-sales-agent', () =>
       runSalesAgent({ triggerKind, triggerRef: event.id ?? event.name }),
     )
