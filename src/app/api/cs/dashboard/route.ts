@@ -26,7 +26,7 @@ export async function GET(): Promise<NextResponse> {
     // OR all projects that have no CS assigned (so CS can see unassigned work too)
     const projects = await prisma.project.findMany({
       where: {
-        status: { in: ['PROJECTED', 'ONGOING', 'COMPLETED', 'BILLED'] },
+        status: { in: ['PROJECTED', 'ONGOING', 'COMPLETED', 'BILLED', 'PAID'] },
         ...(isAdmin
           ? {}
           : { OR: [{ assignedCSId: userId }, { assignedCSId: null }] }),
