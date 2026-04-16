@@ -63,42 +63,41 @@ export async function GET(): Promise<NextResponse> {
   const userIds = users.map((u) => u.id)
   const placeholders = userIds.map((_, i) => `$${i + 1}`).join(', ')
 
-  // 2. Task counts per user (batch raw SQL)
-  const taskRows = await prisma.$queryRawUnsafe<TaskRow[]>(
-    `SELECT
-       "assignedDesignerId"                                                               AS "userId",
-       COUNT(CASE WHEN status IN ('APPROVED','DELIVERED','FA_SIGNED') THEN 1 END)         AS "completed",
-       COUNT(CASE WHEN status IN ('IN_PROGRESS','WIP_UPLOADED','QC_REVIEW') THEN 1 END)  AS "inProgress",
-       COUNT(CASE WHEN status = 'PENDING' THEN 1 END)                                    AS "pending",
-       COUNT(*)                                                                           AS "totalItems",
-       COUNT(CASE WHEN "revisionCount" > 0 THEN 1 END)                                   AS "revisionItems",
-       COALESCE(SUM("estimatedMinutes"), 0)                                               AS "totalEstimatedMinutes"
-     FROM deliverable_items
-     WHERE "assignedDesignerId" IN (${placeholders})
-     GROUP BY "assignedDesignerId"`,
-    ...userIds
-  )
-
-  // 3. QC pass rates per user (batch)
-  const qcRows = await prisma.$queryRawUnsafe<QCRow[]>(
-    `SELECT
-       di."assignedDesignerId"                                   AS "userId",
-       COUNT(CASE WHEN qc.passed = true THEN 1 END)             AS "passed",
-       COUNT(*)                                                  AS "total"
-     FROM qc_checks qc
-     JOIN deliverable_items di ON di.id = qc."deliverableItemId"
-     WHERE di."assignedDesignerId" IN (${placeholders})
-     GROUP BY di."assignedDesignerId"`,
-    ...userIds
-  )
-
-  // 4. Today's workload slots
+  // 2–4. Parallel batch: task counts + QC rates + today's workload (3 queries → 1 round-trip)
   const todayStart = new Date()
   todayStart.setHours(0, 0, 0, 0)
-  const slots = await prisma.workloadSlot.findMany({
-    where: { userId: { in: userIds }, date: todayStart },
-    select: { userId: true, committedMinutes: true, capacityMinutes: true },
-  })
+
+  const [taskRows, qcRows, slots] = await Promise.all([
+    prisma.$queryRawUnsafe<TaskRow[]>(
+      `SELECT
+         "assignedDesignerId"                                                               AS "userId",
+         COUNT(CASE WHEN status IN ('APPROVED','DELIVERED','FA_SIGNED') THEN 1 END)         AS "completed",
+         COUNT(CASE WHEN status IN ('IN_PROGRESS','WIP_UPLOADED','QC_REVIEW') THEN 1 END)  AS "inProgress",
+         COUNT(CASE WHEN status = 'PENDING' THEN 1 END)                                    AS "pending",
+         COUNT(*)                                                                           AS "totalItems",
+         COUNT(CASE WHEN "revisionCount" > 0 THEN 1 END)                                   AS "revisionItems",
+         COALESCE(SUM("estimatedMinutes"), 0)                                               AS "totalEstimatedMinutes"
+       FROM deliverable_items
+       WHERE "assignedDesignerId" IN (${placeholders})
+       GROUP BY "assignedDesignerId"`,
+      ...userIds
+    ),
+    prisma.$queryRawUnsafe<QCRow[]>(
+      `SELECT
+         di."assignedDesignerId"                                   AS "userId",
+         COUNT(CASE WHEN qc.passed = true THEN 1 END)             AS "passed",
+         COUNT(*)                                                  AS "total"
+       FROM qc_checks qc
+       JOIN deliverable_items di ON di.id = qc."deliverableItemId"
+       WHERE di."assignedDesignerId" IN (${placeholders})
+       GROUP BY di."assignedDesignerId"`,
+      ...userIds
+    ),
+    prisma.workloadSlot.findMany({
+      where: { userId: { in: userIds }, date: todayStart },
+      select: { userId: true, committedMinutes: true, capacityMinutes: true },
+    }),
+  ])
 
   // 5. Build lookup maps
   const taskMap = new Map(taskRows.map((r) => [r.userId, r]))
@@ -201,5 +200,7 @@ export async function GET(): Promise<NextResponse> {
     }
   })
 
-  return NextResponse.json({ data })
+  const res = NextResponse.json({ data })
+  res.headers.set('Cache-Control', 'private, max-age=30')
+  return res
 }

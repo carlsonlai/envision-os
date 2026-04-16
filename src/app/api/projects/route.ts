@@ -26,7 +26,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const { role, id: userId } = session.user
     const projects = await getProjectsForRole(role, userId)
 
-    return NextResponse.json({ data: projects })
+    const res = NextResponse.json({ data: projects })
+    res.headers.set('Cache-Control', 'private, max-age=15')
+    return res
   } catch (error) {
     logger.error('GET /api/projects error:', { error: getErrorMessage(error) })
     return NextResponse.json({ error: 'Failed to fetch projects' }, { status: 500 })

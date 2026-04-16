@@ -255,6 +255,9 @@ model Client {
   brandAssets   BrandAsset[]
   proposals     Proposal[]
 
+  @@index([assignedCSId])
+  @@index([assignedSalesId])
+  @@index([tier])
   @@map("clients")
 }
 
@@ -291,6 +294,10 @@ model Lead {
   assignedSales User?      @relation("SalesToLead", fields: [assignedSalesId], references: [id])
   proposals     Proposal[]
 
+  @@index([assignedSalesId])
+  @@index([status])
+  @@index([score, status])
+  @@index([createdAt])
   @@map("leads")
 }
 
@@ -346,6 +353,11 @@ model Project {
   faSignOffs       FASignOff[]
   freelancerAssignments FreelancerAssignment[]
 
+  @@index([clientId])
+  @@index([assignedCSId])
+  @@index([status])
+  @@index([status, clientId])
+  @@index([deadline])
   @@map("projects")
 }
 
@@ -393,6 +405,11 @@ model DeliverableItem {
   freelancerAssignments FreelancerAssignment[]
   auditLogs        AuditLog[]
 
+  @@index([projectId])
+  @@index([assignedDesignerId])
+  @@index([status])
+  @@index([projectId, status])
+  @@index([deadline])
   @@map("deliverable_items")
 }
 
@@ -415,6 +432,8 @@ model FileVersion {
   uploadedBy      User            @relation("UploaderToFile", fields: [uploadedById], references: [id])
   qcChecks        QCCheck[]
 
+  @@index([deliverableItemId])
+  @@index([projectId])
   @@map("file_versions")
 }
 
@@ -454,6 +473,8 @@ model QCCheck {
   fileVersion     FileVersion     @relation(fields: [fileVersionId], references: [id], onDelete: Cascade)
   checkedBy       User            @relation("QCCheckerToCheck", fields: [checkedById], references: [id])
 
+  @@index([deliverableItemId])
+  @@index([fileVersionId])
   @@map("qc_checks")
 }
 
@@ -509,6 +530,9 @@ model Invoice {
   // Relations
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
+  @@index([projectId])
+  @@index([status])
+  @@index([dueAt])
   @@map("invoices")
 }
 
@@ -552,6 +576,7 @@ model WorkloadSlot {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, date])
+  @@index([date])
   @@map("workload_slots")
 }
 
@@ -600,6 +625,8 @@ model ChatMessage {
   project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   sender  User    @relation("SenderToMessage", fields: [senderId], references: [id])
 
+  @@index([projectId, createdAt])
+  @@index([senderId])
   @@map("chat_messages")
 }
 

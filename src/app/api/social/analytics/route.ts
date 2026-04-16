@@ -44,18 +44,21 @@ async function fetchInstagramStats(): Promise<PlatformResult> {
 
   try {
     const fields = 'followers_count,media_count,profile_views'
-    const res = await fetch(
-      `https://graph.facebook.com/v19.0/${accountId}?fields=${fields}&access_token=${token}`,
-      { next: { revalidate: 3600 } }
-    )
+
+    // Parallelize account info + insights fetch
+    const [res, insightRes] = await Promise.all([
+      fetch(
+        `https://graph.facebook.com/v19.0/${accountId}?fields=${fields}&access_token=${token}`,
+        { next: { revalidate: 3600 } }
+      ),
+      fetch(
+        `https://graph.facebook.com/v19.0/${accountId}/insights?metric=reach,impressions,follower_count&period=week&access_token=${token}`,
+        { next: { revalidate: 3600 } }
+      ),
+    ])
+
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
-
-    // Fetch insights (reach, impressions) for the last 7 days
-    const insightRes = await fetch(
-      `https://graph.facebook.com/v19.0/${accountId}/insights?metric=reach,impressions,follower_count&period=week&access_token=${token}`,
-      { next: { revalidate: 3600 } }
-    )
     const insightData = insightRes.ok ? await insightRes.json() : { data: [] }
     const reachMetric = (insightData.data as Array<{ name: string; values: Array<{ value: number }> }>)
       .find((m) => m.name === 'reach')
@@ -89,17 +92,20 @@ async function fetchFacebookStats(): Promise<PlatformResult> {
   }
 
   try {
-    const res = await fetch(
-      `https://graph.facebook.com/v19.0/${pageId}?fields=fan_count,followers_count&access_token=${token}`,
-      { next: { revalidate: 3600 } }
-    )
+    // Parallelize page info + insights fetch
+    const [res, insightRes] = await Promise.all([
+      fetch(
+        `https://graph.facebook.com/v19.0/${pageId}?fields=fan_count,followers_count&access_token=${token}`,
+        { next: { revalidate: 3600 } }
+      ),
+      fetch(
+        `https://graph.facebook.com/v19.0/${pageId}/insights/page_impressions_unique/week?access_token=${token}`,
+        { next: { revalidate: 3600 } }
+      ),
+    ])
+
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
-
-    const insightRes = await fetch(
-      `https://graph.facebook.com/v19.0/${pageId}/insights/page_impressions_unique/week?access_token=${token}`,
-      { next: { revalidate: 3600 } }
-    )
     const insightData = insightRes.ok ? await insightRes.json() : { data: [] }
     const latestReach = (insightData.data as Array<{ value: number }>)?.[0]?.value ?? null
 
@@ -249,14 +255,15 @@ async function fetchMailchimpStats(): Promise<PlatformResult> {
     const base = `https://${server}.api.mailchimp.com/3.0`
     const headers = { Authorization: `apikey ${apiKey}` }
 
-    // List stats
-    const listRes = await fetch(`${base}/lists/${listId ?? ''}`, { headers, next: { revalidate: 3600 } })
+    // Parallelize list stats + campaign stats fetch
+    const [listRes, campRes] = await Promise.all([
+      fetch(`${base}/lists/${listId ?? ''}`, { headers, next: { revalidate: 3600 } }),
+      fetch(`${base}/campaigns?count=10&status=sent&sort_field=send_time&sort_dir=DESC`, { headers, next: { revalidate: 3600 } }),
+    ])
+
     if (!listRes.ok) throw new Error(`HTTP ${listRes.status}`)
     const listData = await listRes.json()
     const memberCount: number = listData.stats?.member_count ?? null
-
-    // Recent campaign stats
-    const campRes = await fetch(`${base}/campaigns?count=10&status=sent&sort_field=send_time&sort_dir=DESC`, { headers, next: { revalidate: 3600 } })
     const campData = campRes.ok ? await campRes.json() : { campaigns: [] }
     const campaigns: Array<{ report_summary?: { open_rate?: number; click_rate?: number } }> = campData.campaigns ?? []
     const avgOpenRate = campaigns.length > 0
@@ -304,11 +311,13 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
 
   const connectedCount = platforms.filter((p) => p.connected).length
 
-  return NextResponse.json({
+  const res = NextResponse.json({
     success: true,
     connectedCount,
     totalPlatforms: 7, // includes RedNote (manual)
     platforms,
     lastUpdated: new Date().toISOString(),
   })
+  res.headers.set('Cache-Control', 'private, max-age=60')
+  return res
 }

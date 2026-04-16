@@ -139,18 +139,36 @@ export async function getTeamCapacity(date: Date): Promise<TeamCapacity[]> {
   })
 
   const dateOnly = new Date(date.toISOString().split('T')[0])
+  const designerIds = designers.map((d) => d.id)
 
-  const teamCapacity = await Promise.all(
-    designers.map(async (designer) => {
-      const capacityInfo = await getDesignerCapacity(designer.id, dateOnly)
+  // Batch-load all slots in ONE query instead of N per-designer queries
+  const allSlots = await prisma.workloadSlot.findMany({
+    where: { userId: { in: designerIds }, date: dateOnly },
+  })
+  const slotMap = new Map(allSlots.map((s) => [s.userId, s]))
 
-      return {
-        user: designer,
-        slots: [capacityInfo],
-        averageUtilization: capacityInfo.utilizationPercent,
-      }
-    })
-  )
+  const teamCapacity: TeamCapacity[] = designers.map((designer) => {
+    const slot = slotMap.get(designer.id)
+    const committedMinutes = slot?.committedMinutes ?? 0
+    const capacityMinutes = slot?.capacityMinutes ?? DEFAULT_CAPACITY_MINUTES
+    const availableMinutes = Math.max(0, capacityMinutes - committedMinutes)
+    const utilizationPercent = Math.round((committedMinutes / capacityMinutes) * 100)
+
+    const capacityInfo: CapacityInfo = {
+      userId: designer.id,
+      date: dateOnly,
+      committedMinutes,
+      capacityMinutes,
+      availableMinutes,
+      utilizationPercent,
+    }
+
+    return {
+      user: designer,
+      slots: [capacityInfo],
+      averageUtilization: utilizationPercent,
+    }
+  })
 
   return teamCapacity
 }
@@ -198,32 +216,56 @@ export async function autoAssign(deliverableItem: DeliverableItem): Promise<User
     throw new Error(`No available designers found for item type: ${deliverableItem.itemType}`)
   }
 
-  // Score each candidate
-  const scored = await Promise.all(
-    candidates.map(async (candidate) => {
-      // Check capacity between today and deadline
-      let totalAvailableMinutes = 0
-      const daysUntilDeadline = Math.ceil(
-        (deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-      )
+  // Batch-load ALL workload slots for ALL candidates across the date range in ONE query
+  const daysUntilDeadline = Math.max(1, Math.ceil(
+    (deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+  ))
+  const dateRange: Date[] = []
+  for (let i = 0; i < daysUntilDeadline; i++) {
+    const d = new Date(today)
+    d.setDate(today.getDate() + i)
+    dateRange.push(new Date(d.toISOString().split('T')[0]))
+  }
 
-      for (let i = 0; i < daysUntilDeadline; i++) {
-        const checkDate = new Date(today)
-        checkDate.setDate(today.getDate() + i)
-        const capacity = await getDesignerCapacity(candidate.id, checkDate)
-        totalAvailableMinutes += capacity.availableMinutes
-      }
+  const candidateIds = candidates.map((c) => c.id)
+  const allSlots = await prisma.workloadSlot.findMany({
+    where: { userId: { in: candidateIds }, date: { in: dateRange } },
+  })
 
-      const todayCapacity = await getDesignerCapacity(candidate.id, today)
-      const availabilityScore = todayCapacity.utilizationPercent < 90 ? 1 : 0
-      const capacityScore = totalAvailableMinutes >= estimatedMinutes ? 1 : 0
+  // Build nested map: userId → dateISO → slot
+  const slotLookup = new Map<string, Map<string, { committedMinutes: number; capacityMinutes: number }>>()
+  for (const s of allSlots) {
+    if (!slotLookup.has(s.userId)) slotLookup.set(s.userId, new Map())
+    slotLookup.get(s.userId)!.set(s.date.toISOString(), s)
+  }
 
-      // Combined score: feasibility + utilization headroom
-      const score = capacityScore * 10 + availabilityScore * 5 + (100 - todayCapacity.utilizationPercent)
+  const todayISO = dateRange[0].toISOString()
 
-      return { candidate, score, totalAvailableMinutes }
-    })
-  )
+  // Score each candidate using the pre-loaded slot data (zero extra queries)
+  const scored = candidates.map((candidate) => {
+    const userSlots = slotLookup.get(candidate.id)
+    let totalAvailableMinutes = 0
+
+    for (const d of dateRange) {
+      const slot = userSlots?.get(d.toISOString())
+      const committed = slot?.committedMinutes ?? 0
+      const capacity = slot?.capacityMinutes ?? DEFAULT_CAPACITY_MINUTES
+      totalAvailableMinutes += Math.max(0, capacity - committed)
+    }
+
+    const todaySlot = userSlots?.get(todayISO)
+    const todayCommitted = todaySlot?.committedMinutes ?? 0
+    const todayCapacity = todaySlot?.capacityMinutes ?? DEFAULT_CAPACITY_MINUTES
+    const todayUtilization = Math.round((todayCommitted / todayCapacity) * 100)
+
+    const availabilityScore = todayUtilization < 90 ? 1 : 0
+    const capacityScore = totalAvailableMinutes >= estimatedMinutes ? 1 : 0
+
+    // Combined score: feasibility + utilization headroom
+    const score = capacityScore * 10 + availabilityScore * 5 + (100 - todayUtilization)
+
+    return { candidate, score, totalAvailableMinutes }
+  })
 
   // Filter candidates who can feasibly complete the work before deadline
   const feasible = scored.filter((s) => s.totalAvailableMinutes >= estimatedMinutes)
@@ -462,48 +504,58 @@ export async function getCompanyTimeline(): Promise<CompanyTimeline> {
     },
   })
 
-  const designerWorkload: DesignerWorkloadDetail[] = await Promise.all(
-    designers.map(async (designer) => {
-      const tasks = allAssignedTasks
-        .filter((t) => t.assignedDesignerId === designer.id)
-        .map((t): DeliverableWithProject => ({
-          id: t.id,
-          description: t.description,
-          itemType: t.itemType,
-          status: t.status,
-          deadline: t.deadline,
-          estimatedMinutes: t.estimatedMinutes,
-          projectCode: t.project.code,
-          clientName: t.project.client?.companyName ?? 'Unknown',
-          assignedDesignerName: designer.name,
-        }))
+  // Batch-load today's workload slots for ALL designers in ONE query
+  const todayOnly = new Date(now.toISOString().split('T')[0])
+  const designerIds = designers.map((d) => d.id)
+  const todaySlots = await prisma.workloadSlot.findMany({
+    where: { userId: { in: designerIds }, date: todayOnly },
+  })
+  const slotMap = new Map(todaySlots.map((s) => [s.userId, s]))
 
-      const totalEstimatedMinutes = tasks.reduce(
-        (sum, t) => sum + (t.estimatedMinutes ?? ITEM_ESTIMATE_MINUTES[t.itemType]),
-        0
-      )
+  const designerWorkload: DesignerWorkloadDetail[] = designers.map((designer) => {
+    const tasks = allAssignedTasks
+      .filter((t) => t.assignedDesignerId === designer.id)
+      .map((t): DeliverableWithProject => ({
+        id: t.id,
+        description: t.description,
+        itemType: t.itemType,
+        status: t.status,
+        deadline: t.deadline,
+        estimatedMinutes: t.estimatedMinutes,
+        projectCode: t.project.code,
+        clientName: t.project.client?.companyName ?? 'Unknown',
+        assignedDesignerName: designer.name,
+      }))
 
-      const todayCapacity = await getDesignerCapacity(designer.id, now)
-      const deadlines = tasks.filter((t) => t.deadline).map((t) => t.deadline as Date)
-      const nearestDeadline =
-        deadlines.length > 0
-          ? deadlines.sort((a, b) => a.getTime() - b.getTime())[0]
-          : null
+    const totalEstimatedMinutes = tasks.reduce(
+      (sum, t) => sum + (t.estimatedMinutes ?? ITEM_ESTIMATE_MINUTES[t.itemType]),
+      0
+    )
 
-      return {
-        userId: designer.id,
-        name: designer.name,
-        email: designer.email,
-        role: designer.role,
-        totalPendingTasks: tasks.length,
-        totalEstimatedMinutes,
-        utilizationToday: todayCapacity.utilizationPercent,
-        nearestDeadline,
-        isOverloaded: todayCapacity.utilizationPercent >= 90,
-        tasks,
-      }
-    })
-  )
+    const slot = slotMap.get(designer.id)
+    const committedMinutes = slot?.committedMinutes ?? 0
+    const capacityMinutes = slot?.capacityMinutes ?? DEFAULT_CAPACITY_MINUTES
+    const utilizationPercent = Math.round((committedMinutes / capacityMinutes) * 100)
+
+    const deadlines = tasks.filter((t) => t.deadline).map((t) => t.deadline as Date)
+    const nearestDeadline =
+      deadlines.length > 0
+        ? deadlines.sort((a, b) => a.getTime() - b.getTime())[0]
+        : null
+
+    return {
+      userId: designer.id,
+      name: designer.name,
+      email: designer.email,
+      role: designer.role,
+      totalPendingTasks: tasks.length,
+      totalEstimatedMinutes,
+      utilizationToday: utilizationPercent,
+      nearestDeadline,
+      isOverloaded: utilizationPercent >= 90,
+      tasks,
+    }
+  })
 
   // 3. Critical deadlines — due within 3 days, not done
   const criticalDeadlines: DeliverableWithProject[] = projectTimelines

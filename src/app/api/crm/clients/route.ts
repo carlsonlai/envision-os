@@ -33,7 +33,9 @@ export async function GET(req: NextRequest) {
       },
       orderBy: [{ tier: 'asc' }, { ltv: 'desc' }],
     })
-    return NextResponse.json({ data: clients })
+    const res = NextResponse.json({ data: clients })
+    res.headers.set('Cache-Control', 'private, max-age=15')
+    return res
   } catch (error) {
     logger.error('GET /api/crm/clients error:', { error: getErrorMessage(error) })
     return NextResponse.json({ error: 'Failed to fetch clients' }, { status: 500 })

@@ -62,9 +62,18 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const { searchParams } = new URL(req.url)
   const paymentFilter = searchParams.get('paymentStatus')
   const search = searchParams.get('search')?.toLowerCase()
+  const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10))
+  const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') ?? '50', 10)))
 
   try {
-    // Fetch all projects with their client name and assigned CS person
+    // Count total projects for pagination
+    const [{ count: totalProjects }] = await prisma.$queryRawUnsafe<[{ count: bigint }]>(
+      `SELECT COUNT(*) AS count FROM "projects"`
+    )
+
+    const offset = (page - 1) * limit
+
+    // Fetch paginated projects with their client name and assigned CS person
     const projects = await prisma.$queryRawUnsafe<ProjectRow[]>(
       `SELECT p.id, p.code, p.status, p."quotedAmount", p."billedAmount", p."paidAmount",
               p."clientId", p."assignedCSId",
@@ -73,22 +82,28 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
        FROM "projects" p
        LEFT JOIN "clients" c ON c.id = p."clientId"
        LEFT JOIN "users" cs ON cs.id = p."assignedCSId"
-       ORDER BY p.code ASC`
+       ORDER BY p.code ASC
+       LIMIT ${limit} OFFSET ${offset}`
     )
 
-    // Fetch all deliverable items with job track columns (including quantity and assigned designer)
-    const items = await prisma.$queryRawUnsafe<ItemRow[]>(
-      `SELECT di.id, di."projectId", di."itemType", di.description, di.quantity, di.status,
-              di."quoteNo", di."qteAmount", di."invoiceNo", di."paymentStatus",
-              di."paymentEta", di."statusNotes", di."invoiceDate", di."invoiceSentStatus",
-              COALESCE(di."isConfirmed", FALSE) AS "isConfirmed",
-              di."assignedDesignerId" AS "designerId",
-              u.name AS "designerName"
-       FROM "deliverable_items" di
-       LEFT JOIN "users" u ON u.id = di."assignedDesignerId"
-       WHERE di."quoteNo" IS NOT NULL OR di."invoiceNo" IS NOT NULL OR di.description IS NOT NULL
-       ORDER BY di."projectId", di."createdAt" ASC`
-    ).catch(() => [] as ItemRow[])
+    // Fetch deliverable items only for paginated projects (scoped, not full-table scan)
+    const projectIds = projects.map((p) => p.id)
+    const items: ItemRow[] = projectIds.length > 0
+      ? await prisma.$queryRawUnsafe<ItemRow[]>(
+          `SELECT di.id, di."projectId", di."itemType", di.description, di.quantity, di.status,
+                  di."quoteNo", di."qteAmount", di."invoiceNo", di."paymentStatus",
+                  di."paymentEta", di."statusNotes", di."invoiceDate", di."invoiceSentStatus",
+                  COALESCE(di."isConfirmed", FALSE) AS "isConfirmed",
+                  di."assignedDesignerId" AS "designerId",
+                  u.name AS "designerName"
+           FROM "deliverable_items" di
+           LEFT JOIN "users" u ON u.id = di."assignedDesignerId"
+           WHERE di."projectId" IN (${projectIds.map((_, i) => `$${i + 1}`).join(', ')})
+             AND (di."quoteNo" IS NOT NULL OR di."invoiceNo" IS NOT NULL OR di.description IS NOT NULL)
+           ORDER BY di."projectId", di."createdAt" ASC`,
+          ...projectIds
+        ).catch(() => [] as ItemRow[])
+      : []
 
     // Group items by projectId
     const itemsByProject = new Map<string, ItemRow[]>()
@@ -100,7 +115,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     // Build project groups
     // totalQuoted = project.quotedAmount (contract value — same as CS Hub)
     // totalPaid / totalPending = summed from deliverable items with payment data
-    let groups = projects
+    const groups = projects
       .map(proj => {
         const projItems = itemsByProject.get(proj.id) ?? []
 
@@ -156,7 +171,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     const grandTotalPaid = groups.reduce((s, g) => s + (g?.totalPaid ?? 0), 0)
     const grandTotalPending = groups.reduce((s, g) => s + (g?.totalPending ?? 0), 0)
 
-    return NextResponse.json({
+    const totalPages = Math.ceil(Number(totalProjects) / limit)
+
+    const res = NextResponse.json({
       data: {
         groups,
         summary: {
@@ -167,8 +184,16 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
           grandTotalPending,
           grandTotalOutstanding: grandTotalQuoted - grandTotalPaid,
         },
+        pagination: {
+          page,
+          limit,
+          totalProjects: Number(totalProjects),
+          totalPages,
+        },
       },
     })
+    res.headers.set('Cache-Control', 'private, max-age=15')
+    return res
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     return NextResponse.json({ error: message }, { status: 500 })
