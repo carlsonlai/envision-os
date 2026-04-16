@@ -2,7 +2,7 @@
  * POST /api/admin/assign-cs-workload
  *
  * Assigns projects to CS staff (Khayrin & Alia) based on Lark group chat membership.
- * For each project with a larkChatId, fetches group members from Lark API
+ * For each project with a larkFolderId, fetches group members from Lark API
  * and assigns the project to whichever CS person is in that chat.
  *
  * Query params:
@@ -123,9 +123,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const projects = await prisma.project.findMany({
       where: {
         status: { in: ['PROJECTED', 'ONGOING'] },
-        larkChatId: { not: null },
+        larkFolderId: { not: null },
       },
-      select: { id: true, code: true, larkChatId: true, status: true },
+      select: { id: true, code: true, larkFolderId: true, status: true },
       orderBy: { code: 'asc' },
     })
 
@@ -142,10 +142,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }> = []
 
     for (const project of projects) {
-      if (!project.larkChatId) continue
+      if (!project.larkFolderId) continue
 
       try {
-        const members = await getChatMembers(project.larkChatId, token)
+        const members = await getChatMembers(project.larkFolderId, token)
         const memberOpenIds = members.map((m) => m.member_id)
         const memberNames = members.map((m) => m.name ?? m.member_id)
 
@@ -196,11 +196,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       }
     }
 
-    // 5. Also handle projects WITHOUT larkChatId (leave unassigned)
+    // 5. Also handle projects WITHOUT larkFolderId (leave unassigned)
     const noChat = await prisma.project.findMany({
       where: {
         status: { in: ['PROJECTED', 'ONGOING'] },
-        larkChatId: null,
+        larkFolderId: null,
       },
       select: { id: true, code: true },
       orderBy: { code: 'asc' },
