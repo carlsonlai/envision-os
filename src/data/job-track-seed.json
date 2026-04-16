@@ -6,13 +6,13 @@
     "statusNotes": "FA",
     "qteNo": "A04018",
     "qteAmount": 1620.0,
-    "qteDate": null,
+    "qteDate": "27 Nov",
     "invoiceNo": "B02337",
     "invoiceDate": "2025-12-12",
     "invoiceSentStatus": "SENT",
     "paymentEta": "2026-10-01",
     "paymentStatus": "PAID",
-    "itemType": "OTHER"
+    "itemType": "SOCIAL"
   },
   {
     "account": "SETIA SV2",
@@ -21,13 +21,13 @@
     "statusNotes": null,
     "qteNo": "A04002",
     "qteAmount": 1620.0,
-    "qteDate": null,
+    "qteDate": "17 Nov",
     "invoiceNo": "B02328",
     "invoiceDate": "2025-08-12",
     "invoiceSentStatus": null,
     "paymentEta": "2026-07-01",
     "paymentStatus": "PAID",
-    "itemType": "OTHER"
+    "itemType": "SOCIAL"
   },
   {
     "account": "SETIA SV2",
@@ -36,13 +36,13 @@
     "statusNotes": null,
     "qteNo": "A03985",
     "qteAmount": 3780.0,
-    "qteDate": null,
+    "qteDate": "4 Nov",
     "invoiceNo": "B02336",
     "invoiceDate": "2025-12-12",
     "invoiceSentStatus": null,
     "paymentEta": "2026-10-01",
     "paymentStatus": "PAID",
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "SETIA SV2",
@@ -51,7 +51,7 @@
     "statusNotes": null,
     "qteNo": "A03978",
     "qteAmount": 540.0,
-    "qteDate": null,
+    "qteDate": "30 Oct",
     "invoiceNo": "B02335",
     "invoiceDate": "2025-12-12",
     "invoiceSentStatus": null,
@@ -66,7 +66,7 @@
     "statusNotes": null,
     "qteNo": "A03962",
     "qteAmount": 10800.0,
-    "qteDate": null,
+    "qteDate": "17 Oct",
     "invoiceNo": "B02338",
     "invoiceDate": "2025-12-12",
     "invoiceSentStatus": null,
@@ -81,7 +81,7 @@
     "statusNotes": null,
     "qteNo": "A03965",
     "qteAmount": 1620.0,
-    "qteDate": null,
+    "qteDate": "18 Oct",
     "invoiceNo": "B02339",
     "invoiceDate": "2025-12-12",
     "invoiceSentStatus": null,
@@ -96,7 +96,7 @@
     "statusNotes": null,
     "qteNo": "A04040",
     "qteAmount": 2160.0,
-    "qteDate": null,
+    "qteDate": "12 Dec",
     "invoiceNo": null,
     "invoiceDate": null,
     "invoiceSentStatus": null,
@@ -111,13 +111,13 @@
     "statusNotes": null,
     "qteNo": "A04048",
     "qteAmount": 216.0,
-    "qteDate": null,
+    "qteDate": "29 Dec",
     "invoiceNo": null,
     "invoiceDate": null,
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": "PENDING",
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "SETIA SV2",
@@ -132,7 +132,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "SOUTHPOINT",
@@ -156,11 +156,11 @@
     "statusNotes": null,
     "qteNo": "A04021",
     "qteAmount": 7676.08,
-    "qteDate": null,
+    "qteDate": "1 Dec",
     "invoiceNo": "B02340",
-    "invoiceDate": "2025-12-15",
+    "invoiceDate": "15/12/2025",
     "invoiceSentStatus": null,
-    "paymentEta": "2026-01-15",
+    "paymentEta": "15/1/2026",
     "paymentStatus": "PAID",
     "itemType": "SOCIAL"
   },
@@ -231,13 +231,13 @@
     "statusNotes": null,
     "qteNo": "A04072",
     "qteAmount": 1836.0,
-    "qteDate": null,
+    "qteDate": "27 Jan",
     "invoiceNo": "B02384",
-    "invoiceDate": "2026-02-27",
+    "invoiceDate": "27/02/2026",
     "invoiceSentStatus": "SENT",
     "paymentEta": null,
     "paymentStatus": "PAID",
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "SUNWAY",
@@ -246,13 +246,13 @@
     "statusNotes": null,
     "qteNo": "A04130",
     "qteAmount": 901.0,
-    "qteDate": null,
+    "qteDate": "09 Mar",
     "invoiceNo": "B02937",
-    "invoiceDate": "2026-03-26",
+    "invoiceDate": "26/03/2026",
     "invoiceSentStatus": "SENT",
     "paymentEta": null,
     "paymentStatus": "PAID",
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "SUNWAY",
@@ -306,11 +306,11 @@
     "statusNotes": null,
     "qteNo": "A04026",
     "qteAmount": 2194.78,
-    "qteDate": null,
+    "qteDate": "1 Dec",
     "invoiceNo": "B02346",
-    "invoiceDate": "2025-12-15",
+    "invoiceDate": "15/12/2025",
     "invoiceSentStatus": null,
-    "paymentEta": "2026-01-15",
+    "paymentEta": "15/1/2026",
     "paymentStatus": "PAID",
     "itemType": "SOCIAL"
   },
@@ -372,7 +372,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": "PAID",
-    "itemType": "SOCIAL"
+    "itemType": "OTHER"
   },
   {
     "account": "SUNWAY",
@@ -387,7 +387,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": "PAID",
-    "itemType": "SOCIAL"
+    "itemType": "OTHER"
   },
   {
     "account": "SUNWAY",
@@ -396,13 +396,13 @@
     "statusNotes": null,
     "qteNo": "A04034",
     "qteAmount": 201.7,
-    "qteDate": null,
+    "qteDate": "5 Dec",
     "invoiceNo": "B02327",
     "invoiceDate": null,
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": "PAID",
-    "itemType": "SOCIAL"
+    "itemType": "OTHER"
   },
   {
     "account": "SUNWAY",
@@ -443,7 +443,7 @@
     "qteAmount": 4860.0,
     "qteDate": null,
     "invoiceNo": "B02380",
-    "invoiceDate": "2026-02-23",
+    "invoiceDate": "23/02/26",
     "invoiceSentStatus": "SENT",
     "paymentEta": null,
     "paymentStatus": "PAID",
@@ -471,7 +471,7 @@
     "statusNotes": "FA",
     "qteNo": "A03408",
     "qteAmount": 73656.0,
-    "qteDate": null,
+    "qteDate": "7 Aug",
     "invoiceNo": null,
     "invoiceDate": null,
     "invoiceSentStatus": null,
@@ -492,7 +492,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "UDA 88",
@@ -507,7 +507,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "UDA 88",
@@ -522,7 +522,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "UDA 88",
@@ -537,7 +537,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "UDA 88",
@@ -552,7 +552,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "UDA 88",
@@ -597,7 +597,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "PKNS \nPlaza Perangsang",
@@ -612,7 +612,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": "PENDING",
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "PKNS \nPlaza Perangsang",
@@ -627,7 +627,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "PKNS \nPlaza Perangsang",
@@ -657,7 +657,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "Mahajaya",
@@ -696,7 +696,7 @@
     "statusNotes": "On going",
     "qteNo": "A04017",
     "qteAmount": 4104.0,
-    "qteDate": null,
+    "qteDate": "26 Nov",
     "invoiceNo": null,
     "invoiceDate": null,
     "invoiceSentStatus": null,
@@ -713,11 +713,11 @@
     "qteAmount": 12960.0,
     "qteDate": null,
     "invoiceNo": "B02202",
-    "invoiceDate": "2025-01-27",
+    "invoiceDate": "27/01/2025",
     "invoiceSentStatus": "SENT",
     "paymentEta": "2026-12-01",
     "paymentStatus": "PAID",
-    "itemType": "BANNER"
+    "itemType": "OTHER"
   },
   {
     "account": "SKRINE",
@@ -726,13 +726,13 @@
     "statusNotes": null,
     "qteNo": "A03560",
     "qteAmount": 3456.0,
-    "qteDate": null,
+    "qteDate": "18 Dec",
     "invoiceNo": "B02356",
-    "invoiceDate": "2025-12-23",
+    "invoiceDate": "23/12/2025",
     "invoiceSentStatus": "SENT",
-    "paymentEta": "2026-01-23",
+    "paymentEta": "23/1/2026",
     "paymentStatus": "PAID",
-    "itemType": "BANNER"
+    "itemType": "PRINT"
   },
   {
     "account": "Mah Sing",
@@ -758,7 +758,7 @@
     "qteAmount": 21704.0,
     "qteDate": null,
     "invoiceNo": "B02321",
-    "invoiceDate": "2026-11-25",
+    "invoiceDate": "25/11/26",
     "invoiceSentStatus": "SENT",
     "paymentEta": null,
     "paymentStatus": "PAID",
@@ -771,9 +771,9 @@
     "statusNotes": null,
     "qteNo": "A03772",
     "qteAmount": 45839.0,
-    "qteDate": null,
+    "qteDate": "19 June",
     "invoiceNo": "B02357",
-    "invoiceDate": "2025-12-23",
+    "invoiceDate": "23/12/2025",
     "invoiceSentStatus": "SENT \n(50% balance)\n14,000",
     "paymentEta": null,
     "paymentStatus": "PAID",
@@ -786,7 +786,7 @@
     "statusNotes": "Talent 4x Paid\n3 Signed, 1 Pending",
     "qteNo": "A03891",
     "qteAmount": 6480.0,
-    "qteDate": null,
+    "qteDate": "26 Aug",
     "invoiceNo": "B02290",
     "invoiceDate": "2025-02-09",
     "invoiceSentStatus": "SENT \n(50% balance)\n3,240.00",
@@ -807,7 +807,7 @@
     "invoiceSentStatus": "SENT",
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "SOCIAL"
+    "itemType": "OTHER"
   },
   {
     "account": "ECOWORLD",
@@ -822,7 +822,22 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "BANNER"
+    "itemType": "OTHER"
+  },
+  {
+    "account": "ECOWORLD",
+    "project": "QUOTE 1",
+    "client": "Polytech Properties Sdn Bhd",
+    "statusNotes": null,
+    "qteNo": "A03989",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": "B02374",
+    "invoiceDate": "2026-12-02",
+    "invoiceSentStatus": "SENT RM 29,970",
+    "paymentEta": null,
+    "paymentStatus": "PAID",
+    "itemType": "OTHER"
   },
   {
     "account": "KLCG",
@@ -852,7 +867,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "KLCG",
@@ -867,7 +882,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "KLCG",
@@ -882,7 +897,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "KLCG",
@@ -897,11 +912,26 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "KLCG",
     "project": "1x Prees Ad",
+    "client": "Suezcap",
+    "statusNotes": null,
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "KLCG",
+    "project": "QUOTE 2",
     "client": "Suezcap",
     "statusNotes": null,
     "qteNo": null,
@@ -921,13 +951,28 @@
     "statusNotes": null,
     "qteNo": "A04038",
     "qteAmount": 1274.4,
-    "qteDate": null,
+    "qteDate": "10 Dec",
     "invoiceNo": null,
     "invoiceDate": null,
     "invoiceSentStatus": "SENT",
     "paymentEta": null,
     "paymentStatus": null,
     "itemType": "PRINT"
+  },
+  {
+    "account": "KLCG",
+    "project": "QUOTE 3",
+    "client": "Suezcap",
+    "statusNotes": null,
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "KLCG",
@@ -957,7 +1002,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "SOCIAL"
+    "itemType": "OTHER"
   },
   {
     "account": "KLCG",
@@ -981,7 +1026,7 @@
     "statusNotes": null,
     "qteNo": "A04016",
     "qteAmount": 9000.0,
-    "qteDate": null,
+    "qteDate": "26 Nov",
     "invoiceNo": null,
     "invoiceDate": null,
     "invoiceSentStatus": null,
@@ -1017,7 +1062,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "KLCG",
@@ -1032,7 +1077,22 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "BANNER"
+    "itemType": "OTHER"
+  },
+  {
+    "account": "KLCG",
+    "project": "QUOTE 4",
+    "client": "Suezcap",
+    "statusNotes": null,
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": "SENT",
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "KLCG",
@@ -1047,7 +1107,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "KLCG",
@@ -1062,7 +1122,22 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
+  },
+  {
+    "account": "KLCG",
+    "project": "QUOTE 5",
+    "client": "Suezcap",
+    "statusNotes": null,
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "KLCG",
@@ -1077,7 +1152,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "SOCIAL"
+    "itemType": "OTHER"
   },
   {
     "account": "KLCG",
@@ -1086,7 +1161,7 @@
     "statusNotes": null,
     "qteNo": "A03975",
     "qteAmount": 20088.0,
-    "qteDate": null,
+    "qteDate": "27 Oct",
     "invoiceNo": null,
     "invoiceDate": null,
     "invoiceSentStatus": null,
@@ -1152,7 +1227,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "KLCG",
@@ -1182,7 +1257,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "KLCG",
@@ -1197,7 +1272,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "KLCG",
@@ -1212,7 +1287,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "BANNER"
+    "itemType": "OTHER"
   },
   {
     "account": "KLCG",
@@ -1242,7 +1317,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "KLCG",
@@ -1257,7 +1332,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "KLCG",
@@ -1272,7 +1347,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "KLCG",
@@ -1287,7 +1362,22 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
+  },
+  {
+    "account": "SHANG RESIDENCES",
+    "project": "QUOTE 1",
+    "client": "SHANG HEIGHT",
+    "statusNotes": "1. drafting website",
+    "qteNo": "A03746",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "SHANG RESIDENCES",
@@ -1303,6 +1393,21 @@
     "paymentEta": null,
     "paymentStatus": null,
     "itemType": "THREE_D"
+  },
+  {
+    "account": "SHANG RESIDENCES",
+    "project": "QUOTE 2",
+    "client": "SHANG HEIGHT",
+    "statusNotes": null,
+    "qteNo": "A03734",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "SHANG RESIDENCES",
@@ -1332,7 +1437,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "THREE_D"
+    "itemType": "VIDEO"
   },
   {
     "account": "SHANG RESIDENCES",
@@ -1348,6 +1453,21 @@
     "paymentEta": null,
     "paymentStatus": null,
     "itemType": "THREE_D"
+  },
+  {
+    "account": "SHANG RESIDENCES",
+    "project": "QUOTE 3",
+    "client": "SHANG HEIGHT",
+    "statusNotes": null,
+    "qteNo": "A03959",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "SHANG RESIDENCES",
@@ -1377,7 +1497,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "SHANG RESIDENCES",
@@ -1392,7 +1512,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "SHANG RESIDENCES",
@@ -1407,7 +1527,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "SHANG RESIDENCES",
@@ -1437,7 +1557,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "SHANG RESIDENCES",
@@ -1452,7 +1572,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "SHANG RESIDENCES",
@@ -1467,7 +1587,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "SHANG RESIDENCES",
@@ -1482,7 +1602,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "SHANG RESIDENCES",
@@ -1527,7 +1647,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "VIDEO"
+    "itemType": "THREE_D"
   },
   {
     "account": "SHANG RESIDENCES",
@@ -1542,7 +1662,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "BANNER"
+    "itemType": "OTHER"
   },
   {
     "account": "SHANG RESIDENCES",
@@ -1591,6 +1711,21 @@
   },
   {
     "account": "EKO PERDANA",
+    "project": "QUOTE 1",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": "A04085",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "EKO PERDANA",
     "project": "Billboard\n- Size: 30' (W) x 15' (H)",
     "client": "HAP SENG",
     "statusNotes": null,
@@ -1602,7 +1737,22 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "QUOTE 2",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": "A03982",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "EKO PERDANA",
@@ -1617,7 +1767,22 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "QUOTE 3",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": "A03977",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "EKO PERDANA",
@@ -1625,6 +1790,21 @@
     "client": "HAP SENG",
     "statusNotes": null,
     "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "QUOTE 4",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": "A03928",
     "qteAmount": null,
     "qteDate": null,
     "invoiceNo": null,
@@ -1647,7 +1827,22 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "SOCIAL"
+    "itemType": "OTHER"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "QUOTE 5",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": "A03923",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "EKO PERDANA",
@@ -1696,127 +1891,22 @@
   },
   {
     "account": "EKO PERDANA",
+    "project": "QUOTE 6",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": "A03879",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "EKO PERDANA",
     "project": "Billboard\n- Size: 40\u2019 (W) x 12\u2019 (H)",
-    "client": "HAP SENG",
-    "statusNotes": null,
-    "qteNo": null,
-    "qteAmount": null,
-    "qteDate": null,
-    "invoiceNo": null,
-    "invoiceDate": null,
-    "invoiceSentStatus": null,
-    "paymentEta": null,
-    "paymentStatus": null,
-    "itemType": "PRINT"
-  },
-  {
-    "account": "EKO PERDANA",
-    "project": "Roll up Bunting\n- 800mm(W) x 2000mm(H)",
-    "client": "HAP SENG",
-    "statusNotes": null,
-    "qteNo": null,
-    "qteAmount": null,
-    "qteDate": null,
-    "invoiceNo": null,
-    "invoiceDate": null,
-    "invoiceSentStatus": null,
-    "paymentEta": null,
-    "paymentStatus": null,
-    "itemType": "PRINT"
-  },
-  {
-    "account": "EKO PERDANA",
-    "project": "Roll up Bunting Printing\n- 800mm(W) x 2000mm(H)",
-    "client": "HAP SENG",
-    "statusNotes": null,
-    "qteNo": null,
-    "qteAmount": null,
-    "qteDate": null,
-    "invoiceNo": null,
-    "invoiceDate": null,
-    "invoiceSentStatus": null,
-    "paymentEta": null,
-    "paymentStatus": null,
-    "itemType": "PRINT"
-  },
-  {
-    "account": "EKO PERDANA",
-    "project": "Simplified Brochure - 4 Panels\n- Size: TBC\nBrochure Printing\n1. Material: Cover - 230gsm\n2. Open Size: A3\n3. Closed Size: A4 \n4. Colour: 4C x 4C\n5. Matte Lamination",
-    "client": "HAP SENG",
-    "statusNotes": null,
-    "qteNo": null,
-    "qteAmount": null,
-    "qteDate": null,
-    "invoiceNo": null,
-    "invoiceDate": null,
-    "invoiceSentStatus": null,
-    "paymentEta": null,
-    "paymentStatus": null,
-    "itemType": "PRINT"
-  },
-  {
-    "account": "EKO PERDANA",
-    "project": "Flyer Design\n- A4 Size\n- Front and Back",
-    "client": "HAP SENG",
-    "statusNotes": null,
-    "qteNo": null,
-    "qteAmount": null,
-    "qteDate": null,
-    "invoiceNo": null,
-    "invoiceDate": null,
-    "invoiceSentStatus": null,
-    "paymentEta": null,
-    "paymentStatus": null,
-    "itemType": "PRINT"
-  },
-  {
-    "account": "EKO PERDANA",
-    "project": "Flyers Printing and Distribution\nFlyers Printing\n- 128gsm\n- Size: A4\n- 4C + 4C (full-color double side)\n- Quantities: 2000 pcs",
-    "client": "HAP SENG",
-    "statusNotes": null,
-    "qteNo": null,
-    "qteAmount": null,
-    "qteDate": null,
-    "invoiceNo": null,
-    "invoiceDate": null,
-    "invoiceSentStatus": null,
-    "paymentEta": null,
-    "paymentStatus": null,
-    "itemType": "PRINT"
-  },
-  {
-    "account": "EKO PERDANA",
-    "project": "Roll up Bunting\n- 800mm(W) x 2000mm(H)",
-    "client": "HAP SENG",
-    "statusNotes": null,
-    "qteNo": null,
-    "qteAmount": null,
-    "qteDate": null,
-    "invoiceNo": null,
-    "invoiceDate": null,
-    "invoiceSentStatus": null,
-    "paymentEta": null,
-    "paymentStatus": null,
-    "itemType": "PRINT"
-  },
-  {
-    "account": "EKO PERDANA",
-    "project": "Roll up Bunting Printing\n- 800mm(W) x 2000mm(H)\n- Delivery",
-    "client": "HAP SENG",
-    "statusNotes": null,
-    "qteNo": null,
-    "qteAmount": null,
-    "qteDate": null,
-    "invoiceNo": null,
-    "invoiceDate": null,
-    "invoiceSentStatus": null,
-    "paymentEta": null,
-    "paymentStatus": null,
-    "itemType": "PRINT"
-  },
-  {
-    "account": "EKO PERDANA",
-    "project": "EDM\nEDM Adaptation\n- Adapt to 3 district\n- Allow minor change but not concept / masthead",
     "client": "HAP SENG",
     "statusNotes": null,
     "qteNo": null,
@@ -1831,6 +1921,216 @@
   },
   {
     "account": "EKO PERDANA",
+    "project": "QUOTE 7",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": "A03835",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "Roll up Bunting\n- 800mm(W) x 2000mm(H)",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "BANNER"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "Roll up Bunting Printing\n- 800mm(W) x 2000mm(H)",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "BANNER"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "QUOTE 8",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": "A03778",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "Simplified Brochure - 4 Panels\n- Size: TBC\nBrochure Printing\n1. Material: Cover - 230gsm\n2. Open Size: A3\n3. Closed Size: A4 \n4. Colour: 4C x 4C\n5. Matte Lamination",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "BROCHURE"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "QUOTE 9",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": "A03777",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "Flyer Design\n- A4 Size\n- Front and Back",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "BROCHURE"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "Flyers Printing and Distribution\nFlyers Printing\n- 128gsm\n- Size: A4\n- 4C + 4C (full-color double side)\n- Quantities: 2000 pcs",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "BROCHURE"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "QUOTE 10",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": "A03776",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "Roll up Bunting\n- 800mm(W) x 2000mm(H)",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "BANNER"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "Roll up Bunting Printing\n- 800mm(W) x 2000mm(H)\n- Delivery",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "BANNER"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "QUOTE 11",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "EDM\nEDM Adaptation\n- Adapt to 3 district\n- Allow minor change but not concept / masthead",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "QUOTE 12",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": "A03675",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "EKO PERDANA",
     "project": "3D Walkthrough\n- Duration: 1mins",
     "client": "HAP SENG",
     "statusNotes": null,
@@ -1842,7 +2142,22 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "VIDEO"
+    "itemType": "THREE_D"
+  },
+  {
+    "account": "EKO PERDANA",
+    "project": "QUOTE 13",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": "A03584",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "EKO PERDANA",
@@ -1876,10 +2191,40 @@
   },
   {
     "account": "EKO PERDANA",
+    "project": "QUOTE 14",
+    "client": "HAP SENG",
+    "statusNotes": null,
+    "qteNo": "A04124",
+    "qteAmount": 1080.0,
+    "qteDate": null,
+    "invoiceNo": "B02407",
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": "PENDING",
+    "itemType": "OTHER"
+  },
+  {
+    "account": "EKO PERDANA",
     "project": "Gong-Xi Raya Press Ad",
     "client": "HAP SENG",
     "statusNotes": "1. Invoice sent on 13/4",
     "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "VENCOS",
+    "project": "QUOTE 1",
+    "client": "VENCOS DEVELOPMENT",
+    "statusNotes": null,
+    "qteNo": "A03973",
     "qteAmount": null,
     "qteDate": null,
     "invoiceNo": null,
@@ -1902,7 +2247,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "OTHER"
+    "itemType": "LOGO"
   },
   {
     "account": "VENCOS",
@@ -1917,7 +2262,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "LOGO"
+    "itemType": "OTHER"
   },
   {
     "account": "VENCOS",
@@ -1932,7 +2277,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "OTHER"
+    "itemType": "LOGO"
   },
   {
     "account": "VENCOS",
@@ -1977,7 +2322,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "BANNER"
+    "itemType": "OTHER"
   },
   {
     "account": "VENCOS",
@@ -1996,6 +2341,21 @@
   },
   {
     "account": "VENCOS",
+    "project": "QUOTE 2",
+    "client": "VENCOS DEVELOPMENT",
+    "statusNotes": null,
+    "qteNo": "A03992",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "VENCOS",
     "project": "x1 Corporate Identity System",
     "client": "VENCOS DEVELOPMENT",
     "statusNotes": null,
@@ -2007,7 +2367,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "LOGO"
+    "itemType": "OTHER"
   },
   {
     "account": "VENCOS",
@@ -2022,7 +2382,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "OTHER"
+    "itemType": "LOGO"
   },
   {
     "account": "VENCOS",
@@ -2052,7 +2412,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "VENCOS",
@@ -2067,7 +2427,22 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "BANNER"
+    "itemType": "OTHER"
+  },
+  {
+    "account": "VENCOS",
+    "project": "QUOTE 3",
+    "client": "VENCOS DEVELOPMENT",
+    "statusNotes": "To start discuss with Gan",
+    "qteNo": "A03993",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "VENCOS",
@@ -2082,7 +2457,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "OTHER"
+    "itemType": "LOGO"
   },
   {
     "account": "VENCOS",
@@ -2097,7 +2472,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "OTHER"
+    "itemType": "LOGO"
   },
   {
     "account": "VENCOS",
@@ -2127,7 +2502,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "BANNER"
+    "itemType": "OTHER"
   },
   {
     "account": "VENCOS",
@@ -2157,7 +2532,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "VENCOS",
@@ -2172,7 +2547,22 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "BANNER"
+    "itemType": "OTHER"
+  },
+  {
+    "account": "VENCOS",
+    "project": "QUOTE 4",
+    "client": "VENCOS DEVELOPMENT",
+    "statusNotes": "To start discuss with Gan",
+    "qteNo": "A03994",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "VENCOS",
@@ -2203,6 +2593,21 @@
     "paymentEta": null,
     "paymentStatus": null,
     "itemType": "SOCIAL"
+  },
+  {
+    "account": "NOVA ONE@KINRARA",
+    "project": "QUOTE 1",
+    "client": "SERI NOVA",
+    "statusNotes": null,
+    "qteNo": "A03972",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "NOVA ONE@KINRARA",
@@ -2247,7 +2652,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
   },
   {
     "account": "NOVA ONE@KINRARA",
@@ -2292,7 +2697,7 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BANNER"
   },
   {
     "account": "NOVA ONE@KINRARA",
@@ -2311,6 +2716,21 @@
   },
   {
     "account": "DAVALLIA",
+    "project": "QUOTE 1",
+    "client": "IOI PROPERTIES",
+    "statusNotes": null,
+    "qteNo": "A04039",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "DAVALLIA",
     "project": "Concept Development - commercial\nMaster Copywriting\nMain Brochure\nHoarding\nAd Visual",
     "client": "IOI PROPERTIES",
     "statusNotes": "1. Hoarding and Ad Visual on hold until further notice.\n2. Waiting new direction/visual from client.\n3. To send invoice by 14/4.",
@@ -2322,7 +2742,22 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
+  },
+  {
+    "account": "DAVALLIA",
+    "project": "QUOTE 2",
+    "client": "IOI PROPERTIES",
+    "statusNotes": null,
+    "qteNo": "A03887",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "DAVALLIA",
@@ -2337,7 +2772,22 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "THREE_D"
+    "itemType": "BANNER"
+  },
+  {
+    "account": "MADANI SERUNAI",
+    "project": "QUOTE 1",
+    "client": "BEAKS DEVELOPMENT",
+    "statusNotes": null,
+    "qteNo": "A03719",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "MADANI SERUNAI",
@@ -2352,7 +2802,22 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
+  },
+  {
+    "account": "ALUNAN SERUNAI",
+    "project": "QUOTE 1",
+    "client": "BEAKS DEVELOPMENT",
+    "statusNotes": null,
+    "qteNo": "A03757",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "ALUNAN SERUNAI",
@@ -2367,7 +2832,22 @@
     "invoiceSentStatus": null,
     "paymentEta": null,
     "paymentStatus": null,
-    "itemType": "PRINT"
+    "itemType": "BROCHURE"
+  },
+  {
+    "account": "ALUNAN SERUNAI",
+    "project": "QUOTE 2",
+    "client": "BEAKS DEVELOPMENT",
+    "statusNotes": null,
+    "qteNo": "A03791",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "ALUNAN SERUNAI",
@@ -2386,6 +2866,21 @@
   },
   {
     "account": "PARKWEST",
+    "project": "QUOTE 1",
+    "client": "PARKWOOD DEVELOPMENT",
+    "statusNotes": null,
+    "qteNo": "A03492",
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "PARKWEST",
     "project": "Main Brochure - 20 pages\nSimplified Brochure - 8 Panels\nPlan Development\n- Master Plan with colour\n- Site Plan with colour\n- Unit Key Plan\n- Facilities Plans\n- Location Map\nFlyer Design\nHoarding - 5 Designs repeat\nBunting\nBillboard\nPress Ad\nFacebook Post\nOnline Banner\nAPDL Submission\n- Brochure\n- Bunting\n- Billboard\n- Press Ad\n- Translate to Malay\nProject Microsite\na. Front End development up to 7 pages\n- Conceptualisation and Visual Design\n- Logo Integration (Logo Provided by customer)\n- Interactive elements (Video, Image, Carousel, Banners)\nb. Responsive Design Support Tablet & Mobile Phone\nc. Backend System\n- Secure and Excellent Management Back Office system\n- Login Protection for Back Office Control Panel\n- Able to Create Unlimited Pages for Articles/blog\n- Web Link (URL) Management\nd. Website Submission\n- Onpage Search Engine Optimized\n- Submit to all Search Engines (Google)\n- Update Meta Title, Meta description & Keywords for your website\n- Google Site Map Creation\ne. System Programming\n- Latest CSS 3 / XHTML & PHP Programming Langues\nf. Technical Support (12-Months)\n- Direct Email\ng. Included Registration Form before APDL\nh. Domain Name & Hosting (1 Year)",
     "client": "PARKWOOD DEVELOPMENT",
     "statusNotes": "1. Concept deck & quotation sent on 8/4\n2. To share revised checklist with Khay",
@@ -2398,6 +2893,21 @@
     "paymentEta": null,
     "paymentStatus": null,
     "itemType": "VIDEO"
+  },
+  {
+    "account": "Skudai Parade",
+    "project": "QUOTE 1",
+    "client": "PARKWOOD DEVELOPMENT",
+    "statusNotes": null,
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
   },
   {
     "account": "Skudai Parade",
@@ -2416,6 +2926,21 @@
   },
   {
     "account": "Marcus Group",
+    "project": "QUOTE 1",
+    "client": "PARKWOOD DEVELOPMENT",
+    "statusNotes": null,
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "Marcus Group",
     "project": "Corporate video",
     "client": "PARKWOOD DEVELOPMENT",
     "statusNotes": "1. Storyboard & quotation sent\n2. Client will revert once their management give feedback",
@@ -2431,9 +2956,39 @@
   },
   {
     "account": "enak BHPetrol",
+    "project": "QUOTE 1",
+    "client": "PARKWOOD DEVELOPMENT",
+    "statusNotes": null,
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "enak BHPetrol",
     "project": "POSM",
     "client": "PARKWOOD DEVELOPMENT",
     "statusNotes": "1. To share portfolio & quotation\n2. Pending Afiqah's clarification on proposal items - only requested items in email/whole phase",
+    "qteNo": null,
+    "qteAmount": null,
+    "qteDate": null,
+    "invoiceNo": null,
+    "invoiceDate": null,
+    "invoiceSentStatus": null,
+    "paymentEta": null,
+    "paymentStatus": null,
+    "itemType": "OTHER"
+  },
+  {
+    "account": "Boustead Properties",
+    "project": "QUOTE 1",
+    "client": "PARKWOOD DEVELOPMENT",
+    "statusNotes": null,
     "qteNo": null,
     "qteAmount": null,
     "qteDate": null,
