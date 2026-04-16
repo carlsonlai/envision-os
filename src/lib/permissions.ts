@@ -9,6 +9,7 @@ export const WORKLOAD_ROLES: Role[] = [
   Role.CREATIVE_DIRECTOR,
   Role.SENIOR_ART_DIRECTOR,
   Role.CLIENT_SERVICING,
+  Role.JUNIOR_ART_DIRECTOR,
 ]
 
 export const ASSIGN_ROLES: Role[] = [
@@ -23,7 +24,13 @@ export const DESIGNER_ROLES: Role[] = [
   Role.GRAPHIC_DESIGNER,
   Role.JUNIOR_DESIGNER,
   Role.DESIGNER_3D,
+  Role.MULTIMEDIA_DESIGNER,
   Role.DIGITAL_MARKETING,
+]
+
+/** Designers who can view all jobs (read-only) but only manage their own */
+export const SENIOR_DESIGNER_ROLES: Role[] = [
+  Role.JUNIOR_ART_DIRECTOR,
 ]
 
 function includesRole(roles: Role[], role: string): boolean {
@@ -48,6 +55,11 @@ export function canAssignTasks(role: string): boolean {
 
 export function isDesignerRole(role: string): boolean {
   return includesRole(DESIGNER_ROLES, role)
+}
+
+/** Can view all jobs (read-only overview) but only act on own assignments */
+export function isSeniorDesigner(role: string): boolean {
+  return includesRole(SENIOR_DESIGNER_ROLES, role)
 }
 
 export function canManageClients(role: string): boolean {

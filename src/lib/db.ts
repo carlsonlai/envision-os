@@ -1,7 +1,7 @@
 import '@/lib/env'
 import { PrismaClient } from '@prisma/client'
 import { PrismaPg } from '@prisma/adapter-pg'
-import { isDesignerRole } from '@/lib/permissions'
+import { isDesignerRole, isSeniorDesigner } from '@/lib/permissions'
 
 function createPrismaClient(): PrismaClient {
   // Prefer Neon pooled connection (PgBouncer) for serverless runtime — falls back to DATABASE_URL for migrations/local dev.
@@ -87,8 +87,10 @@ export async function getProjectForRole(
 }
 
 export async function getProjectsForRole(userRole: string, userId?: string) {
+  // Senior designers (JAD) see all projects; regular designers only see their assigned ones
+  const isRegularDesigner = isDesignerRole(userRole) && !isSeniorDesigner(userRole)
   const projects = await prisma.project.findMany({
-    where: isDesignerRole(userRole)
+    where: isRegularDesigner
       ? {
           deliverableItems: {
             some: {
@@ -99,12 +101,12 @@ export async function getProjectsForRole(userRole: string, userId?: string) {
       : undefined,
     orderBy: { createdAt: 'desc' },
     include: {
-      client: isDesignerRole(userRole) ? false : true,
+      client: isRegularDesigner ? false : true,
       assignedCS: {
         select: { id: true, name: true, email: true },
       },
       deliverableItems: {
-        where: isDesignerRole(userRole) ? { assignedDesignerId: userId } : undefined,
+        where: isRegularDesigner ? { assignedDesignerId: userId } : undefined,
         select: {
           id: true,
           itemType: true,

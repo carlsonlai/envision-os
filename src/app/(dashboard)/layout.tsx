@@ -171,8 +171,11 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
     {
       items: [
         { href: '/admin/workload', label: 'Team Workload',       icon: Activity, exact: true },
+        { href: '/admin/projects', label: 'All Projects',        icon: Briefcase },
         { href: '/designer',       label: 'All Designer Tasks',  icon: ListTodo },
+        { href: '/cs/job-track',   label: 'Job Track',           icon: ListTodo},
         { href: '/command/freelancers', label: 'Freelancers',    icon: Users },
+        { href: '/calendar',       label: 'Calendar',            icon: CalendarDays},
         { href: '/kpi',            label: 'Team KPI',            icon: BarChart3 },
       ],
     },
@@ -183,20 +186,24 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
   SENIOR_ART_DIRECTOR: [
     {
       items: [
-        { href: '/admin/workload', label: 'Team Workload', icon: Activity, exact: true },
-        { href: '/designer',       label: 'My Tasks',      icon: ListTodo },
-        { href: '/kpi',            label: 'My KPI',        icon: BarChart3 },
+        { href: '/admin/workload', label: 'Team Workload',       icon: Activity, exact: true },
+        { href: '/admin/projects', label: 'All Projects',        icon: Briefcase },
+        { href: '/designer',       label: 'All Designer Tasks',  icon: ListTodo },
+        { href: '/cs/job-track',   label: 'Job Track',           icon: ListTodo},
+        { href: '/calendar',       label: 'Calendar',            icon: CalendarDays},
+        { href: '/kpi',            label: 'Team KPI',            icon: BarChart3 },
       ],
     },
     PERSONAL_GROUP,
   ],
 
-  // ─── DESIGNER ROLES (shared structure) ────────────────────────────────────
+  // ─── JUNIOR ART DIRECTOR (sees all jobs, manages own) ─────────────────────
   JUNIOR_ART_DIRECTOR: [
     {
       items: [
-        { href: '/designer', label: 'My Queue', icon: ListTodo },
-        { href: '/kpi',      label: 'My KPI',   icon: BarChart3 },
+        { href: '/designer',       label: 'All Jobs',     icon: ListTodo },
+        { href: '/admin/workload', label: 'Team Timeline', icon: Activity },
+        { href: '/kpi',            label: 'My KPI',        icon: BarChart3 },
       ],
     },
     PERSONAL_GROUP,
