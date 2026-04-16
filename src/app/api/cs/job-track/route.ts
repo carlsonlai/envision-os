@@ -62,29 +62,54 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const { searchParams } = new URL(req.url)
   const paymentFilter = searchParams.get('paymentStatus')
   const search = searchParams.get('search')?.toLowerCase()
+  const scope = searchParams.get('scope') // 'mine' = only assigned to current user
   const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10))
   const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') ?? '50', 10)))
 
+  const userId = session.user.id
+
   try {
+    // Build optional scope filter for "My Clients" view
+    const isMineScope = scope === 'mine'
+
     // Count total projects for pagination
-    const [{ count: totalProjects }] = await prisma.$queryRawUnsafe<[{ count: bigint }]>(
-      `SELECT COUNT(*) AS count FROM "projects"`
-    )
+    const [{ count: totalProjects }] = isMineScope
+      ? await prisma.$queryRawUnsafe<[{ count: bigint }]>(
+          `SELECT COUNT(*) AS count FROM "projects" p WHERE p."assignedCSId" = $1`,
+          userId
+        )
+      : await prisma.$queryRawUnsafe<[{ count: bigint }]>(
+          `SELECT COUNT(*) AS count FROM "projects"`
+        )
 
     const offset = (page - 1) * limit
 
     // Fetch paginated projects with their client name and assigned CS person
-    const projects = await prisma.$queryRawUnsafe<ProjectRow[]>(
-      `SELECT p.id, p.code, p.status, p."quotedAmount", p."billedAmount", p."paidAmount",
-              p."clientId", p."assignedCSId",
-              c."companyName" AS "clientName",
-              cs.name AS "csName"
-       FROM "projects" p
-       LEFT JOIN "clients" c ON c.id = p."clientId"
-       LEFT JOIN "users" cs ON cs.id = p."assignedCSId"
-       ORDER BY p.code ASC
-       LIMIT ${limit} OFFSET ${offset}`
-    )
+    const projects = isMineScope
+      ? await prisma.$queryRawUnsafe<ProjectRow[]>(
+          `SELECT p.id, p.code, p.status, p."quotedAmount", p."billedAmount", p."paidAmount",
+                  p."clientId", p."assignedCSId",
+                  c."companyName" AS "clientName",
+                  cs.name AS "csName"
+           FROM "projects" p
+           LEFT JOIN "clients" c ON c.id = p."clientId"
+           LEFT JOIN "users" cs ON cs.id = p."assignedCSId"
+           WHERE p."assignedCSId" = $1
+           ORDER BY p.code ASC
+           LIMIT ${limit} OFFSET ${offset}`,
+          userId
+        )
+      : await prisma.$queryRawUnsafe<ProjectRow[]>(
+          `SELECT p.id, p.code, p.status, p."quotedAmount", p."billedAmount", p."paidAmount",
+                  p."clientId", p."assignedCSId",
+                  c."companyName" AS "clientName",
+                  cs.name AS "csName"
+           FROM "projects" p
+           LEFT JOIN "clients" c ON c.id = p."clientId"
+           LEFT JOIN "users" cs ON cs.id = p."assignedCSId"
+           ORDER BY p.code ASC
+           LIMIT ${limit} OFFSET ${offset}`
+        )
 
     // Fetch deliverable items only for paginated projects (scoped, not full-table scan)
     const projectIds = projects.map((p) => p.id)

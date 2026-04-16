@@ -1,15 +1,17 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
+import Link from 'next/link'
 import {
   Search, RefreshCw, ChevronDown, ChevronRight,
   FileText, Receipt, CheckCircle2, Clock, AlertCircle,
   TrendingUp, DollarSign, Loader2, Zap, LayoutGrid, List,
   ShieldCheck, ShieldAlert, ShieldX, Database, Briefcase,
   MessageSquare, ExternalLink, Pencil, X, Save, Users, UserCheck,
+  FolderKanban, AlertTriangle,
 } from 'lucide-react'
 
-type ViewMode = 'grouped' | 'pipeline' | 'table' | 'live'
+type ViewMode = 'grouped' | 'pipeline' | 'table' | 'live' | 'kanban'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -97,6 +99,39 @@ interface EditState {
   item: JobItem
   group: ProjectGroup
 }
+
+// ─── Kanban Types ────────────────────────────────────────────────────────────
+
+type KanbanProjectStatus = 'PROJECTED' | 'ONGOING' | 'COMPLETED' | 'BILLED' | 'PAID'
+
+interface KanbanProject {
+  id: string
+  code: string
+  status: KanbanProjectStatus
+  quotedAmount: number
+  billedAmount: number
+  paidAmount: number
+  deadline: string | null
+  client?: { companyName: string; contactPerson: string; email: string }
+  updatedAt: string
+}
+
+const KANBAN_COLUMNS: {
+  status: KanbanProjectStatus
+  label: string
+  icon: React.ElementType
+  accent: string
+  borderColor: string
+  bgColor: string
+  textColor: string
+  dropHighlight: string
+}[] = [
+  { status: 'PROJECTED', label: 'Projected', icon: Clock,          accent: 'text-zinc-400',    borderColor: 'border-zinc-700/60',    bgColor: 'bg-zinc-800/30',    textColor: 'text-zinc-400',    dropHighlight: 'ring-2 ring-zinc-400/50 bg-zinc-800/60' },
+  { status: 'ONGOING',   label: 'Ongoing',   icon: Zap,            accent: 'text-blue-400',    borderColor: 'border-blue-500/30',    bgColor: 'bg-blue-500/5',     textColor: 'text-blue-300',    dropHighlight: 'ring-2 ring-blue-400/50 bg-blue-500/10' },
+  { status: 'COMPLETED', label: 'Completed', icon: AlertTriangle,  accent: 'text-amber-400',   borderColor: 'border-amber-500/30',   bgColor: 'bg-amber-500/5',    textColor: 'text-amber-300',   dropHighlight: 'ring-2 ring-amber-400/50 bg-amber-500/10' },
+  { status: 'BILLED',    label: 'Billed',    icon: FileText,       accent: 'text-violet-400',  borderColor: 'border-violet-500/30',  bgColor: 'bg-violet-500/5',   textColor: 'text-violet-300',  dropHighlight: 'ring-2 ring-violet-400/50 bg-violet-500/10' },
+  { status: 'PAID',      label: 'Paid',      icon: CheckCircle2,   accent: 'text-emerald-400', borderColor: 'border-emerald-500/30', bgColor: 'bg-emerald-500/5',  textColor: 'text-emerald-300', dropHighlight: 'ring-2 ring-emerald-400/50 bg-emerald-500/10' },
+]
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -674,6 +709,52 @@ export default function JobTrackPage() {
   const [editState, setEditState] = useState<EditState | null>(null)
   const [csStaff, setCsStaff] = useState<StaffMember[]>([])
   const [designers, setDesigners] = useState<StaffMember[]>([])
+  const [scopeFilter, setScopeFilter] = useState<'all' | 'mine'>('all')
+
+  // ── Kanban state ─────────────────────────────────────────────────────────
+  const [kanbanProjects, setKanbanProjects] = useState<KanbanProject[]>([])
+  const [kanbanLoading, setKanbanLoading] = useState(false)
+  const [kanbanDragging, setKanbanDragging] = useState('')
+  const [kanbanOverCol, setKanbanOverCol] = useState<KanbanProjectStatus | null>(null)
+  const kanbanDragCounters = useRef<Partial<Record<KanbanProjectStatus, number>>>({})
+
+  const loadKanban = useCallback(async () => {
+    setKanbanLoading(true)
+    try {
+      const res = await fetch('/api/projects')
+      const data = await res.json()
+      setKanbanProjects(data.data ?? [])
+    } catch {
+      // silent
+    } finally {
+      setKanbanLoading(false)
+    }
+  }, [])
+
+  const handleKanbanDrop = async (targetStatus: KanbanProjectStatus) => {
+    if (!kanbanDragging || !kanbanOverCol) return
+    const project = kanbanProjects.find(p => p.id === kanbanDragging)
+    if (!project || project.status === targetStatus) {
+      setKanbanDragging('')
+      setKanbanOverCol(null)
+      return
+    }
+    const prev = kanbanProjects
+    setKanbanProjects(ps => ps.map(p => p.id === kanbanDragging ? { ...p, status: targetStatus } : p))
+    setKanbanDragging('')
+    setKanbanOverCol(null)
+    kanbanDragCounters.current = {}
+    try {
+      const res = await fetch(`/api/projects/${kanbanDragging}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: targetStatus }),
+      })
+      if (!res.ok) throw new Error('Failed')
+    } catch {
+      setKanbanProjects(prev)
+    }
+  }
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -681,6 +762,7 @@ export default function JobTrackPage() {
       const params = new URLSearchParams()
       if (search) params.set('search', search)
       if (payFilter) params.set('paymentStatus', payFilter)
+      if (scopeFilter === 'mine') params.set('scope', 'mine')
       const res = await fetch(`/api/cs/job-track?${params}`)
       const json = await res.json() as { data: { groups: ProjectGroup[], summary: Summary } }
       setGroups(json.data.groups ?? [])
@@ -693,7 +775,7 @@ export default function JobTrackPage() {
     } finally {
       setLoading(false)
     }
-  }, [search, payFilter])
+  }, [search, payFilter, scopeFilter])
 
   useEffect(() => { void load() }, [load])
 
@@ -707,6 +789,11 @@ export default function JobTrackPage() {
       })
       .catch(() => {})
   }, [])
+
+  // Load kanban projects when switching to kanban view
+  useEffect(() => {
+    if (view === 'kanban' && kanbanProjects.length === 0) void loadKanban()
+  }, [view, kanbanProjects.length, loadKanban])
 
   const runBukkuSync = async () => {
     setSyncingBukku(true)
@@ -798,12 +885,30 @@ export default function JobTrackPage() {
           <p className="text-sm text-zinc-500 mt-0.5">All active accounts — quotations, invoices &amp; payment status</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          {/* My / All toggle */}
+          <div className="flex items-center rounded-lg border border-zinc-700 bg-zinc-800/60 p-0.5">
+            <button
+              type="button"
+              onClick={() => setScopeFilter('all')}
+              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${scopeFilter === 'all' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}`}
+            >
+              All
+            </button>
+            <button
+              type="button"
+              onClick={() => setScopeFilter('mine')}
+              className={`rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors ${scopeFilter === 'mine' ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}`}
+            >
+              My Clients
+            </button>
+          </div>
+
           {/* View toggle */}
           <div className="flex items-center rounded-lg border border-zinc-700 bg-zinc-800/60 p-0.5">
-            {(['grouped', 'pipeline', 'table', 'live'] as ViewMode[]).map((v, i) => {
-              const icons = [LayoutGrid, TrendingUp, List, Database]
+            {(['kanban', 'grouped', 'pipeline', 'table', 'live'] as ViewMode[]).map((v, i) => {
+              const icons = [FolderKanban, LayoutGrid, TrendingUp, List, Database]
               const Icon = icons[i]
-              const titles = ['Grouped view', 'Billing Pipeline', 'Table view', 'Live Bukku']
+              const titles = ['Project Board', 'Grouped view', 'Billing Pipeline', 'Table view', 'Live Bukku']
               return (
                 <button
                   key={v}
@@ -811,6 +916,7 @@ export default function JobTrackPage() {
                   onClick={() => {
                     setView(v)
                     if (v === 'live' && !verifyData) void runVerify()
+                    if (v === 'kanban' && kanbanProjects.length === 0) void loadKanban()
                   }}
                   title={titles[i]}
                   className={`rounded-md p-1.5 transition-colors ${view === v ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}`}
@@ -866,8 +972,160 @@ export default function JobTrackPage() {
         </div>
       )}
 
-      {/* ── Live Bukku View ──────────────────────────────────────────────── */}
-      {view === 'live' ? (
+      {/* ── Kanban Board View ──────────────────────────────────────────── */}
+      {view === 'kanban' ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-sm text-zinc-500">
+              {kanbanProjects.length} project{kanbanProjects.length !== 1 ? 's' : ''} across all stages
+            </p>
+            <button
+              type="button"
+              onClick={() => void loadKanban()}
+              disabled={kanbanLoading}
+              className="flex items-center gap-1.5 rounded-md border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3 w-3 ${kanbanLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+          </div>
+
+          {kanbanLoading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-5 gap-3 h-[calc(100vh-240px)] overflow-hidden">
+              {KANBAN_COLUMNS.map((col) => {
+                const colProjects = kanbanProjects.filter(p => p.status === col.status)
+                const total = colProjects.reduce((sum, p) => sum + p.quotedAmount, 0)
+                const Icon = col.icon
+                const isOver = kanbanOverCol === col.status && !!kanbanDragging
+
+                return (
+                  <div
+                    key={col.status}
+                    className={`flex flex-col rounded-xl border transition-all duration-150 overflow-hidden ${
+                      isOver
+                        ? `${col.dropHighlight} border-transparent`
+                        : `${col.borderColor} ${col.bgColor}`
+                    }`}
+                    onDragEnter={(e) => {
+                      e.preventDefault()
+                      kanbanDragCounters.current[col.status] = (kanbanDragCounters.current[col.status] ?? 0) + 1
+                      setKanbanOverCol(col.status)
+                    }}
+                    onDragLeave={() => {
+                      kanbanDragCounters.current[col.status] = (kanbanDragCounters.current[col.status] ?? 1) - 1
+                      if ((kanbanDragCounters.current[col.status] ?? 0) <= 0) {
+                        kanbanDragCounters.current[col.status] = 0
+                        setKanbanOverCol(prev => prev === col.status ? null : prev)
+                      }
+                    }}
+                    onDragOver={(e) => {
+                      e.preventDefault()
+                      e.dataTransfer.dropEffect = 'move'
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault()
+                      kanbanDragCounters.current[col.status] = 0
+                      void handleKanbanDrop(col.status)
+                    }}
+                  >
+                    {/* Column header */}
+                    <div className="flex items-center justify-between px-3 py-2.5 border-b border-zinc-800/40">
+                      <div className="flex items-center gap-1.5">
+                        <Icon className={`h-3.5 w-3.5 ${col.accent}`} />
+                        <span className={`text-xs font-semibold ${col.textColor}`}>{col.label}</span>
+                      </div>
+                      <span className="rounded-full bg-zinc-800/60 px-1.5 py-0.5 text-[10px] font-medium text-zinc-400">
+                        {colProjects.length}
+                      </span>
+                    </div>
+
+                    {/* Total value */}
+                    <div className="px-3 py-2 border-b border-zinc-800/30">
+                      <span className="text-xs font-semibold text-zinc-300">{fmt(total)}</span>
+                    </div>
+
+                    {/* Cards */}
+                    <div className="flex-1 overflow-y-auto p-2 space-y-2">
+                      {colProjects.length === 0 ? (
+                        <div className={`flex flex-col items-center justify-center h-20 gap-1 rounded-lg border-2 border-dashed transition-colors ${
+                          isOver ? 'border-zinc-500/50' : 'border-transparent'
+                        }`}>
+                          {isOver ? (
+                            <span className="text-xs text-zinc-400 font-medium">Drop here</span>
+                          ) : (
+                            <span className="text-xs text-zinc-700">No projects here</span>
+                          )}
+                        </div>
+                      ) : (
+                        colProjects.map((project) => {
+                          const overdue = project.deadline ? new Date(project.deadline) < new Date() : false
+                          return (
+                            <div
+                              key={project.id}
+                              draggable
+                              onDragStart={(e) => {
+                                e.dataTransfer.effectAllowed = 'move'
+                                e.dataTransfer.setData('text/plain', project.id)
+                                setKanbanDragging(project.id)
+                              }}
+                              onDragEnd={() => setKanbanDragging('')}
+                              className={`rounded-lg border p-3 space-y-2 transition-all duration-150 cursor-grab active:cursor-grabbing select-none ${
+                                kanbanDragging === project.id
+                                  ? 'opacity-40 scale-95'
+                                  : 'hover:border-zinc-600/60'
+                              } ${
+                                overdue
+                                  ? 'border-amber-500/20 bg-amber-500/5'
+                                  : 'border-zinc-800/60 bg-zinc-900/40'
+                              }`}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <Link
+                                  href={`/cs/projects/${project.id}`}
+                                  className="text-xs font-mono font-semibold text-[#818cf8] hover:text-[#a5b4fc] transition-colors"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  {project.code}
+                                </Link>
+                                {overdue && <AlertTriangle className="h-3 w-3 text-red-400 flex-shrink-0" />}
+                              </div>
+                              {project.client && (
+                                <p className="text-xs text-zinc-300 font-medium truncate">{project.client.companyName}</p>
+                              )}
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs text-zinc-500">{fmt(project.quotedAmount)}</span>
+                                {project.deadline && (
+                                  <span className={`text-[10px] ${overdue ? 'text-red-400' : 'text-zinc-600'}`}>
+                                    {overdue ? 'Overdue' : new Date(project.deadline).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })}
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex gap-1.5">
+                                <Link
+                                  href={`/cs/projects/${project.id}`}
+                                  onClick={(e) => e.stopPropagation()}
+                                  className="flex items-center gap-1 rounded px-2 py-1 text-[10px] font-medium text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700/60 transition-colors border border-zinc-700/40"
+                                >
+                                  <FileText className="h-2.5 w-2.5" />
+                                  Open
+                                </Link>
+                              </div>
+                            </div>
+                          )
+                        })
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          )}
+        </div>
+      ) : view === 'live' ? (
         <div className="space-y-4">
           <div className="flex items-center gap-3">
             <div className="relative flex-1 max-w-sm">
