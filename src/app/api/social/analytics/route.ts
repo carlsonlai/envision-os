@@ -43,35 +43,24 @@ async function fetchInstagramStats(): Promise<PlatformResult> {
   }
 
   try {
-    const fields = 'followers_count,media_count,profile_views'
+    const fields = 'followers_count,media_count,username,name'
 
-    // Parallelize account info + insights fetch
-    const [res, insightRes] = await Promise.all([
-      fetch(
-        `https://graph.facebook.com/v19.0/${accountId}?fields=${fields}&access_token=${token}`,
-        { next: { revalidate: 3600 } }
-      ),
-      fetch(
-        `https://graph.facebook.com/v19.0/${accountId}/insights?metric=reach,impressions,follower_count&period=week&access_token=${token}`,
-        { next: { revalidate: 3600 } }
-      ),
-    ])
+    const res = await fetch(
+      `https://graph.facebook.com/v25.0/${accountId}?fields=${fields}&access_token=${token}`,
+      { next: { revalidate: 3600 } }
+    )
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json()
-    const insightData = insightRes.ok ? await insightRes.json() : { data: [] }
-    const reachMetric = (insightData.data as Array<{ name: string; values: Array<{ value: number }> }>)
-      .find((m) => m.name === 'reach')
-    const weeklyReach = reachMetric?.values?.[0]?.value ?? null
 
     return {
       id: 'instagram',
       name: 'Instagram',
       connected: true,
       followers: data.followers_count ?? null,
-      followerGrowth: null, // requires comparing historical data
-      reach: weeklyReach,
-      engagement: null, // requires per-post calculation
+      followerGrowth: null,
+      reach: null,
+      engagement: null,
       leads: null,
       posts: data.media_count ?? null,
     }
@@ -95,11 +84,11 @@ async function fetchFacebookStats(): Promise<PlatformResult> {
     // Parallelize page info + insights fetch
     const [res, insightRes] = await Promise.all([
       fetch(
-        `https://graph.facebook.com/v19.0/${pageId}?fields=fan_count,followers_count&access_token=${token}`,
+        `https://graph.facebook.com/v25.0/${pageId}?fields=fan_count,followers_count&access_token=${token}`,
         { next: { revalidate: 3600 } }
       ),
       fetch(
-        `https://graph.facebook.com/v19.0/${pageId}/insights/page_impressions_unique/week?access_token=${token}`,
+        `https://graph.facebook.com/v25.0/${pageId}/insights/page_impressions_unique/week?access_token=${token}`,
         { next: { revalidate: 3600 } }
       ),
     ])
