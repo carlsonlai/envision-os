@@ -686,7 +686,7 @@ export default function ReputationPage() {
             <div className="flex flex-col items-center justify-center py-16 text-center rounded-xl border border-zinc-800 bg-zinc-900/30">
               <BarChart3 className="h-10 w-10 text-zinc-700 mb-3" />
               <p className="text-sm text-zinc-500">No report generated yet</p>
-              <p className="text-xs text-zinc-600 mt-1">Click "Generate Report" to create your MD reputation briefing</p>
+              <p className="text-xs text-zinc-600 mt-1">Click &ldquo;Generate Report&rdquo; to create your MD reputation briefing</p>
             </div>
           )}
 

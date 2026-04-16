@@ -136,21 +136,28 @@ export default function MyCareerPage() {
 
   useEffect(() => {
     if (status !== 'authenticated') return
+    let cancelled = false
+    const load = async () => {
+      try {
+        const r = await fetch('/api/my/career')
+        if (!r.ok) throw new Error(`HTTP ${r.status}`)
+        const { data } = (await r.json()) as { data: CareerData }
+        if (!cancelled) {
+          setCareerData(data)
+          setExpandedLevel(data.currentLevel + 1) // auto-expand next level
+        }
+      } catch (err: unknown) {
+        if (!cancelled) {
+          setLoadError(err instanceof Error ? err.message : 'Failed to load career data')
+        }
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
     setLoading(true)
     setLoadError(null)
-    fetch('/api/my/career')
-      .then(async (r) => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`)
-        return r.json() as Promise<{ data: CareerData }>
-      })
-      .then(({ data }) => {
-        setCareerData(data)
-        setExpandedLevel(data.currentLevel + 1) // auto-expand next level
-      })
-      .catch((err: unknown) => {
-        setLoadError(err instanceof Error ? err.message : 'Failed to load career data')
-      })
-      .finally(() => setLoading(false))
+    load()
+    return () => { cancelled = true }
   }, [status])
 
   if (loading || status === 'loading') {

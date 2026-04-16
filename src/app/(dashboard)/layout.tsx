@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from 'next-auth/react'
 import { useRouter, usePathname } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import {
   LayoutDashboard,
@@ -373,8 +373,13 @@ export default function DashboardLayout({
   }, [status, router])
 
   // Close mobile nav on route change
+  const prevPathname = useRef(pathname)
   useEffect(() => {
-    setMobileOpen(false)
+    if (prevPathname.current !== pathname) {
+      prevPathname.current = pathname
+      // Use requestAnimationFrame to avoid synchronous setState in effect
+      requestAnimationFrame(() => setMobileOpen(false))
+    }
   }, [pathname])
 
   // Render the dashboard shell immediately — middleware guarantees the user is

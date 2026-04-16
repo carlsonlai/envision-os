@@ -724,7 +724,7 @@ function computeKPIScore(kpis: KPIData): number {
 function SalaryPanel({ kpis }: { kpis: KPIData }) {
   const score = computeKPIScore(kpis)
   const tier = KPI_TIERS.find(t => score >= t.min && score <= t.max) ?? KPI_TIERS[3]
-  const prevScore = Math.max(0, score - Math.round(Math.random() * 8 + 2))
+  const prevScore = Math.max(0, score - 5)
   const delta = score - prevScore
   const nextTier = KPI_TIERS.find(t => t.min > score)
 

@@ -161,8 +161,8 @@ export async function getProjectsForRole(userRole: string, userId?: string) {
   })
 
   // Attach invoiceNumber and quotations via raw SQL (safe against Prisma client version drift)
-  let invoiceNumberMap: Record<string, string | null> = {}
-  let quotationsMap: Record<string, unknown[]> = {}
+  const invoiceNumberMap: Record<string, string | null> = {}
+  const quotationsMap: Record<string, unknown[]> = {}
 
   if (!isDesignerRole(userRole)) {
     try {

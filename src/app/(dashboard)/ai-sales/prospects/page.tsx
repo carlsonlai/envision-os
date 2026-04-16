@@ -209,7 +209,7 @@ export default function ProspectChatPage() {
                   <p className="text-[10px] text-zinc-600 uppercase tracking-wider font-semibold">Objection Handlers</p>
                   {script.objectionHandlers.map((oh, i) => (
                     <div key={i} className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 space-y-1">
-                      <p className="text-xs font-semibold text-amber-400">Objection: "{oh.objection}"</p>
+                      <p className="text-xs font-semibold text-amber-400">Objection: &ldquo;{oh.objection}&rdquo;</p>
                       <p className="text-xs text-zinc-300">Response: {oh.response}</p>
                     </div>
                   ))}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
+import { createHmac } from 'crypto'
 import { authOptions } from '@/lib/auth'
 
 const KLING_ACCESS_KEY_ID = process.env.KLING_ACCESS_KEY_ID
@@ -21,7 +22,6 @@ function buildKlingJwt(): string {
   const signingInput = `${header}.${payload}`
 
   // Node.js built-in crypto for HMAC-SHA256
-  const { createHmac } = require('crypto') as typeof import('crypto')
   const sig = createHmac('sha256', KLING_ACCESS_KEY_SECRET!)
     .update(signingInput)
     .digest('base64url')

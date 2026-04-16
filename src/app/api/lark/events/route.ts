@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createDecipheriv } from 'crypto'
+import { createDecipheriv, createHmac, createHash } from 'crypto'
 import { getToken } from '@/services/lark'
 import axios from 'axios'
 import { logger, getErrorMessage } from '@/lib/logger'
@@ -15,7 +15,6 @@ function verifySignature(
   body: string,
   signature: string
 ): boolean {
-  const { createHmac } = require('crypto')
   const toSign = `${timestamp}${nonce}${encryptKey}${body}`
   const computed = createHmac('sha256', encryptKey).update(toSign).digest('hex')
   return computed === signature
@@ -25,7 +24,7 @@ function verifySignature(
 
 function decryptBody(encrypted: string, encryptKey: string): unknown {
   // Lark AES-256-CBC decryption
-  const keyHash = require('crypto').createHash('sha256').update(encryptKey).digest()
+  const keyHash = createHash('sha256').update(encryptKey).digest()
   const encryptedBuffer = Buffer.from(encrypted, 'base64')
   const iv = encryptedBuffer.slice(0, 16)
   const content = encryptedBuffer.slice(16)

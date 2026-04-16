@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import Link from 'next/link'
 import { MessageSquare, Sparkles, RefreshCw, Send, Copy, Check, FileText, Receipt, Bell, AlertTriangle } from 'lucide-react'
 
 interface Project {
@@ -131,9 +132,9 @@ export default function ClientCommsPage() {
                     <p className="text-xs text-zinc-500 font-medium">No active projects yet</p>
                     <p className="text-[11px] text-zinc-600">
                       First{' '}
-                      <a href="/crm" className="text-indigo-400 hover:underline">add a client</a>
+                      <Link href="/crm" className="text-indigo-400 hover:underline">add a client</Link>
                       , then{' '}
-                      <a href="/admin/projects" className="text-indigo-400 hover:underline">create a project</a>.
+                      <Link href="/admin/projects" className="text-indigo-400 hover:underline">create a project</Link>.
                     </p>
                   </div>
                 ) : (
