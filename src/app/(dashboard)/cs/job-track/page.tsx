@@ -8,10 +8,10 @@ import {
   TrendingUp, DollarSign, Loader2, Zap, LayoutGrid, List,
   ShieldCheck, ShieldAlert, ShieldX, Database, Briefcase,
   MessageSquare, ExternalLink, Pencil, X, Save, Users, UserCheck,
-  FolderKanban, AlertTriangle,
+  FolderKanban, AlertTriangle, Activity,
 } from 'lucide-react'
 
-type ViewMode = 'grouped' | 'pipeline' | 'table' | 'live' | 'kanban'
+type ViewMode = 'grouped' | 'pipeline' | 'table' | 'live' | 'kanban' | 'activity'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -251,6 +251,89 @@ function BukkuStatusPill({ status }: { status: string }) {
       {status}
     </span>
   )
+}
+
+// ─── Activity Helpers ─────────────────────────────────────────────────────────
+
+const ACTION_LABELS: Record<string, string> = {
+  STATUS_CHANGE: 'Status Changed',
+  DESIGNER_ASSIGNED: 'Designer Assigned',
+  FILE_UPLOADED: 'File Uploaded',
+  QC_SUBMITTED: 'QC Submitted',
+  QC_APPROVED: 'QC Approved',
+  QC_REJECTED: 'QC Rejected',
+  REVISION_UPLOADED: 'Revision Uploaded',
+  REVISION_APPROVED: 'Revision Approved',
+  REVISION_REJECTED: 'Revision Rejected',
+  CLIENT_APPROVED: 'Client Approved',
+  CLIENT_CONFIRMED: 'Client Confirmed',
+  BRIEF_CREATED: 'Brief Created',
+  BRIEF_UPDATED: 'Brief Updated',
+  FA_CREATED: 'FA Created',
+  FA_SIGNOFF: 'FA Signed Off',
+  HANDOVER_COMPLETED: 'Handover Done',
+  PROJECT_CREATED: 'Project Created',
+  POST_DELIVERY_SEQUENCE_STARTED: 'Post-Delivery Started',
+  REFERRAL_CONVERSION: 'Referral Converted',
+  AUTO_ASSIGNED: 'Auto-Assigned',
+  PAYMENT_STATUS_CHANGE: 'Payment Updated',
+}
+
+function formatActionLabel(action: string): string {
+  return ACTION_LABELS[action] ?? action.replace(/_/g, ' ')
+}
+
+function getActionColor(action: string): string {
+  if (action.includes('APPROVED') || action.includes('SIGNOFF') || action === 'CLIENT_CONFIRMED')
+    return 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25'
+  if (action.includes('REJECTED'))
+    return 'bg-rose-500/15 text-rose-400 border border-rose-500/25'
+  if (action.includes('UPLOADED') || action.includes('REVISION'))
+    return 'bg-blue-500/15 text-blue-400 border border-blue-500/25'
+  if (action.includes('ASSIGNED') || action === 'AUTO_ASSIGNED')
+    return 'bg-violet-500/15 text-violet-400 border border-violet-500/25'
+  if (action.includes('STATUS') || action.includes('PAYMENT'))
+    return 'bg-amber-500/15 text-amber-400 border border-amber-500/25'
+  if (action.includes('CREATED') || action.includes('BRIEF'))
+    return 'bg-cyan-500/15 text-cyan-400 border border-cyan-500/25'
+  if (action.includes('HANDOVER') || action.includes('DELIVERY'))
+    return 'bg-teal-500/15 text-teal-400 border border-teal-500/25'
+  return 'bg-zinc-700/60 text-zinc-400 border border-zinc-600/40'
+}
+
+const ROLE_MAP: Record<string, string> = {
+  ADMIN: 'Admin',
+  CREATIVE_DIRECTOR: 'CD',
+  SENIOR_ART_DIRECTOR: 'Sr AD',
+  JUNIOR_ART_DIRECTOR: 'Jr AD',
+  GRAPHIC_DESIGNER: 'Designer',
+  JUNIOR_DESIGNER: 'Jr Designer',
+  DESIGNER_3D: '3D Designer',
+  MULTIMEDIA_DESIGNER: 'Multimedia',
+  DIGITAL_MARKETING: 'Digital Mktg',
+  CLIENT_SERVICING: 'CS',
+  SALES: 'Sales',
+}
+
+function formatRole(role: string): string {
+  return ROLE_MAP[role] ?? role.replace(/_/g, ' ')
+}
+
+function renderMetadata(meta: Record<string, unknown>): React.ReactNode[] {
+  const SKIP_KEYS = new Set(['scheduledViaCron', 'scheduledAt'])
+  const nodes: React.ReactNode[] = []
+  for (const [k, v] of Object.entries(meta)) {
+    if (SKIP_KEYS.has(k) || v == null || v === '') continue
+    const label = k.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ').trim()
+    const val = typeof v === 'object' ? JSON.stringify(v) : String(v)
+    if (val.length > 80) continue // skip long blobs
+    nodes.push(
+      <span key={k} className="inline-flex items-center rounded bg-zinc-700/50 px-1.5 py-0.5 text-[10px] text-zinc-400">
+        <span className="text-zinc-500 mr-1">{label}:</span> {val}
+      </span>
+    )
+  }
+  return nodes
 }
 
 // ─── Edit Drawer ──────────────────────────────────────────────────────────────
@@ -718,6 +801,39 @@ export default function JobTrackPage() {
   const [kanbanOverCol, setKanbanOverCol] = useState<KanbanProjectStatus | null>(null)
   const kanbanDragCounters = useRef<Partial<Record<KanbanProjectStatus, number>>>({})
 
+  // ── Activity state ──────────────────────────────────────────────────────
+  interface ActivityItem {
+    id: string
+    action: string
+    metadata: Record<string, unknown> | null
+    createdAt: string
+    projectId: string | null
+    projectCode: string | null
+    clientName: string | null
+    performerName: string | null
+    performerRole: string | null
+    deliverableItemId: string | null
+    itemDescription: string | null
+    itemType: string | null
+  }
+  const [activityItems, setActivityItems] = useState<ActivityItem[]>([])
+  const [activityLoading, setActivityLoading] = useState(false)
+
+  const loadActivity = useCallback(async () => {
+    setActivityLoading(true)
+    try {
+      const params = new URLSearchParams({ limit: '100' })
+      if (scopeFilter === 'mine') params.set('scope', 'mine')
+      const res = await fetch(`/api/cs/activity?${params}`)
+      const json = await res.json() as { data?: ActivityItem[] }
+      setActivityItems(json.data ?? [])
+    } catch {
+      // silent
+    } finally {
+      setActivityLoading(false)
+    }
+  }, [scopeFilter])
+
   const loadKanban = useCallback(async () => {
     setKanbanLoading(true)
     try {
@@ -794,6 +910,11 @@ export default function JobTrackPage() {
   useEffect(() => {
     if (view === 'kanban' && kanbanProjects.length === 0) void loadKanban()
   }, [view, kanbanProjects.length, loadKanban])
+
+  // Load activity when switching to activity view
+  useEffect(() => {
+    if (view === 'activity') void loadActivity()
+  }, [view, loadActivity])
 
   const runBukkuSync = async () => {
     setSyncingBukku(true)
@@ -905,10 +1026,10 @@ export default function JobTrackPage() {
 
           {/* View toggle */}
           <div className="flex items-center rounded-lg border border-zinc-700 bg-zinc-800/60 p-0.5">
-            {(['kanban', 'grouped', 'pipeline', 'table', 'live'] as ViewMode[]).map((v, i) => {
-              const icons = [FolderKanban, LayoutGrid, TrendingUp, List, Database]
+            {(['kanban', 'grouped', 'pipeline', 'table', 'live', 'activity'] as ViewMode[]).map((v, i) => {
+              const icons = [FolderKanban, LayoutGrid, TrendingUp, List, Database, Activity]
               const Icon = icons[i]
-              const titles = ['Project Board', 'Grouped view', 'Billing Pipeline', 'Table view', 'Live Bukku']
+              const titles = ['Project Board', 'Grouped view', 'Billing Pipeline', 'Table view', 'Live Bukku', 'Activity Log']
               return (
                 <button
                   key={v}
@@ -917,6 +1038,7 @@ export default function JobTrackPage() {
                     setView(v)
                     if (v === 'live' && !verifyData) void runVerify()
                     if (v === 'kanban' && kanbanProjects.length === 0) void loadKanban()
+                    if (v === 'activity') void loadActivity()
                   }}
                   title={titles[i]}
                   className={`rounded-md p-1.5 transition-colors ${view === v ? 'bg-zinc-700 text-zinc-100' : 'text-zinc-500 hover:text-zinc-300'}`}
@@ -1123,6 +1245,83 @@ export default function JobTrackPage() {
                 )
               })}
             </div>
+          )}
+        </div>
+      ) : view === 'activity' ? (
+        <div className="space-y-3">
+          {activityLoading ? (
+            <div className="flex items-center justify-center py-20 text-zinc-500">
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />Loading activity…
+            </div>
+          ) : activityItems.length === 0 ? (
+            <div className="text-center py-20 text-zinc-500 text-sm">No recent activity found.</div>
+          ) : (
+            <>
+              <div className="text-xs text-zinc-500 mb-2">{activityItems.length} recent changes</div>
+              <div className="relative pl-4 border-l border-zinc-700/60">
+                {activityItems.map((a, idx) => {
+                  const dt = new Date(a.createdAt)
+                  const showDate = idx === 0 || new Date(activityItems[idx - 1].createdAt).toDateString() !== dt.toDateString()
+                  const actionLabel = formatActionLabel(a.action)
+                  const actionColor = getActionColor(a.action)
+
+                  return (
+                    <div key={a.id}>
+                      {showDate && (
+                        <div className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500 mt-4 mb-2 -ml-4 pl-4">
+                          {dt.toLocaleDateString('en-MY', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })}
+                        </div>
+                      )}
+                      <div className="relative mb-3 group">
+                        <div className="absolute -left-[21px] top-1.5 h-2.5 w-2.5 rounded-full border-2 border-zinc-800 bg-zinc-600 group-hover:bg-zinc-400 transition-colors" />
+                        <div className="rounded-lg border border-zinc-700/50 bg-zinc-800/40 px-3 py-2 hover:bg-zinc-800/70 transition-colors">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${actionColor}`}>
+                              {actionLabel}
+                            </span>
+                            {a.projectCode && (
+                              <Link
+                                href={`/projects/${a.projectId}`}
+                                className="text-xs font-mono text-blue-400 hover:text-blue-300 hover:underline"
+                              >
+                                {a.projectCode}
+                              </Link>
+                            )}
+                            {a.clientName && (
+                              <span className="text-[11px] text-zinc-400">{a.clientName}</span>
+                            )}
+                            <span className="ml-auto text-[10px] text-zinc-600">
+                              {dt.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                          <div className="mt-1 flex items-center gap-2 flex-wrap text-[11px]">
+                            {a.performerName && (
+                              <span className="text-zinc-300">
+                                <span className="text-zinc-500">by</span> {a.performerName}
+                                {a.performerRole && (
+                                  <span className="text-zinc-600 ml-1">({formatRole(a.performerRole)})</span>
+                                )}
+                              </span>
+                            )}
+                            {a.itemDescription && (
+                              <span className="text-zinc-500">
+                                on <span className="text-zinc-400">{a.itemDescription}</span>
+                                {a.itemType && <span className="text-zinc-600 ml-1">({a.itemType.replace(/_/g, ' ')})</span>}
+                              </span>
+                            )}
+                          </div>
+                          {a.metadata && typeof a.metadata === 'object' && Object.keys(a.metadata).length > 0 && (
+                            <div className="mt-1.5 flex flex-wrap gap-1.5">
+                              {renderMetadata(a.metadata as Record<string, unknown>)}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </>
           )}
         </div>
       ) : view === 'live' ? (
