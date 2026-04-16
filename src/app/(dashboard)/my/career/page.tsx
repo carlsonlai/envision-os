@@ -28,7 +28,9 @@ interface CareerLevel {
   perks: string[]
 }
 
-const CAREER_LEVELS: CareerLevel[] = [
+// ── Role-specific career ladders ─────────────────────────────────────────────
+
+const DESIGN_LADDER: CareerLevel[] = [
   { title: 'Junior Designer', level: 1, minKPI: 60, salaryRange: 'RM 2,000 – 2,800', requirements: ['Complete onboarding', 'Pass 3-month review', 'Basic Figma proficiency'], perks: ['14 days annual leave', 'Medical coverage', 'EPF + SOCSO'] },
   { title: 'Graphic Designer', level: 2, minKPI: 65, salaryRange: 'RM 2,800 – 3,500', requirements: ['6+ months tenure', 'KPI ≥ 65 for 2 quarters', 'Handle independent briefs', 'No revision escalations'], perks: ['Transport allowance', 'Phone allowance', '+2 annual leave days'] },
   { title: 'Senior Graphic Designer', level: 3, minKPI: 72, salaryRange: 'RM 3,500 – 4,800', requirements: ['12+ months tenure', 'KPI ≥ 72 for 3 quarters', 'Mentor 1 junior', 'QC pass rate ≥ 90%'], perks: ['Freelance project allowance', '+training budget RM 500/yr', 'Flexible hours'] },
@@ -36,6 +38,81 @@ const CAREER_LEVELS: CareerLevel[] = [
   { title: 'Senior Art Director', level: 5, minKPI: 85, salaryRange: 'RM 6,500 – 9,000', requirements: ['24+ months as AD', 'KPI ≥ 85', 'Manage team of 3+', 'Revenue contribution'], perks: ['20% bonus', 'Share of project profit', 'Full flexibility'] },
   { title: 'Creative Director', level: 6, minKPI: 90, salaryRange: 'RM 9,000+', requirements: ['Exceptional portfolio', 'KPI ≥ 90', 'Department leadership', 'New business wins'], perks: ['Executive package', 'Company equity options', 'Unlimited leave'] },
 ]
+
+const CS_LADDER: CareerLevel[] = [
+  { title: 'Junior CS Executive', level: 1, minKPI: 60, salaryRange: 'RM 2,200 – 2,800', requirements: ['Complete onboarding', 'Pass 3-month review', 'Understand agency workflow'], perks: ['14 days annual leave', 'Medical coverage', 'EPF + SOCSO'] },
+  { title: 'CS Executive', level: 2, minKPI: 65, salaryRange: 'RM 2,800 – 3,800', requirements: ['6+ months tenure', 'KPI ≥ 65 for 2 quarters', 'Manage 5+ active accounts', 'Zero client escalations'], perks: ['Transport allowance', 'Phone allowance', '+2 annual leave days'] },
+  { title: 'Senior CS Executive', level: 3, minKPI: 72, salaryRange: 'RM 3,800 – 5,000', requirements: ['12+ months tenure', 'KPI ≥ 72 for 3 quarters', 'Handle key accounts independently', 'Mentor 1 junior CS'], perks: ['Client entertainment budget', '+training budget RM 500/yr', 'Flexible hours'] },
+  { title: 'CS Manager', level: 4, minKPI: 78, salaryRange: 'RM 5,000 – 7,000', requirements: ['18+ months as Senior CS', 'KPI ≥ 78 consistently', 'Manage CS team of 3+', 'Revenue retention ≥ 90%'], perks: ['Annual bonus eligible', 'Conference allocation', 'Remote work 2d/week'] },
+  { title: 'Senior CS Manager', level: 5, minKPI: 85, salaryRange: 'RM 7,000 – 9,500', requirements: ['24+ months as Manager', 'KPI ≥ 85', 'Department P&L ownership', 'New business development'], perks: ['20% bonus', 'Share of project profit', 'Full flexibility'] },
+  { title: 'Head of Client Services', level: 6, minKPI: 90, salaryRange: 'RM 9,500+', requirements: ['Exceptional client portfolio', 'KPI ≥ 90', 'Department leadership', 'Strategic account wins'], perks: ['Executive package', 'Company equity options', 'Unlimited leave'] },
+]
+
+const SALES_LADDER: CareerLevel[] = [
+  { title: 'Sales Executive', level: 1, minKPI: 60, salaryRange: 'RM 2,200 – 3,000', requirements: ['Complete onboarding', 'Pass 3-month review', 'Understand service offerings'], perks: ['14 days annual leave', 'Medical coverage', 'EPF + SOCSO'] },
+  { title: 'Senior Sales Executive', level: 2, minKPI: 65, salaryRange: 'RM 3,000 – 4,200', requirements: ['6+ months tenure', 'KPI ≥ 65 for 2 quarters', 'Close 3+ deals/month', 'Build pipeline of 20+ leads'], perks: ['Sales commission structure', 'Phone allowance', '+2 annual leave days'] },
+  { title: 'Sales Lead', level: 3, minKPI: 72, salaryRange: 'RM 4,200 – 5,500', requirements: ['12+ months tenure', 'KPI ≥ 72 for 3 quarters', 'RM 50k+ monthly revenue', 'Mentor 1 junior sales'], perks: ['Higher commission tier', '+training budget RM 500/yr', 'Flexible hours'] },
+  { title: 'Sales Manager', level: 4, minKPI: 78, salaryRange: 'RM 5,500 – 7,500', requirements: ['18+ months as Lead', 'KPI ≥ 78 consistently', 'Manage sales team', 'Hit quarterly revenue targets'], perks: ['Annual bonus eligible', 'Conference allocation', 'Remote work 2d/week'] },
+  { title: 'Senior Sales Manager', level: 5, minKPI: 85, salaryRange: 'RM 7,500 – 10,000', requirements: ['24+ months as Manager', 'KPI ≥ 85', 'Strategic account management', 'Revenue growth ≥ 20% YoY'], perks: ['20% bonus', 'Share of project profit', 'Full flexibility'] },
+  { title: 'Head of Sales', level: 6, minKPI: 90, salaryRange: 'RM 10,000+', requirements: ['Exceptional track record', 'KPI ≥ 90', 'Department leadership', 'Key partnership development'], perks: ['Executive package', 'Company equity options', 'Unlimited leave'] },
+]
+
+const MULTIMEDIA_LADDER: CareerLevel[] = [
+  { title: 'Junior Multimedia Designer', level: 1, minKPI: 60, salaryRange: 'RM 2,200 – 2,800', requirements: ['Complete onboarding', 'Pass 3-month review', 'Basic video editing & motion graphics'], perks: ['14 days annual leave', 'Medical coverage', 'EPF + SOCSO'] },
+  { title: 'Multimedia Designer', level: 2, minKPI: 65, salaryRange: 'RM 2,800 – 3,800', requirements: ['6+ months tenure', 'KPI ≥ 65 for 2 quarters', 'Handle video projects independently', 'After Effects proficiency'], perks: ['Transport allowance', 'Phone allowance', '+2 annual leave days'] },
+  { title: 'Senior Multimedia Designer', level: 3, minKPI: 72, salaryRange: 'RM 3,800 – 5,200', requirements: ['12+ months tenure', 'KPI ≥ 72 for 3 quarters', 'Lead multimedia campaigns', 'Mentor 1 junior'], perks: ['Equipment allowance', '+training budget RM 500/yr', 'Flexible hours'] },
+  { title: 'Multimedia Lead', level: 4, minKPI: 78, salaryRange: 'RM 5,200 – 7,000', requirements: ['18+ months as Senior', 'KPI ≥ 78 consistently', 'Department workflow ownership', 'Client presentation skills'], perks: ['Annual bonus eligible', 'Conference allocation', 'Remote work 2d/week'] },
+  { title: 'Senior Art Director', level: 5, minKPI: 85, salaryRange: 'RM 7,000 – 9,000', requirements: ['24+ months as Lead', 'KPI ≥ 85', 'Cross-media creative direction', 'Revenue contribution'], perks: ['20% bonus', 'Share of project profit', 'Full flexibility'] },
+  { title: 'Creative Director', level: 6, minKPI: 90, salaryRange: 'RM 9,000+', requirements: ['Exceptional portfolio', 'KPI ≥ 90', 'Department leadership', 'New business wins'], perks: ['Executive package', 'Company equity options', 'Unlimited leave'] },
+]
+
+const MARKETING_LADDER: CareerLevel[] = [
+  { title: 'Digital Marketing Executive', level: 1, minKPI: 60, salaryRange: 'RM 2,200 – 2,800', requirements: ['Complete onboarding', 'Pass 3-month review', 'Basic SEO & social media'], perks: ['14 days annual leave', 'Medical coverage', 'EPF + SOCSO'] },
+  { title: 'Senior Marketing Executive', level: 2, minKPI: 65, salaryRange: 'RM 2,800 – 3,800', requirements: ['6+ months tenure', 'KPI ≥ 65 for 2 quarters', 'Run campaigns independently', 'Google/Meta Ads certified'], perks: ['Transport allowance', 'Phone allowance', '+2 annual leave days'] },
+  { title: 'Marketing Specialist', level: 3, minKPI: 72, salaryRange: 'RM 3,800 – 5,200', requirements: ['12+ months tenure', 'KPI ≥ 72 for 3 quarters', 'Manage client ad budgets RM 20k+/mo', 'Data-driven reporting'], perks: ['Certification budget', '+training budget RM 500/yr', 'Flexible hours'] },
+  { title: 'Marketing Manager', level: 4, minKPI: 78, salaryRange: 'RM 5,200 – 7,000', requirements: ['18+ months as Specialist', 'KPI ≥ 78 consistently', 'Lead marketing team', 'ROI-driven strategy'], perks: ['Annual bonus eligible', 'Conference allocation', 'Remote work 2d/week'] },
+  { title: 'Senior Marketing Manager', level: 5, minKPI: 85, salaryRange: 'RM 7,000 – 9,500', requirements: ['24+ months as Manager', 'KPI ≥ 85', 'Multi-channel strategy ownership', 'Client retention & growth'], perks: ['20% bonus', 'Share of project profit', 'Full flexibility'] },
+  { title: 'Head of Digital Marketing', level: 6, minKPI: 90, salaryRange: 'RM 9,500+', requirements: ['Exceptional track record', 'KPI ≥ 90', 'Department leadership', 'Revenue-generating campaigns'], perks: ['Executive package', 'Company equity options', 'Unlimited leave'] },
+]
+
+const THREE_D_LADDER: CareerLevel[] = [
+  { title: 'Junior 3D Designer', level: 1, minKPI: 60, salaryRange: 'RM 2,200 – 3,000', requirements: ['Complete onboarding', 'Pass 3-month review', 'Basic 3D modeling & rendering'], perks: ['14 days annual leave', 'Medical coverage', 'EPF + SOCSO'] },
+  { title: '3D Designer', level: 2, minKPI: 65, salaryRange: 'RM 3,000 – 4,000', requirements: ['6+ months tenure', 'KPI ≥ 65 for 2 quarters', 'Handle 3D projects independently', 'Blender/Cinema4D proficiency'], perks: ['Transport allowance', 'Phone allowance', '+2 annual leave days'] },
+  { title: 'Senior 3D Designer', level: 3, minKPI: 72, salaryRange: 'RM 4,000 – 5,500', requirements: ['12+ months tenure', 'KPI ≥ 72 for 3 quarters', 'Lead 3D campaigns', 'Mentor 1 junior'], perks: ['Equipment allowance', '+training budget RM 500/yr', 'Flexible hours'] },
+  { title: '3D Lead', level: 4, minKPI: 78, salaryRange: 'RM 5,500 – 7,500', requirements: ['18+ months as Senior', 'KPI ≥ 78 consistently', '3D workflow ownership', 'Client presentation skills'], perks: ['Annual bonus eligible', 'Conference allocation', 'Remote work 2d/week'] },
+  { title: 'Senior Art Director', level: 5, minKPI: 85, salaryRange: 'RM 7,500 – 9,000', requirements: ['24+ months as Lead', 'KPI ≥ 85', 'Cross-discipline creative direction', 'Revenue contribution'], perks: ['20% bonus', 'Share of project profit', 'Full flexibility'] },
+  { title: 'Creative Director', level: 6, minKPI: 90, salaryRange: 'RM 9,000+', requirements: ['Exceptional portfolio', 'KPI ≥ 90', 'Department leadership', 'New business wins'], perks: ['Executive package', 'Company equity options', 'Unlimited leave'] },
+]
+
+function getTrackName(role: string): string {
+  switch (role) {
+    case 'CLIENT_SERVICING': return 'Client Services'
+    case 'SALES': return 'Sales'
+    case 'MULTIMEDIA_DESIGNER': return 'Multimedia'
+    case 'DIGITAL_MARKETING': return 'Digital Marketing'
+    case 'DESIGNER_3D': return '3D Design'
+    default: return 'Design'
+  }
+}
+
+/** Maps user role to their specific career ladder */
+function getLadderForRole(role: string): CareerLevel[] {
+  switch (role) {
+    case 'CLIENT_SERVICING':
+      return CS_LADDER
+    case 'SALES':
+      return SALES_LADDER
+    case 'MULTIMEDIA_DESIGNER':
+      return MULTIMEDIA_LADDER
+    case 'DIGITAL_MARKETING':
+      return MARKETING_LADDER
+    case 'DESIGNER_3D':
+      return THREE_D_LADDER
+    default:
+      // JUNIOR_DESIGNER, GRAPHIC_DESIGNER, JUNIOR_ART_DIRECTOR, SENIOR_ART_DIRECTOR, CREATIVE_DIRECTOR, ADMIN
+      return DESIGN_LADDER
+  }
+}
 
 const CATEGORY_COLORS: Record<string, string> = {
   performance: 'text-amber-400 bg-amber-500/10 border-amber-500/20',
@@ -107,6 +184,7 @@ export default function MyCareerPage() {
     goals,
   } = careerData
 
+  const CAREER_LEVELS = getLadderForRole(careerData.role)
   const currentLevelData = CAREER_LEVELS[currentLevel - 1]
   const nextLevel = CAREER_LEVELS[currentLevel] // index = currentLevel (0-based, next is currentLevel)
   const unlockedCount = achievements.filter((a: CareerAchievement) => a.unlocked).length
@@ -123,7 +201,7 @@ export default function MyCareerPage() {
             <TrendingUp className="h-5 w-5 text-[#818cf8]" />
             Career Path & Achievements
           </h1>
-          <p className="text-sm text-zinc-500 mt-0.5">Your growth journey at Envicion Studios</p>
+          <p className="text-sm text-zinc-500 mt-0.5">Your growth journey at Envicion Studios · <span className="text-zinc-400">{getTrackName(careerData.role)} Track</span></p>
         </div>
         <p className="text-xs text-zinc-600">
           Logged in as <span className="text-zinc-400">{session?.user?.name}</span>

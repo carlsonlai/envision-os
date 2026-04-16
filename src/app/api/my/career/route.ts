@@ -4,15 +4,29 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { Role } from '@prisma/client'
 
-// Maps Prisma Role → career ladder level (1–6)
+/**
+ * Maps Prisma Role → career ladder level (1–6).
+ * Each role is mapped to where they sit in THEIR OWN ladder.
+ *
+ * Design ladder:   Junior Designer(1) → Graphic Designer(2) → Senior GD(3) → AD(4) → Sr AD(5) → CD(6)
+ * CS ladder:       Junior CS(1) → CS Exec(2) → Senior CS(3) → CS Manager(4) → Sr CS Mgr(5) → Head CS(6)
+ * Sales ladder:    Sales Exec(1) → Sr Sales Exec(2) → Sales Lead(3) → Sales Mgr(4) → Sr Sales Mgr(5) → Head Sales(6)
+ * Multimedia:      Jr Multimedia(1) → Multimedia(2) → Sr Multimedia(3) → Multimedia Lead(4) → Sr AD(5) → CD(6)
+ * Marketing:       DM Exec(1) → Sr DM Exec(2) → Specialist(3) → Manager(4) → Sr Manager(5) → Head DM(6)
+ * 3D:              Jr 3D(1) → 3D(2) → Sr 3D(3) → 3D Lead(4) → Sr AD(5) → CD(6)
+ */
 const ROLE_TO_LEVEL: Partial<Record<Role, number>> = {
+  // Design ladder
   [Role.JUNIOR_DESIGNER]: 1,
   [Role.GRAPHIC_DESIGNER]: 2,
-  [Role.DESIGNER_3D]: 3,
   [Role.JUNIOR_ART_DIRECTOR]: 3,
-  [Role.DIGITAL_MARKETING]: 3,
   [Role.SENIOR_ART_DIRECTOR]: 5,
   [Role.CREATIVE_DIRECTOR]: 6,
+  // Specialist roles — start at level 2 in their own ladders
+  [Role.DESIGNER_3D]: 2,
+  [Role.MULTIMEDIA_DESIGNER]: 2,
+  [Role.DIGITAL_MARKETING]: 2,
+  // CS & Sales — start at level 2 in their own ladders
   [Role.SALES]: 2,
   [Role.CLIENT_SERVICING]: 2,
   [Role.ADMIN]: 4,
