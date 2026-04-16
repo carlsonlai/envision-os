@@ -15,6 +15,8 @@ export interface DeliverableWithProject {
   projectCode: string
   clientName: string
   assignedDesignerName: string | null
+  assignedDesignerRole: string | null
+  paymentStatus: string | null
 }
 
 export interface DesignerWorkloadDetail {
@@ -125,6 +127,7 @@ export async function getTeamCapacity(date: Date): Promise<TeamCapacity[]> {
           Role.GRAPHIC_DESIGNER,
           Role.JUNIOR_DESIGNER,
           Role.DESIGNER_3D,
+          Role.MULTIMEDIA_DESIGNER,
           Role.DIGITAL_MARKETING,
           Role.SENIOR_ART_DIRECTOR,
         ],
@@ -189,6 +192,7 @@ export async function autoAssign(deliverableItem: DeliverableItem): Promise<User
     Role.GRAPHIC_DESIGNER,
     Role.JUNIOR_DESIGNER,
     Role.DESIGNER_3D,
+    Role.MULTIMEDIA_DESIGNER,
     Role.DIGITAL_MARKETING,
   ]
 
@@ -433,12 +437,23 @@ export async function getCompanyTimeline(): Promise<CompanyTimeline> {
       client: { select: { companyName: true } },
       deliverableItems: {
         include: {
-          assignedDesigner: { select: { name: true } },
+          assignedDesigner: { select: { name: true, role: true } },
         },
       },
     },
     orderBy: { deadline: 'asc' },
   })
+
+  // Supplementary: fetch paymentStatus for all deliverable items (raw column not in Prisma model)
+  const allItemIds = activeProjects.flatMap(p => p.deliverableItems.map(i => i.id))
+  const paymentMap = new Map<string, string | null>()
+  if (allItemIds.length > 0) {
+    const payRows = await prisma.$queryRawUnsafe<{ id: string; paymentStatus: string | null }[]>(
+      `SELECT id, "paymentStatus" FROM "deliverable_items" WHERE id IN (${allItemIds.map((_, i) => `$${i + 1}`).join(', ')})`,
+      ...allItemIds
+    ).catch(() => [] as { id: string; paymentStatus: string | null }[])
+    for (const row of payRows) paymentMap.set(row.id, row.paymentStatus)
+  }
 
   const projectTimelines: ProjectTimeline[] = activeProjects.map((project) => {
     const deliverables: DeliverableWithProject[] = project.deliverableItems.map((item) => ({
@@ -451,6 +466,8 @@ export async function getCompanyTimeline(): Promise<CompanyTimeline> {
       projectCode: project.code,
       clientName: project.client?.companyName ?? 'Unknown',
       assignedDesignerName: item.assignedDesigner?.name ?? null,
+      assignedDesignerRole: item.assignedDesigner?.role ?? null,
+      paymentStatus: paymentMap.get(item.id) ?? null,
     }))
 
     const total = deliverables.length
@@ -480,6 +497,7 @@ export async function getCompanyTimeline(): Promise<CompanyTimeline> {
     Role.GRAPHIC_DESIGNER,
     Role.JUNIOR_DESIGNER,
     Role.DESIGNER_3D,
+    Role.MULTIMEDIA_DESIGNER,
     Role.DIGITAL_MARKETING,
     Role.SENIOR_ART_DIRECTOR,
     Role.CREATIVE_DIRECTOR,
@@ -500,9 +518,20 @@ export async function getCompanyTimeline(): Promise<CompanyTimeline> {
       project: {
         include: { client: { select: { companyName: true } } },
       },
-      assignedDesigner: { select: { name: true } },
+      assignedDesigner: { select: { name: true, role: true } },
     },
   })
+
+  // Fetch paymentStatus for assigned tasks
+  const assignedItemIds = allAssignedTasks.map(t => t.id)
+  const assignedPayMap = new Map<string, string | null>()
+  if (assignedItemIds.length > 0) {
+    const payRows2 = await prisma.$queryRawUnsafe<{ id: string; paymentStatus: string | null }[]>(
+      `SELECT id, "paymentStatus" FROM "deliverable_items" WHERE id IN (${assignedItemIds.map((_, i) => `$${i + 1}`).join(', ')})`,
+      ...assignedItemIds
+    ).catch(() => [] as { id: string; paymentStatus: string | null }[])
+    for (const row of payRows2) assignedPayMap.set(row.id, row.paymentStatus)
+  }
 
   // Batch-load today's workload slots for ALL designers in ONE query
   const todayOnly = new Date(now.toISOString().split('T')[0])
@@ -525,6 +554,8 @@ export async function getCompanyTimeline(): Promise<CompanyTimeline> {
         projectCode: t.project.code,
         clientName: t.project.client?.companyName ?? 'Unknown',
         assignedDesignerName: designer.name,
+        assignedDesignerRole: designer.role,
+        paymentStatus: assignedPayMap.get(t.id) ?? null,
       }))
 
     const totalEstimatedMinutes = tasks.reduce(
@@ -875,7 +906,7 @@ export async function handleLeaveApproval(userId: string, startDate: Date, endDa
 function getRequiredRoleForItemType(itemType: ItemType): Role[] | null {
   const roleMap: Partial<Record<ItemType, Role[]>> = {
     [ItemType.THREE_D]: [Role.DESIGNER_3D, Role.SENIOR_ART_DIRECTOR],
-    [ItemType.VIDEO]: [Role.DIGITAL_MARKETING, Role.SENIOR_ART_DIRECTOR],
+    [ItemType.VIDEO]: [Role.MULTIMEDIA_DESIGNER, Role.DIGITAL_MARKETING, Role.SENIOR_ART_DIRECTOR],
     [ItemType.SOCIAL]: [Role.DIGITAL_MARKETING, Role.GRAPHIC_DESIGNER, Role.JUNIOR_DESIGNER],
   }
   return roleMap[itemType] ?? null

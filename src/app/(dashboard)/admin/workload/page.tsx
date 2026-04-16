@@ -34,6 +34,8 @@ interface DeliverableItem {
   projectCode: string
   clientName: string
   assignedDesignerName: string | null
+  assignedDesignerRole: string | null
+  paymentStatus: string | null
 }
 
 interface DesignerWorkload {
@@ -78,9 +80,20 @@ const ROLE_LABELS: Record<string, string> = {
   GRAPHIC_DESIGNER: 'Graphic Designer',
   JUNIOR_DESIGNER: 'Junior Designer',
   DESIGNER_3D: '3D Designer',
+  MULTIMEDIA_DESIGNER: 'Multimedia',
   DIGITAL_MARKETING: 'Digital Marketing',
   SENIOR_ART_DIRECTOR: 'Senior AD',
   CREATIVE_DIRECTOR: 'Creative Director',
+  CLIENT_SERVICING: 'Client Services',
+}
+
+const PAYMENT_STATUS_STYLES: Record<string, { label: string; cls: string }> = {
+  HALF_PAID:  { label: 'Half Paid', cls: 'text-lime-400 bg-lime-500/10 border-lime-500/20' },
+  FULL_PAID:  { label: 'Full Paid', cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+  PAID:       { label: 'Paid',      cls: 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' },
+  BILLED:     { label: 'Billed',    cls: 'text-violet-400 bg-violet-500/10 border-violet-500/20' },
+  STARTED:    { label: 'Started',   cls: 'text-blue-400 bg-blue-500/10 border-blue-500/20' },
+  PENDING:    { label: 'Pending',   cls: 'text-amber-400 bg-amber-500/10 border-amber-500/20' },
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -361,6 +374,18 @@ function ProjectCard({ project }: { project: ProjectTimeline }) {
   const [expanded, setExpanded] = useState(false)
   const pct = project.completionPercent
 
+  // Build role assignment summary for this project
+  const roleAssignments = new Map<string, string[]>()
+  for (const d of project.deliverables) {
+    if (d.assignedDesignerRole && d.assignedDesignerName) {
+      const role = ROLE_LABELS[d.assignedDesignerRole] ?? d.assignedDesignerRole
+      if (!roleAssignments.has(role)) roleAssignments.set(role, [])
+      const names = roleAssignments.get(role)!
+      if (!names.includes(d.assignedDesignerName)) names.push(d.assignedDesignerName)
+    }
+  }
+  const unassignedCount = project.deliverables.filter(d => !d.assignedDesignerName).length
+
   return (
     <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 overflow-hidden">
       <div className="p-4">
@@ -403,6 +428,26 @@ function ProjectCard({ project }: { project: ProjectTimeline }) {
           </div>
         </div>
 
+        {/* Role assignment summary */}
+        {(roleAssignments.size > 0 || unassignedCount > 0) && (
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {Array.from(roleAssignments.entries()).map(([role, names]) => (
+              <span
+                key={role}
+                className="inline-flex items-center gap-1 text-[10px] font-medium rounded px-1.5 py-0.5 bg-[#6366f1]/10 text-[#818cf8] border border-[#6366f1]/20"
+                title={names.join(', ')}
+              >
+                {role}: {names.join(', ')}
+              </span>
+            ))}
+            {unassignedCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-medium rounded px-1.5 py-0.5 bg-orange-500/10 text-orange-400 border border-orange-500/20">
+                {unassignedCount} unassigned
+              </span>
+            )}
+          </div>
+        )}
+
         <div className="flex items-center justify-between text-xs text-zinc-500">
           <span>{project.deliverables.length} deliverable{project.deliverables.length !== 1 ? 's' : ''}</span>
           {project.deadline && (
@@ -431,26 +476,45 @@ function ProjectCard({ project }: { project: ProjectTimeline }) {
 
           {expanded && (
             <div className="border-t border-zinc-800/60 divide-y divide-zinc-800/40">
-              {project.deliverables.map((d) => (
-                <div key={d.id} className="flex items-center gap-2.5 px-4 py-2">
-                  <span className="flex-shrink-0 text-[10px] font-medium text-zinc-600 bg-zinc-800 rounded px-1 py-0.5">
-                    {ITEM_TYPE_LABELS[d.itemType] ?? d.itemType}
-                  </span>
-                  <span className="flex-1 min-w-0 text-xs text-zinc-400 truncate">
-                    {d.description ?? d.itemType}
-                  </span>
-                  <span className="flex-shrink-0 text-xs text-zinc-600">
-                    {d.assignedDesignerName ?? <span className="text-orange-400">Unassigned</span>}
-                  </span>
-                  <span
-                    className={`flex-shrink-0 text-[10px] font-medium ${
-                      STATUS_COLORS[d.status] ?? 'text-zinc-500'
-                    }`}
-                  >
-                    {d.status.replace(/_/g, ' ')}
-                  </span>
-                </div>
-              ))}
+              {project.deliverables.map((d) => {
+                const payStyle = d.paymentStatus ? PAYMENT_STATUS_STYLES[d.paymentStatus] : null
+                return (
+                  <div key={d.id} className="px-4 py-2.5 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="flex-shrink-0 text-[10px] font-medium text-zinc-600 bg-zinc-800 rounded px-1 py-0.5">
+                        {ITEM_TYPE_LABELS[d.itemType] ?? d.itemType}
+                      </span>
+                      <span className="flex-1 min-w-0 text-xs text-zinc-400 truncate">
+                        {d.description ?? d.itemType}
+                      </span>
+                      <span
+                        className={`flex-shrink-0 text-[10px] font-medium ${
+                          STATUS_COLORS[d.status] ?? 'text-zinc-500'
+                        }`}
+                      >
+                        {d.status.replace(/_/g, ' ')}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 pl-0.5">
+                      {d.assignedDesignerName ? (
+                        <span className="text-[10px] text-zinc-500">
+                          <span className="text-[#818cf8]">{d.assignedDesignerName}</span>
+                          {d.assignedDesignerRole && (
+                            <span className="text-zinc-600"> · {ROLE_LABELS[d.assignedDesignerRole] ?? d.assignedDesignerRole}</span>
+                          )}
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-orange-400">Unassigned</span>
+                      )}
+                      {payStyle && (
+                        <span className={`text-[10px] font-medium rounded px-1 py-0.5 border ${payStyle.cls}`}>
+                          {payStyle.label}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           )}
         </>
