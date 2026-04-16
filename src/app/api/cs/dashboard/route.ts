@@ -19,12 +19,17 @@ export async function GET(): Promise<NextResponse> {
   }
 
   const userId = session.user.id
+  const isAdmin = session.user.role === 'ADMIN' || session.user.role === 'CREATIVE_DIRECTOR'
 
   try {
+    // Show projects assigned to this CS user, OR all projects if user is admin/CD,
+    // OR all projects that have no CS assigned (so CS can see unassigned work too)
     const projects = await prisma.project.findMany({
       where: {
-        assignedCSId: userId,
         status: { in: ['PROJECTED', 'ONGOING', 'COMPLETED', 'BILLED'] },
+        ...(isAdmin
+          ? {}
+          : { OR: [{ assignedCSId: userId }, { assignedCSId: null }] }),
       },
       select: {
         id: true,
