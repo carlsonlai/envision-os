@@ -81,6 +81,7 @@ export async function runDemandIntel(
     triggerKind: opts.triggerKind,
     triggerRef: opts.triggerRef,
   })
+  if (run.skipped) return { runId: run.id, scanned: 0, changed: 0 }
 
   try {
     const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)

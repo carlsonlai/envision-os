@@ -20,6 +20,7 @@ export async function runDeliveryAgent(
   opts: { triggerKind: 'cron' | 'event' | 'manual'; triggerRef?: string } = { triggerKind: 'manual' },
 ): Promise<{ runId: string; delivered: number; flagged: number }> {
   const run = await startRun({ agent: 'DELIVERY_AGENT', triggerKind: opts.triggerKind, triggerRef: opts.triggerRef })
+  if (run.skipped) return { runId: run.id, delivered: 0, flagged: 0 }
 
   try {
     // Find active projects with deliverables

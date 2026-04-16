@@ -21,6 +21,7 @@ export async function runQaAgent(
   opts: { triggerKind: 'cron' | 'event' | 'manual'; triggerRef?: string } = { triggerKind: 'manual' },
 ): Promise<{ runId: string; checksCreated: number; flagged: number }> {
   const run = await startRun({ agent: 'QA_AGENT', triggerKind: opts.triggerKind, triggerRef: opts.triggerRef })
+  if (run.skipped) return { runId: run.id, checksCreated: 0, flagged: 0 }
 
   try {
     // ── Step 1: Items needing QC check ────────────────────────────────────

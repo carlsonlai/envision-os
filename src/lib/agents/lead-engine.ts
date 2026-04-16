@@ -21,6 +21,7 @@ export async function runLeadEngine(
   opts: { triggerKind: 'cron' | 'event' | 'manual'; triggerRef?: string } = { triggerKind: 'manual' },
 ): Promise<{ runId: string; routed: number; nurtured: number }> {
   const run = await startRun({ agent: 'LEAD_ENGINE', triggerKind: opts.triggerKind, triggerRef: opts.triggerRef })
+  if (run.skipped) return { runId: run.id, routed: 0, nurtured: 0 }
 
   try {
     // ── Step 1: Route unassigned HOT/WARM leads ──────────────────────────────

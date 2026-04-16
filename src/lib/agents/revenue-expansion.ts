@@ -33,6 +33,7 @@ export async function runRevenueExpansion(
   opts: { triggerKind: 'cron' | 'event' | 'manual'; triggerRef?: string } = { triggerKind: 'manual' },
 ): Promise<{ runId: string; upsells: number; renewals: number; tierBumps: number }> {
   const run = await startRun({ agent: 'REVENUE_EXPANSION', triggerKind: opts.triggerKind, triggerRef: opts.triggerRef })
+  if (run.skipped) return { runId: run.id, upsells: 0, renewals: 0, tierBumps: 0 }
 
   try {
     const clients = await prisma.client.findMany({

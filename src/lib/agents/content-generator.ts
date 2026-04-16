@@ -64,6 +64,7 @@ export async function runContentGenerator(
   opts: { triggerKind: 'cron' | 'event' | 'manual'; triggerRef?: string } = { triggerKind: 'manual' },
 ): Promise<{ runId: string; generated: number }> {
   const run = await startRun({ agent: 'CONTENT_GENERATOR', triggerKind: opts.triggerKind, triggerRef: opts.triggerRef })
+  if (run.skipped) return { runId: run.id, generated: 0 }
 
   try {
     const drafts = await prisma.adCampaign.findMany({

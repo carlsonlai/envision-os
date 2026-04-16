@@ -20,6 +20,7 @@ export async function runPaymentAgent(
   opts: { triggerKind: 'cron' | 'event' | 'manual'; triggerRef?: string } = { triggerKind: 'manual' },
 ): Promise<{ runId: string; flagged: number; escalated: number }> {
   const run = await startRun({ agent: 'PAYMENT_AGENT', triggerKind: opts.triggerKind, triggerRef: opts.triggerRef })
+  if (run.skipped) return { runId: run.id, flagged: 0, escalated: 0 }
 
   try {
     const now = new Date()

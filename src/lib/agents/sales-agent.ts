@@ -38,6 +38,7 @@ export async function runSalesAgent(
   opts: { triggerKind: 'cron' | 'event' | 'manual'; triggerRef?: string } = { triggerKind: 'manual' },
 ): Promise<{ runId: string; drafted: number; flagged: number }> {
   const run = await startRun({ agent: 'SALES_AGENT', triggerKind: opts.triggerKind, triggerRef: opts.triggerRef })
+  if (run.skipped) return { runId: run.id, drafted: 0, flagged: 0 }
 
   try {
     // ── Step 1: Draft proposals for qualified leads with none ─────────────

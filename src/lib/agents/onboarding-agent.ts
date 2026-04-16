@@ -21,6 +21,7 @@ export async function runOnboardingAgent(
   opts: { triggerKind: 'cron' | 'event' | 'manual'; triggerRef?: string } = { triggerKind: 'manual' },
 ): Promise<{ runId: string; onboarded: number; flaggedForCS: number }> {
   const run = await startRun({ agent: 'ONBOARDING_AGENT', triggerKind: opts.triggerKind, triggerRef: opts.triggerRef })
+  if (run.skipped) return { runId: run.id, onboarded: 0, flaggedForCS: 0 }
 
   try {
     // ── Step 1: Fresh clients with no projects → ensure tier ──────────────

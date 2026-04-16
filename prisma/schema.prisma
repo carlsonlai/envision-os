@@ -674,6 +674,8 @@ model AdCampaign {
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
 
+  contentPerformance ContentPerformance[]
+
   @@map("ad_campaigns")
 }
 
@@ -814,6 +816,8 @@ model Asset {
   tags           String[]   @default([])
   createdAt      DateTime   @default(now())
 
+  contentPerformance ContentPerformance[]
+
   @@index([uploaderId])
   @@index([platform])
   @@index([createdAt])
@@ -863,6 +867,7 @@ model AgentConfig {
   autonomyEnabled     Boolean    @default(true)   // false = all decisions require approval
   confidenceThreshold Float      @default(0.75)   // 0..1 — below this → PENDING_APPROVAL
   valueCapCents       Int?                         // decisions affecting > cap → PENDING_APPROVAL (null = no cap)
+  rateCapPerHour      Int?                         // max decisions per rolling hour (null = default 60)
   pausedReason        String?
   pausedAt            DateTime?
   pausedByUserId      String?
@@ -917,4 +922,86 @@ model AgentDecision {
   @@index([status])
   @@index([entityType, entityId])
   @@map("agent_decisions")
+}
+
+// ─── Roadmap Phase 4: System Intelligence & Failsafe ─────────────────
+
+/// Tracks performance metrics for every published content asset over time
+model ContentPerformance {
+  id             String   @id @default(cuid())
+  adCampaignId   String?
+  assetId        String?
+  platform       String                           // "meta" | "tiktok" | "linkedin" | "google"
+  status         String   @default("testing")     // "testing" | "active" | "paused" | "killed" | "scaled"
+  impressions    Int      @default(0)
+  clicks         Int      @default(0)
+  conversions    Int      @default(0)
+  spendCents     Int      @default(0)
+  revenueCents   Int      @default(0)
+  ctr            Float?                           // clicks / impressions
+  cpl            Float?                           // spend / conversions (cost per lead)
+  conversionRate Float?                           // conversions / clicks
+  roas           Float?                           // revenue / spend
+  firstPublished DateTime @default(now())
+  lastSynced     DateTime @default(now())
+  meta           Json?                            // platform-specific extra data
+
+  adCampaign AdCampaign? @relation(fields: [adCampaignId], references: [id], onDelete: SetNull)
+  asset      Asset?      @relation(fields: [assetId], references: [id], onDelete: SetNull)
+
+  @@index([adCampaignId])
+  @@index([assetId])
+  @@index([platform, status])
+  @@index([lastSynced])
+  @@map("content_performance")
+}
+
+/// Stores demand signals captured by Agent 1 (Demand Intelligence)
+model KeywordSignal {
+  id         String   @id @default(cuid())
+  keyword    String
+  source     String                              // "google_trends" | "meta_ad_library" | "tiktok_creative" | "manual"
+  region     String   @default("MY")             // ISO 3166-1 alpha-2
+  score      Int                                 // 0–100 relevance/trending score
+  volume     Int?                                // estimated monthly search volume
+  trend      String?                             // "rising" | "stable" | "declining"
+  category   String?                             // industry vertical tag
+  capturedAt DateTime @default(now())
+  processedByAgentAt DateTime?                   // when Agent 2 consumed this signal
+  meta       Json?                               // raw API payload
+
+  @@unique([keyword, source, region, capturedAt])
+  @@index([score])
+  @@index([capturedAt])
+  @@index([source, region])
+  @@map("keyword_signals")
+}
+
+enum FailsafeSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+/// Logs every time a failsafe rule fires (rate cap, value cap, anomaly, etc.)
+model FailsafeIncident {
+  id            String           @id @default(cuid())
+  agent         AgentKind
+  severity      FailsafeSeverity @default(MEDIUM)
+  rule          String                             // "rate_cap" | "value_cap" | "confidence_floor" | "anomaly" | "manual_pause"
+  description   String                             // human-readable explanation
+  triggerValue  String?                            // the value that tripped the rule (e.g. "47 actions/hr")
+  thresholdValue String?                           // the configured limit (e.g. "30 actions/hr")
+  agentRunId    String?
+  decisionId    String?
+  resolvedAt    DateTime?
+  resolvedBy    String?                            // userId of admin who resolved
+  resolvedNote  String?
+  createdAt     DateTime         @default(now())
+
+  @@index([agent, createdAt])
+  @@index([severity])
+  @@index([resolvedAt])
+  @@map("failsafe_incidents")
 }

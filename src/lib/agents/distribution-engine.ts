@@ -21,6 +21,7 @@ export async function runDistributionEngine(
   opts: { triggerKind: 'cron' | 'event' | 'manual'; triggerRef?: string } = { triggerKind: 'manual' },
 ): Promise<{ runId: string; activated: number; skipped: number }> {
   const run = await startRun({ agent: 'DISTRIBUTION_ENGINE', triggerKind: opts.triggerKind, triggerRef: opts.triggerRef })
+  if (run.skipped) return { runId: run.id, activated: 0, skipped: 0 }
 
   try {
     const campaigns = await prisma.adCampaign.findMany({

@@ -4,8 +4,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import {
-  Activity, AlertTriangle, Clock, Cpu, Loader2,
-  Pause, Play, RefreshCw, ShieldCheck,
+  Activity, AlertTriangle, Cpu, Loader2,
+  Pause, Play, RefreshCw, Shield, ShieldCheck, Siren,
 } from 'lucide-react'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
@@ -73,6 +73,22 @@ interface AgentsPayload {
   recentDecisions: AgentDecision[]
 }
 
+type FailsafeSeverity = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+
+interface FailsafeIncident {
+  id: string
+  agent: AgentKind
+  severity: FailsafeSeverity
+  rule: string
+  description: string
+  triggerValue: string | null
+  thresholdValue: string | null
+  resolvedAt: string | null
+  resolvedBy: string | null
+  resolvedNote: string | null
+  createdAt: string
+}
+
 // ─── Static metadata for the 12-agent grid ─────────────────────────────────────
 
 const AGENT_META: Record<AgentKind, { label: string; tagline: string }> = {
@@ -100,6 +116,13 @@ const STATUS_BADGE: Record<AgentDecisionStatus, string> = {
   SKIPPED:          'bg-zinc-500/15   text-zinc-400   border-zinc-500/30',
 }
 
+const SEVERITY_BADGE: Record<FailsafeSeverity, string> = {
+  LOW:      'bg-zinc-500/15   text-zinc-300   border-zinc-500/30',
+  MEDIUM:   'bg-amber-500/15  text-amber-300  border-amber-500/30',
+  HIGH:     'bg-orange-500/15 text-orange-300 border-orange-500/30',
+  CRITICAL: 'bg-red-500/15    text-red-400    border-red-500/30',
+}
+
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export default function AgentControlPage() {
@@ -107,6 +130,7 @@ export default function AgentControlPage() {
   const router = useRouter()
 
   const [data, setData] = useState<AgentsPayload | null>(null)
+  const [incidents, setIncidents] = useState<FailsafeIncident[]>([])
   const [loading, setLoading] = useState(true)
   const [busyAgent, setBusyAgent] = useState<AgentKind | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -122,10 +146,17 @@ export default function AgentControlPage() {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/admin/agents', { cache: 'no-store' })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json: AgentsPayload = await res.json()
+      const [agentsRes, incidentsRes] = await Promise.all([
+        fetch('/api/admin/agents', { cache: 'no-store' }),
+        fetch('/api/admin/agents/incidents?limit=30', { cache: 'no-store' }),
+      ])
+      if (!agentsRes.ok) throw new Error(`HTTP ${agentsRes.status}`)
+      const json: AgentsPayload = await agentsRes.json()
       setData(json)
+      if (incidentsRes.ok) {
+        const ij = await incidentsRes.json()
+        setIncidents(ij.data ?? [])
+      }
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to load')
     } finally {
@@ -172,6 +203,7 @@ export default function AgentControlPage() {
   }, [load])
 
   const [busyDecision, setBusyDecision] = useState<string | null>(null)
+  const [busyIncident, setBusyIncident] = useState<string | null>(null)
 
   const reviewDecision = useCallback(async (id: string, action: 'approve' | 'reject') => {
     setBusyDecision(id)
@@ -190,17 +222,36 @@ export default function AgentControlPage() {
     }
   }, [load])
 
+  const resolveIncident = useCallback(async (id: string) => {
+    setBusyIncident(id)
+    try {
+      const res = await fetch(`/api/admin/agents/incidents/${id}`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ note: 'Resolved via Agent Control panel' }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      await load()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Resolve failed')
+    } finally {
+      setBusyIncident(null)
+    }
+  }, [load])
+
+  const unresolvedIncidents = useMemo(() => incidents.filter((i) => !i.resolvedAt), [incidents])
+
   const totals = useMemo(() => {
-    if (!data) return { live: 0, paused: 0, pending: 0, planned: 0 }
-    let live = 0, paused = 0, pending = 0, planned = 0
+    if (!data) return { live: 0, paused: 0, pending: 0, incidents: 0 }
+    let live = 0, paused = 0, pending = 0
     for (const a of data.agents) {
-      if (!a.implemented) { planned++; continue }
+      if (!a.implemented) continue
       if (a.config?.enabled === false) paused++
       else live++
       pending += a.pendingCount
     }
-    return { live, paused, pending, planned }
-  }, [data])
+    return { live, paused, pending, incidents: unresolvedIncidents.length }
+  }, [data, unresolvedIncidents])
 
   if (status === 'loading' || loading) {
     return (
@@ -240,10 +291,10 @@ export default function AgentControlPage() {
 
       {/* Summary row */}
       <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <SummaryCard label="Live agents"   value={totals.live}    tone="emerald" icon={<Activity className="w-4 h-4" />} />
-        <SummaryCard label="Paused"        value={totals.paused}  tone="amber"   icon={<Pause className="w-4 h-4" />} />
-        <SummaryCard label="Pending review" value={totals.pending} tone="sky"    icon={<ShieldCheck className="w-4 h-4" />} />
-        <SummaryCard label="Planned (not built)" value={totals.planned} tone="zinc" icon={<Clock className="w-4 h-4" />} />
+        <SummaryCard label="Live agents"      value={totals.live}      tone="emerald" icon={<Activity className="w-4 h-4" />} />
+        <SummaryCard label="Paused"           value={totals.paused}    tone="amber"   icon={<Pause className="w-4 h-4" />} />
+        <SummaryCard label="Pending review"   value={totals.pending}   tone="sky"     icon={<ShieldCheck className="w-4 h-4" />} />
+        <SummaryCard label="Failsafe alerts"  value={totals.incidents} tone={totals.incidents > 0 ? 'amber' : 'zinc'} icon={<Shield className="w-4 h-4" />} />
       </section>
 
       {/* Agent grid */}
@@ -258,6 +309,53 @@ export default function AgentControlPage() {
           />
         ))}
       </section>
+
+      {/* Failsafe incidents */}
+      {incidents.length > 0 && (
+        <section className="rounded-xl border border-zinc-800 bg-zinc-900/50">
+          <header className="flex items-center justify-between px-4 py-3 border-b border-zinc-800">
+            <h2 className="text-sm font-medium text-white flex items-center gap-2">
+              <Siren className="w-4 h-4 text-amber-400" /> Failsafe Incidents
+            </h2>
+            <span className="text-xs text-zinc-500">{unresolvedIncidents.length} unresolved / {incidents.length} total</span>
+          </header>
+          <ul className="divide-y divide-zinc-800">
+            {incidents.map((inc) => (
+              <li key={inc.id} className="px-4 py-3 flex items-start justify-between gap-4 text-sm">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className={`text-[10px] px-2 py-0.5 rounded border ${SEVERITY_BADGE[inc.severity]}`}>
+                      {inc.severity}
+                    </span>
+                    <span className="text-zinc-300 font-medium">{AGENT_META[inc.agent]?.label ?? inc.agent}</span>
+                    <span className="text-zinc-500">·</span>
+                    <span className="text-zinc-400">{inc.rule}</span>
+                    {inc.resolvedAt && (
+                      <span className="text-emerald-400 text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 border border-emerald-500/20">RESOLVED</span>
+                    )}
+                  </div>
+                  <p className="text-zinc-400 mt-1">{inc.description}</p>
+                  {inc.triggerValue && inc.thresholdValue && (
+                    <p className="text-zinc-500 text-xs mt-0.5">Actual: {inc.triggerValue} · Limit: {inc.thresholdValue}</p>
+                  )}
+                </div>
+                <div className="text-right text-xs text-zinc-500 shrink-0 flex flex-col items-end gap-1">
+                  <div>{new Date(inc.createdAt).toLocaleString()}</div>
+                  {!inc.resolvedAt && (
+                    <button
+                      disabled={busyIncident === inc.id}
+                      onClick={() => resolveIncident(inc.id)}
+                      className="mt-1 px-2 py-0.5 rounded bg-emerald-600/80 hover:bg-emerald-600 text-white text-[10px] disabled:opacity-50"
+                    >
+                      {busyIncident === inc.id ? '…' : 'Resolve'}
+                    </button>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       {/* Decision log */}
       <section className="rounded-xl border border-zinc-800 bg-zinc-900/50">

@@ -28,6 +28,7 @@ export async function runPmAi(
   opts: { triggerKind: 'cron' | 'event' | 'manual'; triggerRef?: string } = { triggerKind: 'manual' },
 ): Promise<{ runId: string; rebalanced: number; deadlineFlagged: number }> {
   const run = await startRun({ agent: 'PM_AI', triggerKind: opts.triggerKind, triggerRef: opts.triggerRef })
+  if (run.skipped) return { runId: run.id, rebalanced: 0, deadlineFlagged: 0 }
 
   try {
     // Load all designers

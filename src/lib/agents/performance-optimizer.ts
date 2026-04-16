@@ -36,6 +36,7 @@ export async function runPerformanceOptimizer(
   opts: { triggerKind: 'cron' | 'event' | 'manual'; triggerRef?: string } = { triggerKind: 'manual' },
 ): Promise<{ runId: string; reviewed: number; paused: number }> {
   const run = await startRun({ agent: 'PERFORMANCE_OPTIMIZER', triggerKind: opts.triggerKind, triggerRef: opts.triggerRef })
+  if (run.skipped) return { runId: run.id, reviewed: 0, paused: 0 }
 
   try {
     const campaigns = await prisma.adCampaign.findMany({
