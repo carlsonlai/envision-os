@@ -664,6 +664,8 @@ export async function getDesignerWorkload(userId: string): Promise<DesignerWorkl
     projectCode: t.project.code,
     clientName: t.project.client?.companyName ?? 'Unknown',
     assignedDesignerName: designer.name,
+    assignedDesignerRole: designer.role ?? null,
+    paymentStatus: null,
   }))
 
   const totalEstimatedMinutes = mappedTasks.reduce(

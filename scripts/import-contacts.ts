@@ -66,7 +66,7 @@ function parseCSV(text: string): Row[] {
   if (field.length || cur.length) { cur.push(field); rows.push(cur) }
   const [header, ...data] = rows.filter(r => r.length > 1 || (r.length === 1 && r[0] !== ''))
   return data.map(r => {
-    const o: any = {}
+    const o: Record<string, string> = {}
     header.forEach((h, i) => { o[h] = (r[i] ?? '').trim() })
     return o as Row
   })
@@ -91,7 +91,7 @@ async function main() {
 
   const byScore: Record<string, number> = {}
   const byStatus: Record<string, number> = {}
-  let created = 0, updated = 0, skipped = 0, invalid = 0
+  let created = 0, updated = 0, invalid = 0
 
   for (const r of rows) {
     if (!r.email || !r.name) { invalid++; continue }
