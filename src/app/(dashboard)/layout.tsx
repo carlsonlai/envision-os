@@ -154,13 +154,29 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
   ],
 
   // ─── CLIENT SERVICING ─────────────────────────────────────────────────────
+  // CS is the bridge between clients and creative — needs full visibility
   CLIENT_SERVICING: [
     {
+      label: 'Client Management',
       items: [
-        { href: '/cs',           label: 'Projects',            icon: Briefcase, exact: true },
-        { href: '/cs/job-track', label: 'Job Track',           icon: ListTodo },
+        { href: '/cs',           label: 'My Projects',         icon: Briefcase, exact: true },
+        { href: '/admin/projects', label: 'All Projects',      icon: FolderKanban },
+        { href: '/cs/job-track', label: 'Job Track & Billing', icon: ListTodo },
         { href: '/crm',          label: 'CRM & Client Health', icon: Heart },
-        { href: '/kpi',          label: 'My KPI',              icon: BarChart3 },
+      ],
+    },
+    {
+      label: 'Creative Team',
+      items: [
+        { href: '/admin/workload', label: 'Team Workload',     icon: Activity },
+        { href: '/designer',       label: 'Designer Progress',  icon: Palette },
+        { href: '/calendar',       label: 'Calendar',           icon: CalendarDays },
+      ],
+    },
+    {
+      label: 'Performance',
+      items: [
+        { href: '/kpi',            label: 'My KPI',            icon: BarChart3 },
       ],
     },
     PERSONAL_GROUP,
