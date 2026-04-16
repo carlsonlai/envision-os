@@ -819,3 +819,102 @@ model Asset {
   @@index([createdAt])
   @@map("assets")
 }
+
+// ─── AUTONOMOUS AGENT LAYER (Phase 1 — 2026-04-16) ──────────────────────────
+// Event-driven agents orchestrated by Inngest. All agent decisions are logged,
+// gated by guardrails (value caps, confidence thresholds), and can be paused
+// globally or per-agent via AgentConfig.
+
+enum AgentKind {
+  DEMAND_INTEL
+  CONTENT_GENERATOR
+  DISTRIBUTION_ENGINE
+  PERFORMANCE_OPTIMIZER
+  LEAD_ENGINE
+  SALES_AGENT
+  PAYMENT_AGENT
+  ONBOARDING_AGENT
+  PM_AI
+  QA_AGENT
+  DELIVERY_AGENT
+  REVENUE_EXPANSION
+}
+
+enum AgentDecisionStatus {
+  AUTO_EXECUTED      // agent acted on its own (auto-with-override)
+  PENDING_APPROVAL   // below confidence threshold or above value cap — waits
+  APPROVED           // human approved a PENDING decision
+  REJECTED           // human rejected
+  OVERRIDDEN         // human reversed an AUTO_EXECUTED decision after the fact
+  FAILED             // execution errored
+  SKIPPED            // guardrail blocked (e.g., agent paused)
+}
+
+enum AgentRunStatus {
+  STARTED
+  COMPLETED
+  FAILED
+}
+
+model AgentConfig {
+  id                  String     @id @default(cuid())
+  agent               AgentKind  @unique
+  enabled             Boolean    @default(true)
+  autonomyEnabled     Boolean    @default(true)   // false = all decisions require approval
+  confidenceThreshold Float      @default(0.75)   // 0..1 — below this → PENDING_APPROVAL
+  valueCapCents       Int?                         // decisions affecting > cap → PENDING_APPROVAL (null = no cap)
+  pausedReason        String?
+  pausedAt            DateTime?
+  pausedByUserId      String?
+  updatedAt           DateTime   @updatedAt
+
+  @@map("agent_configs")
+}
+
+model AgentRun {
+  id          String          @id @default(cuid())
+  agent       AgentKind
+  triggerKind String                              // "cron" | "event" | "manual" | "backfill"
+  triggerRef  String?                             // inngest event id, cron expr, etc.
+  status      AgentRunStatus  @default(STARTED)
+  startedAt   DateTime        @default(now())
+  finishedAt  DateTime?
+  durationMs  Int?
+  tokensUsed  Int?
+  costCents   Int?
+  error       String?
+  summary     String?                             // human-readable one-liner
+  decisions   AgentDecision[]
+
+  @@index([agent, startedAt])
+  @@index([status])
+  @@map("agent_runs")
+}
+
+model AgentDecision {
+  id             String              @id @default(cuid())
+  runId          String?
+  agent          AgentKind
+  status         AgentDecisionStatus @default(AUTO_EXECUTED)
+  confidence     Float                                 // 0..1
+  action         String                                // e.g. "qualify_lead", "send_proposal", "pause_ad"
+  rationale      String                                // agent's reasoning (short)
+  entityType     String?                               // "Lead" | "Client" | "Project" | "AdCampaign" | ...
+  entityId       String?
+  inputSnapshot  Json?                                 // what the agent saw
+  proposedChange Json?                                 // the change it wants / made
+  result         Json?                                 // execution outcome (once run)
+  valueCents     Int?                                  // monetary impact for cap check
+  requiresReview Boolean             @default(false)
+  reviewedByUserId String?
+  reviewedAt     DateTime?
+  reviewNote     String?
+  createdAt      DateTime            @default(now())
+
+  run AgentRun? @relation(fields: [runId], references: [id], onDelete: SetNull)
+
+  @@index([agent, createdAt])
+  @@index([status])
+  @@index([entityType, entityId])
+  @@map("agent_decisions")
+}

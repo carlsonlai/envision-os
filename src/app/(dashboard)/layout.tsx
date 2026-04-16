@@ -36,6 +36,7 @@ import {
   Award,
   Activity,
   Library,
+  Cpu,
 } from 'lucide-react'
 
 interface NavItem {
@@ -122,6 +123,12 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
         { href: '/command/staff',       label: 'Staff Monitor', icon: Users },
         { href: '/command/reputation',  label: 'Reputation',    icon: Star },
         { href: '/command/ai-report',   label: 'AI Report',     icon: Brain },
+      ],
+    },
+    {
+      label: 'Autonomy',
+      items: [
+        { href: '/admin/agents', label: 'Agent Control', icon: Cpu, exact: true },
       ],
     },
     {
