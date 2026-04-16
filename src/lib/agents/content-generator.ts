@@ -72,11 +72,16 @@ export async function runContentGenerator(
       take: 20,
     })
 
+    // Batch-load all clients upfront (eliminates N+1 per-campaign lookup)
+    const clientIds = [...new Set(drafts.map((d) => d.clientId).filter(Boolean))] as string[]
+    const clients = clientIds.length > 0
+      ? await prisma.client.findMany({ where: { id: { in: clientIds } }, select: { id: true, companyName: true } })
+      : []
+    const clientMap = new Map(clients.map((c) => [c.id, c.companyName]))
+
     let generated = 0
     for (const campaign of drafts) {
-      const clientName = campaign.clientId
-        ? (await prisma.client.findUnique({ where: { id: campaign.clientId }, select: { companyName: true } }))?.companyName
-        : undefined
+      const clientName = campaign.clientId ? clientMap.get(campaign.clientId) : undefined
 
       const ai = await aiCopy({ ...campaign, clientName: clientName ?? undefined })
       const content = ai ?? templateCopy(campaign)

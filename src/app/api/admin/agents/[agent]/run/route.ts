@@ -6,7 +6,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { getErrorMessage, logger } from '@/lib/logger'
-import type { AgentKind } from '@prisma/client'
 
 import { runDemandIntel }          from '@/lib/agents/demand-intel'
 import { runLeadEngine }           from '@/lib/agents/lead-engine'

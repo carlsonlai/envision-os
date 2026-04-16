@@ -36,54 +36,71 @@ export async function runRevenueExpansion(
   if (run.skipped) return { runId: run.id, upsells: 0, renewals: 0, tierBumps: 0 }
 
   try {
-    const clients = await prisma.client.findMany({
-      include: {
-        projects: { select: { id: true, status: true, paidAmount: true, updatedAt: true } },
-      },
-      take: 200,
-    })
+    // Parallel-load clients and project stats (avoids fetching ALL project rows)
+    const [clients, deliveredByClient, paidByClient, staleProjects] = await Promise.all([
+      prisma.client.findMany({ take: 200 }),
+      prisma.project.groupBy({
+        by: ['clientId'],
+        where: { status: 'COMPLETED' },
+        _count: { _all: true },
+      }),
+      prisma.project.groupBy({
+        by: ['clientId'],
+        _sum: { paidAmount: true },
+      }),
+      prisma.project.findMany({
+        where: { status: 'COMPLETED', updatedAt: { lt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) } },
+        select: { id: true, clientId: true, updatedAt: true },
+      }),
+    ])
+
+    const deliveredMap = new Map(deliveredByClient.map((c) => [c.clientId, c._count._all]))
+    const paidMap = new Map(paidByClient.map((c) => [c.clientId, c._sum.paidAmount ?? 0]))
+    const staleByClient = new Map<string | null, typeof staleProjects>()
+    for (const p of staleProjects) {
+      const arr = staleByClient.get(p.clientId) ?? []
+      arr.push(p)
+      staleByClient.set(p.clientId, arr)
+    }
 
     let upsells = 0
     let renewals = 0
     let tierBumps = 0
-    const ninetyDaysAgo = new Date(Date.now() - 90 * 24 * 60 * 60 * 1000)
 
     for (const client of clients) {
-      const delivered = client.projects.filter((p) => p.status === 'COMPLETED')
-      const totalPaid = client.projects.reduce((sum, p) => sum + (p.paidAmount ?? 0), 0)
+      const deliveredCount = deliveredMap.get(client.id) ?? 0
+      const totalPaid = paidMap.get(client.id) ?? 0
 
       // ── Upsell: high-activity clients ──────────────────────────────────
-      if (delivered.length >= 3 && (client.tier === 'GOLD' || client.tier === 'PLATINUM')) {
-        // Force PENDING_APPROVAL: confidence stays below default threshold
+      if (deliveredCount >= 3 && (client.tier === 'GOLD' || client.tier === 'PLATINUM')) {
         await recordDecision({
           runId: run.id,
           agent: 'REVENUE_EXPANSION',
           action: 'suggest_upsell',
-          rationale: `"${client.companyName}" — ${delivered.length} delivered projects, ${client.tier} tier → upsell candidate`,
+          rationale: `"${client.companyName}" — ${deliveredCount} delivered projects, ${client.tier} tier → upsell candidate`,
           confidence: 0.55, // intentionally below threshold → PENDING_APPROVAL
           entityType: 'Client',
           entityId: client.id,
-          proposedChange: { suggestUpsell: true, deliveredCount: delivered.length },
+          proposedChange: { suggestUpsell: true, deliveredCount },
           valueCents: Math.round(totalPaid * 100 * 0.2), // ~20% additional potential
         })
         upsells++
       }
 
       // ── Renewal: stale delivered projects ───────────────────────────────
-      for (const proj of delivered) {
-        if (proj.updatedAt < ninetyDaysAgo) {
-          await recordDecision({
-            runId: run.id,
-            agent: 'REVENUE_EXPANSION',
-            action: 'suggest_renewal',
-            rationale: `Project ${proj.id.slice(0, 8)} delivered > 90 days ago for "${client.companyName}" — renewal opportunity`,
-            confidence: 0.60, // below threshold → review
-            entityType: 'Project',
-            entityId: proj.id,
-            proposedChange: { suggestRenewal: true },
-          })
-          renewals++
-        }
+      const clientStaleProjects = staleByClient.get(client.id) ?? []
+      for (const proj of clientStaleProjects) {
+        await recordDecision({
+          runId: run.id,
+          agent: 'REVENUE_EXPANSION',
+          action: 'suggest_renewal',
+          rationale: `Project ${proj.id.slice(0, 8)} delivered > 90 days ago for "${client.companyName}" — renewal opportunity`,
+          confidence: 0.60, // below threshold → review
+          entityType: 'Project',
+          entityId: proj.id,
+          proposedChange: { suggestRenewal: true },
+        })
+        renewals++
       }
 
       // ── Tier upgrade ────────────────────────────────────────────────────

@@ -2,7 +2,6 @@ import { inngest } from '@/lib/inngest'
 import { prisma } from '@/lib/db'
 import { startRun } from './run'
 import { recordDecision, markDecisionResult, markDecisionFailed } from './decision-log'
-import { getErrorMessage } from '@/lib/logger'
 
 /**
  * DELIVERY AGENT — Agent #11
@@ -23,24 +22,41 @@ export async function runDeliveryAgent(
   if (run.skipped) return { runId: run.id, delivered: 0, flagged: 0 }
 
   try {
-    // Find active projects with deliverables
+    // Use _count aggregation to avoid fetching all deliverable item rows
     const projects = await prisma.project.findMany({
       where: { status: 'ONGOING' },
-      include: {
-        deliverableItems: { select: { id: true, status: true } },
+      select: {
+        id: true,
+        code: true,
         client: { select: { companyName: true } },
+        _count: {
+          select: {
+            deliverableItems: true,
+          },
+        },
       },
       take: 100,
     })
+
+    // Batch-count completed items per project in one query
+    const projectIds = projects.filter((p) => p._count.deliverableItems > 0).map((p) => p.id)
+    const completedCounts = projectIds.length > 0
+      ? await prisma.deliverableItem.groupBy({
+          by: ['projectId'],
+          where: { projectId: { in: projectIds }, status: { in: ['DELIVERED', 'FA_SIGNED'] } },
+          _count: { _all: true },
+        })
+      : []
+    const completedMap = new Map(completedCounts.map((c) => [c.projectId, c._count._all]))
 
     let delivered = 0
     let flagged = 0
 
     for (const proj of projects) {
-      if (proj.deliverableItems.length === 0) continue
+      const total = proj._count.deliverableItems
+      if (total === 0) continue
 
-      const total = proj.deliverableItems.length
-      const completed = proj.deliverableItems.filter((d: { status: string }) => d.status === 'DELIVERED' || d.status === 'FA_SIGNED').length
+      const completed = completedMap.get(proj.id) ?? 0
       const allDone = completed === total
 
       if (allDone) {
@@ -65,17 +81,16 @@ export async function runDeliveryAgent(
           }
         }
       } else if (completed > 0 && completed >= total * 0.5) {
-        // Over half done but some stale — flag
-        const pending = proj.deliverableItems.filter((d: { status: string }) => d.status !== 'DELIVERED' && d.status !== 'FA_SIGNED')
+        const remaining = total - completed
         const decision = await recordDecision({
           runId: run.id,
           agent: 'DELIVERY_AGENT',
           action: 'flag_partial_delivery',
-          rationale: `${proj.code}: ${completed}/${total} done, ${pending.length} remaining — check for blockers`,
+          rationale: `${proj.code}: ${completed}/${total} done, ${remaining} remaining — check for blockers`,
           confidence: 0.75,
           entityType: 'Project',
           entityId: proj.id,
-          proposedChange: { partialDelivery: true, completedCount: completed, remainingCount: pending.length },
+          proposedChange: { partialDelivery: true, completedCount: completed, remainingCount: remaining },
         })
 
         if (decision.status === 'AUTO_EXECUTED') {

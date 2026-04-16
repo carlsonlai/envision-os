@@ -2,7 +2,6 @@ import { inngest } from '@/lib/inngest'
 import { prisma } from '@/lib/db'
 import { startRun } from './run'
 import { recordDecision, markDecisionResult, markDecisionFailed } from './decision-log'
-import { logger, getErrorMessage } from '@/lib/logger'
 
 /**
  * PERFORMANCE OPTIMIZER — Agent #5

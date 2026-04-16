@@ -25,28 +25,28 @@ export async function runLeadEngine(
 
   try {
     // ── Step 1: Route unassigned HOT/WARM leads ──────────────────────────────
-    const unassigned = await prisma.lead.findMany({
-      where: { assignedSalesId: null, score: { in: ['HOT', 'WARM'] }, status: 'NEW' },
-      orderBy: { createdAt: 'asc' },
-      take: 100,
-    })
-
-    const salesReps = await prisma.user.findMany({
-      where: { role: 'SALES' },
-      select: { id: true, name: true },
-    })
+    // Parallel-load all data needed for routing (3 queries → 1 round-trip)
+    const [unassigned, salesReps, counts] = await Promise.all([
+      prisma.lead.findMany({
+        where: { assignedSalesId: null, score: { in: ['HOT', 'WARM'] }, status: 'NEW' },
+        orderBy: { createdAt: 'asc' },
+        take: 100,
+      }),
+      prisma.user.findMany({
+        where: { role: 'SALES' },
+        select: { id: true, name: true },
+      }),
+      prisma.lead.groupBy({
+        by: ['assignedSalesId'],
+        where: { assignedSalesId: { not: null }, status: { in: ['NEW', 'QUALIFIED', 'PROPOSAL_SENT', 'NEGOTIATING'] } },
+        _count: true,
+      }),
+    ])
 
     if (salesReps.length === 0) {
       await run.finish(`No SALES users found — skipped ${unassigned.length} unassigned leads`)
       return { runId: run.id, routed: 0, nurtured: 0 }
     }
-
-    // Count current open leads per rep
-    const counts = await prisma.lead.groupBy({
-      by: ['assignedSalesId'],
-      where: { assignedSalesId: { not: null }, status: { in: ['NEW', 'QUALIFIED', 'PROPOSAL_SENT', 'NEGOTIATING'] } },
-      _count: true,
-    })
     const loadMap = new Map<string, number>()
     for (const rep of salesReps) loadMap.set(rep.id, 0)
     for (const c of counts) if (c.assignedSalesId) loadMap.set(c.assignedSalesId, c._count)

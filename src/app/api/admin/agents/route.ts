@@ -34,34 +34,49 @@ export async function GET(): Promise<NextResponse> {
   }
 
   try {
-    const configs = await prisma.agentConfig.findMany()
-    const configByAgent = new Map(configs.map((c) => [c.agent, c]))
-
-    const agents = await Promise.all(
-      ALL_AGENTS.map(async (agent) => {
-        const cfg = configByAgent.get(agent) ?? null
-        const [lastRun, pendingCount, recentRuns] = await Promise.all([
-          prisma.agentRun.findFirst({ where: { agent }, orderBy: { startedAt: 'desc' } }),
-          prisma.agentDecision.count({ where: { agent, status: 'PENDING_APPROVAL' } }),
-          prisma.agentRun.findMany({ where: { agent }, orderBy: { startedAt: 'desc' }, take: 5 }),
-        ])
-        return {
-          agent,
-          implemented: true,
-          config: cfg,
-          lastRun,
-          pendingCount,
-          recentRuns,
-        }
+    // ── Batch-load everything in 4 parallel queries instead of 40 sequential ──
+    const [configs, allRuns, pendingCounts, recentDecisions] = await Promise.all([
+      prisma.agentConfig.findMany(),
+      prisma.agentRun.findMany({
+        where: { agent: { in: ALL_AGENTS } },
+        orderBy: { startedAt: 'desc' },
+        take: 60, // 12 agents × 5 recent runs each
       }),
-    )
+      prisma.agentDecision.groupBy({
+        by: ['agent'],
+        where: { status: 'PENDING_APPROVAL', agent: { in: ALL_AGENTS } },
+        _count: { _all: true },
+      }),
+      prisma.agentDecision.findMany({
+        orderBy: { createdAt: 'desc' },
+        take: 50,
+      }),
+    ])
 
-    const recentDecisions = await prisma.agentDecision.findMany({
-      orderBy: { createdAt: 'desc' },
-      take: 50,
-    })
+    // Index in-memory
+    const configByAgent = new Map(configs.map((c) => [c.agent, c]))
+    const pendingByAgent = new Map(pendingCounts.map((c) => [c.agent, c._count._all]))
 
-    return NextResponse.json({ agents, recentDecisions })
+    // Group runs per agent (already sorted desc by startedAt)
+    const runsByAgent = new Map<string, typeof allRuns>()
+    for (const run of allRuns) {
+      const arr = runsByAgent.get(run.agent) ?? []
+      if (arr.length < 5) arr.push(run)
+      runsByAgent.set(run.agent, arr)
+    }
+
+    const agents = ALL_AGENTS.map((agent) => ({
+      agent,
+      implemented: true,
+      config: configByAgent.get(agent) ?? null,
+      lastRun: runsByAgent.get(agent)?.[0] ?? null,
+      pendingCount: pendingByAgent.get(agent) ?? 0,
+      recentRuns: runsByAgent.get(agent) ?? [],
+    }))
+
+    const res = NextResponse.json({ agents, recentDecisions })
+    res.headers.set('Cache-Control', 'private, max-age=5')
+    return res
   } catch (error: unknown) {
     logger.error('agents.list.failed', { error: getErrorMessage(error) })
     return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 })

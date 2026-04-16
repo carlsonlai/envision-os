@@ -46,11 +46,10 @@ export async function checkRateCap(
 ): Promise<RateCapResult> {
   const since = new Date(Date.now() - windowMinutes * 60_000)
 
-  const count = await prisma.agentDecision.count({
-    where: { agent, createdAt: { gte: since } },
-  })
-
-  const cfg = await prisma.agentConfig.findUnique({ where: { agent } })
+  const [count, cfg] = await Promise.all([
+    prisma.agentDecision.count({ where: { agent, createdAt: { gte: since } } }),
+    prisma.agentConfig.findUnique({ where: { agent } }),
+  ])
   const cap = cfg?.rateCapPerHour ?? DEFAULT_RATE_CAP_PER_HOUR
 
   return { allowed: count < cap, count, cap }
