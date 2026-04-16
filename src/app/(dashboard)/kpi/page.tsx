@@ -24,6 +24,12 @@ import {
   Award,
   ChevronUp,
   ChevronDown,
+  Users,
+  CheckCircle2,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
+  Activity,
 } from 'lucide-react'
 
 interface DesignerKPIs {
@@ -70,6 +76,24 @@ interface RevenueData {
 
 interface AIKPINudge {
   nudge: string
+}
+
+interface StaffMetric {
+  userId: string
+  name: string
+  role: string
+  tasksCompleted: number
+  tasksInProgress: number
+  tasksPending: number
+  revisionRate: number
+  qcPassRate: number
+  utilizationToday: number
+  totalEstimatedHours: number
+  activityStatus: 'ACTIVE' | 'IDLE' | 'OFFLINE' | 'OVERLOADED'
+  productivityScore: number
+  bonusEligible: boolean
+  kpiTrend: 'UP' | 'DOWN' | 'FLAT'
+  aiVerdict: string
 }
 
 const CHART_COLORS = ['#6366f1', '#8b5cf6', '#a78bfa', '#c4b5fd']
@@ -294,18 +318,146 @@ function SalesView({ kpis, nudge }: { kpis: SalesKPIs; nudge: string }) {
   )
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  ADMIN: 'Admin',
+  CREATIVE_DIRECTOR: 'Creative Director',
+  SENIOR_ART_DIRECTOR: 'Sr. Art Director',
+  ART_DIRECTOR: 'Art Director',
+  SENIOR_DESIGNER: 'Sr. Designer',
+  DESIGNER: 'Designer',
+  JUNIOR_DESIGNER: 'Jr. Designer',
+  CLIENT_SERVICING: 'Client Servicing',
+  SALES: 'Sales',
+  AI_DESIGNER: 'AI Designer',
+  AI_ART_DIRECTOR: 'AI Art Director',
+}
+
+const STATUS_STYLE: Record<string, { cls: string; label: string }> = {
+  ACTIVE:     { cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30', label: 'Active' },
+  IDLE:       { cls: 'bg-amber-500/15 text-amber-400 border-amber-500/30', label: 'Idle' },
+  OFFLINE:    { cls: 'bg-zinc-700/40 text-zinc-500 border-zinc-700', label: 'Offline' },
+  OVERLOADED: { cls: 'bg-red-500/15 text-red-400 border-red-500/30', label: 'Overloaded' },
+}
+
+function scoreColor(score: number): string {
+  if (score >= 90) return 'text-amber-400'
+  if (score >= 75) return 'text-emerald-400'
+  if (score >= 65) return 'text-zinc-300'
+  return 'text-red-400'
+}
+
+function scoreTierLabel(score: number): string {
+  if (score >= 90) return 'Elite'
+  if (score >= 75) return 'High Performer'
+  if (score >= 65) return 'Meets Standard'
+  return 'At Risk'
+}
+
+function scoreBorder(score: number): string {
+  if (score >= 90) return 'border-amber-500/30'
+  if (score >= 75) return 'border-emerald-500/30'
+  if (score >= 65) return 'border-zinc-800/60'
+  return 'border-red-500/30'
+}
+
+function StaffKPICard({ staff }: { staff: StaffMetric }) {
+  const statusStyle = STATUS_STYLE[staff.activityStatus] ?? STATUS_STYLE.OFFLINE
+  const totalTasks = staff.tasksCompleted + staff.tasksInProgress + staff.tasksPending
+
+  return (
+    <div className={`rounded-xl border ${scoreBorder(staff.productivityScore)} bg-zinc-900/40 p-4 space-y-3 transition-colors hover:bg-zinc-900/60`}>
+      {/* Header: avatar + name + role + status */}
+      <div className="flex items-start gap-3">
+        <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#6366f1]/20 text-sm font-bold text-[#818cf8] flex-shrink-0">
+          {staff.name?.[0] ?? '?'}
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-zinc-100 truncate">{staff.name}</p>
+            {staff.kpiTrend === 'UP' && <ArrowUpRight className="h-3 w-3 text-emerald-400 flex-shrink-0" />}
+            {staff.kpiTrend === 'DOWN' && <ArrowDownRight className="h-3 w-3 text-red-400 flex-shrink-0" />}
+            {staff.kpiTrend === 'FLAT' && <Minus className="h-3 w-3 text-zinc-500 flex-shrink-0" />}
+          </div>
+          <p className="text-[10px] text-zinc-500">{ROLE_LABELS[staff.role] ?? staff.role.replace(/_/g, ' ')}</p>
+        </div>
+        <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-semibold ${statusStyle.cls}`}>
+          {statusStyle.label}
+        </span>
+      </div>
+
+      {/* KPI Score + Tier */}
+      <div className="flex items-center gap-4">
+        <div className="text-center flex-shrink-0">
+          <p className={`text-3xl font-black ${scoreColor(staff.productivityScore)}`}>{staff.productivityScore}</p>
+          <p className="text-[10px] text-zinc-600">/ 100</p>
+        </div>
+        <div className="flex-1 space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className={`text-xs font-semibold ${scoreColor(staff.productivityScore)}`}>{scoreTierLabel(staff.productivityScore)}</span>
+            {staff.bonusEligible && (
+              <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-400">
+                <Award className="h-2.5 w-2.5" /> Bonus
+              </span>
+            )}
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-zinc-800 overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all ${
+                staff.productivityScore >= 90 ? 'bg-amber-500' :
+                staff.productivityScore >= 75 ? 'bg-emerald-500' :
+                staff.productivityScore >= 65 ? 'bg-[#6366f1]' : 'bg-red-500'
+              }`}
+              style={{ width: `${staff.productivityScore}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Stats grid */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="rounded-lg bg-zinc-800/40 px-2.5 py-2 text-center">
+          <p className="text-lg font-bold text-zinc-100">{staff.tasksCompleted}</p>
+          <p className="text-[10px] text-zinc-500">Done</p>
+        </div>
+        <div className="rounded-lg bg-zinc-800/40 px-2.5 py-2 text-center">
+          <p className="text-lg font-bold text-zinc-100">{staff.tasksInProgress}</p>
+          <p className="text-[10px] text-zinc-500">Active</p>
+        </div>
+        <div className="rounded-lg bg-zinc-800/40 px-2.5 py-2 text-center">
+          <p className="text-lg font-bold text-zinc-100">{staff.tasksPending}</p>
+          <p className="text-[10px] text-zinc-500">Pending</p>
+        </div>
+      </div>
+
+      {/* Metrics row */}
+      <div className="flex items-center justify-between text-[10px]">
+        <span className="text-zinc-500">QC Pass: <span className={`font-semibold ${staff.qcPassRate >= 80 ? 'text-emerald-400' : staff.qcPassRate >= 60 ? 'text-amber-400' : 'text-red-400'}`}>{staff.qcPassRate}%</span></span>
+        <span className="text-zinc-500">Revisions: <span className={`font-semibold ${staff.revisionRate <= 15 ? 'text-emerald-400' : staff.revisionRate <= 30 ? 'text-amber-400' : 'text-red-400'}`}>{staff.revisionRate}%</span></span>
+        <span className="text-zinc-500">Util: <span className={`font-semibold ${staff.utilizationToday >= 70 ? 'text-emerald-400' : staff.utilizationToday >= 40 ? 'text-amber-400' : 'text-zinc-400'}`}>{staff.utilizationToday}%</span></span>
+      </div>
+
+      {/* AI Verdict */}
+      <p className="text-[10px] text-zinc-500 leading-relaxed border-t border-zinc-800/40 pt-2">{staff.aiVerdict}</p>
+    </div>
+  )
+}
+
 function AdminView({ nudge }: { nudge: string }) {
   const [revenue, setRevenue] = useState<RevenueData | null>(null)
   const [workload, setWorkload] = useState<TeamWorkload | null>(null)
+  const [staffMetrics, setStaffMetrics] = useState<StaffMetric[]>([])
+  const [staffFilter, setStaffFilter] = useState<string>('ALL')
 
   useEffect(() => {
     Promise.all([
       fetch('/api/kpi/revenue?period=MONTH').then(r => r.json()),
       fetch('/api/kpi/team').then(r => r.json()),
+      fetch('/api/admin/staff-metrics').then(r => r.json()),
     ])
-      .then(([rev, team]) => {
+      .then(([rev, team, staff]) => {
         setRevenue((rev as { data: RevenueData }).data)
         setWorkload((team as { data: TeamWorkload }).data)
+        setStaffMetrics((staff as { data: StaffMetric[] }).data ?? [])
       })
       .catch(() => {})
   }, [])
@@ -317,6 +469,26 @@ function AdminView({ nudge }: { nudge: string }) {
     { name: 'Achieved', value: totalEarned },
     { name: 'Gap', value: Math.max(0, revenueTarget - totalEarned) },
   ]
+
+  // Staff filter
+  const humanStaff = staffMetrics.filter(s => !s.role.startsWith('AI_'))
+  const filteredStaff = staffFilter === 'ALL'
+    ? humanStaff
+    : staffFilter === 'AT_RISK'
+      ? humanStaff.filter(s => s.productivityScore < 65)
+      : staffFilter === 'BONUS'
+        ? humanStaff.filter(s => s.bonusEligible)
+        : staffFilter === 'IDLE'
+          ? humanStaff.filter(s => s.activityStatus === 'IDLE' || s.activityStatus === 'OFFLINE')
+          : humanStaff
+
+  // Summary stats
+  const avgScore = humanStaff.length > 0
+    ? Math.round(humanStaff.reduce((s, m) => s + m.productivityScore, 0) / humanStaff.length)
+    : 0
+  const atRiskCount = humanStaff.filter(s => s.productivityScore < 65).length
+  const bonusCount = humanStaff.filter(s => s.bonusEligible).length
+  const idleCount = humanStaff.filter(s => s.activityStatus === 'IDLE' || s.activityStatus === 'OFFLINE').length
 
   if (!revenue) {
     return (
@@ -375,7 +547,7 @@ function AdminView({ nudge }: { nudge: string }) {
         />
       </div>
 
-      {/* Revenue vs Target donut */}
+      {/* Revenue vs Target donut + Designer utilisation */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-5">
           <h3 className="text-sm font-semibold text-zinc-200 mb-4">Revenue vs Monthly Target</h3>
@@ -427,6 +599,76 @@ function AdminView({ nudge }: { nudge: string }) {
           </div>
         )}
       </div>
+
+      {/* ── Staff KPI Section ─────────────────────────────────────── */}
+      {humanStaff.length > 0 && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-[#818cf8]" />
+              <h2 className="text-sm font-semibold text-zinc-200">Staff KPI Overview</h2>
+              <span className="text-[10px] text-zinc-600">{humanStaff.length} members</span>
+            </div>
+            <div className="flex items-center gap-1 rounded-lg border border-zinc-800/60 bg-zinc-900/40 p-1">
+              {[
+                { key: 'ALL', label: 'All' },
+                { key: 'BONUS', label: `Bonus (${bonusCount})` },
+                { key: 'AT_RISK', label: `At Risk (${atRiskCount})` },
+                { key: 'IDLE', label: `Idle (${idleCount})` },
+              ].map(f => (
+                <button
+                  type="button"
+                  key={f.key}
+                  onClick={() => setStaffFilter(f.key)}
+                  className={`rounded-md px-2.5 py-1 text-[10px] font-medium transition-colors ${
+                    staffFilter === f.key
+                      ? 'bg-[#6366f1] text-white'
+                      : 'text-zinc-500 hover:text-zinc-200'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Agency score summary */}
+          <div className="grid grid-cols-4 gap-3">
+            <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-3 text-center">
+              <p className={`text-2xl font-black ${scoreColor(avgScore)}`}>{avgScore}</p>
+              <p className="text-[10px] text-zinc-500 mt-0.5">Agency Avg</p>
+            </div>
+            <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-3 text-center">
+              <p className="text-2xl font-black text-emerald-400">{bonusCount}</p>
+              <p className="text-[10px] text-zinc-500 mt-0.5">Bonus Eligible</p>
+            </div>
+            <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-3 text-center">
+              <p className={`text-2xl font-black ${atRiskCount > 0 ? 'text-red-400' : 'text-zinc-300'}`}>{atRiskCount}</p>
+              <p className="text-[10px] text-zinc-500 mt-0.5">At Risk</p>
+            </div>
+            <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-3 text-center">
+              <p className={`text-2xl font-black ${idleCount > 0 ? 'text-amber-400' : 'text-zinc-300'}`}>{idleCount}</p>
+              <p className="text-[10px] text-zinc-500 mt-0.5">Idle / Offline</p>
+            </div>
+          </div>
+
+          {/* Staff cards grid */}
+          {filteredStaff.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {filteredStaff
+                .sort((a, b) => b.productivityScore - a.productivityScore)
+                .map(s => (
+                  <StaffKPICard key={s.userId} staff={s} />
+                ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <Activity className="mx-auto h-6 w-6 text-zinc-600 mb-2" />
+              <p className="text-sm text-zinc-500">No staff match this filter</p>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
