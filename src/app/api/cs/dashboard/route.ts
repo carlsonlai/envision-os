@@ -1,8 +1,9 @@
 /**
  * GET /api/cs/dashboard
  *
- * Returns the current CS user's assigned projects with deliverable items
- * for the CS Dashboard overview.
+ * Returns ALL active projects for CS Dashboard.
+ * CS staff can see every project and self-select which ones they handle.
+ * Includes claim info (which CS staff have claimed each project).
  */
 
 import { NextResponse } from 'next/server'
@@ -19,17 +20,12 @@ export async function GET(): Promise<NextResponse> {
   }
 
   const userId = session.user.id
-  const isAdmin = session.user.role === 'ADMIN' || session.user.role === 'CREATIVE_DIRECTOR'
 
   try {
-    // Show projects assigned to this CS user, OR all projects if user is admin/CD,
-    // OR all projects that have no CS assigned (so CS can see unassigned work too)
+    // Show ALL active projects — CS staff pick which ones they handle
     const projects = await prisma.project.findMany({
       where: {
         status: { in: ['PROJECTED', 'ONGOING', 'COMPLETED', 'BILLED', 'PAID'] },
-        ...(isAdmin
-          ? {}
-          : { OR: [{ assignedCSId: userId }, { assignedCSId: null }] }),
       },
       select: {
         id: true,
@@ -40,6 +36,15 @@ export async function GET(): Promise<NextResponse> {
         updatedAt: true,
         client: {
           select: { companyName: true },
+        },
+        csAssignments: {
+          select: {
+            userId: true,
+            claimedAt: true,
+            user: {
+              select: { name: true },
+            },
+          },
         },
         deliverableItems: {
           select: {
@@ -72,6 +77,12 @@ export async function GET(): Promise<NextResponse> {
       quotedAmount: p.quotedAmount,
       deadline: p.deadline?.toISOString() ?? null,
       updatedAt: p.updatedAt.toISOString(),
+      claimedBy: p.csAssignments.map((a) => ({
+        userId: a.userId,
+        name: a.user.name,
+        claimedAt: a.claimedAt.toISOString(),
+      })),
+      isMyClaim: p.csAssignments.some((a) => a.userId === userId),
       items: p.deliverableItems.map((di) => ({
         id: di.id,
         itemType: di.itemType,
@@ -85,7 +96,7 @@ export async function GET(): Promise<NextResponse> {
       })),
     }))
 
-    return NextResponse.json({ data })
+    return NextResponse.json({ data, currentUserId: userId })
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     return NextResponse.json({ error: message }, { status: 500 })
