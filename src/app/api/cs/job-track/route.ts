@@ -145,12 +145,17 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
         // Use project.quotedAmount as the contract total (aligns with CS Hub)
         const contractQuoted = Number(proj.quotedAmount) || 0
-        const totalPaid = filteredItems.filter(i => i.paymentStatus === 'FULL_PAID' || i.paymentStatus === 'PAID')
+        const totalFullPaid = filteredItems.filter(i => i.paymentStatus === 'FULL_PAID' || i.paymentStatus === 'PAID')
           .reduce((s, i) => s + (i.qteAmount ?? 0), 0)
-          + filteredItems.filter(i => i.paymentStatus === 'HALF_PAID')
-          .reduce((s, i) => s + ((i.qteAmount ?? 0) * 0.5), 0)
+        const totalHalfPaid = filteredItems.filter(i => i.paymentStatus === 'HALF_PAID')
+          .reduce((s, i) => s + (i.qteAmount ?? 0), 0)
+        const totalPaid = totalFullPaid + (totalHalfPaid * 0.5)
         const totalPending = filteredItems.filter(i => i.paymentStatus === 'PENDING')
           .reduce((s, i) => s + (i.qteAmount ?? 0), 0)
+
+        // A project with any HALF_PAID items is still ONGOING
+        const hasHalfPaid = filteredItems.some(i => i.paymentStatus === 'HALF_PAID')
+        const effectiveStatus = hasHalfPaid && proj.status === 'PAID' ? 'ONGOING' : proj.status
 
         return {
           projectId: proj.id,
@@ -159,9 +164,11 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
           csName: proj.csName ?? null,
           account: proj.code,
           client: proj.clientName ?? proj.code,
-          projectStatus: proj.status,
-          totalQuoted: contractQuoted,          // contract value from CS Hub
+          projectStatus: effectiveStatus,
+          totalQuoted: contractQuoted,
           totalPaid,
+          totalHalfPaid,
+          totalFullPaid,
           totalPending,
           items: filteredItems,
         }
@@ -170,7 +177,9 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
     // Grand totals
     const grandTotalQuoted = groups.reduce((s, g) => s + (g?.totalQuoted ?? 0), 0)
-    const grandTotalPaid = groups.reduce((s, g) => s + (g?.totalPaid ?? 0), 0)
+    const grandTotalFullPaid = groups.reduce((s, g) => s + (g?.totalFullPaid ?? 0), 0)
+    const grandTotalHalfPaid = groups.reduce((s, g) => s + (g?.totalHalfPaid ?? 0), 0)
+    const grandTotalCollected = grandTotalFullPaid + (grandTotalHalfPaid * 0.5)
     const grandTotalPending = groups.reduce((s, g) => s + (g?.totalPending ?? 0), 0)
 
     const totalPages = Math.ceil(Number(totalProjects) / limit)
@@ -182,9 +191,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
           totalAccounts: groups.length,
           totalItems: groups.reduce((s, g) => s + (g?.items.length ?? 0), 0),
           grandTotalQuoted,
-          grandTotalPaid,
+          grandTotalPaid: grandTotalCollected,
+          grandTotalFullPaid,
+          grandTotalHalfPaid,
+          grandTotalCollected,
           grandTotalPending,
-          grandTotalOutstanding: grandTotalQuoted - grandTotalPaid,
+          grandTotalOutstanding: grandTotalQuoted - grandTotalCollected,
         },
         pagination: {
           page,

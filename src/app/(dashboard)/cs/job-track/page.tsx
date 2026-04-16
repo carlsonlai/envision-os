@@ -42,6 +42,8 @@ interface ProjectGroup {
   projectStatus: string
   totalQuoted: number
   totalPaid: number
+  totalHalfPaid: number
+  totalFullPaid: number
   totalPending: number
   items: JobItem[]
 }
@@ -58,6 +60,9 @@ interface Summary {
   totalItems: number
   grandTotalQuoted: number
   grandTotalPaid: number
+  grandTotalFullPaid: number
+  grandTotalHalfPaid: number
+  grandTotalCollected: number
   grandTotalPending: number
   grandTotalOutstanding: number
 }
@@ -969,10 +974,12 @@ export default function JobTrackPage() {
         <>
           {/* Summary cards */}
           {summary && (
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
               {[
                 { label: 'Total Quoted', value: fmt(summary.grandTotalQuoted), icon: FileText, color: 'text-blue-400' },
-                { label: 'Collected', value: fmt(summary.grandTotalPaid), icon: CheckCircle2, color: 'text-emerald-400' },
+                { label: 'Full Paid', value: fmt(summary.grandTotalFullPaid), icon: CheckCircle2, color: 'text-emerald-400' },
+                { label: 'Half Paid', value: fmt(summary.grandTotalHalfPaid), icon: Clock, color: 'text-lime-400' },
+                { label: 'Collection', value: fmt(summary.grandTotalCollected), icon: DollarSign, color: 'text-cyan-400' },
                 { label: 'Pending', value: fmt(summary.grandTotalPending), icon: Clock, color: 'text-amber-400' },
                 { label: 'Outstanding', value: fmt(summary.grandTotalOutstanding), icon: AlertCircle, color: 'text-rose-400' },
               ].map(card => (
@@ -1198,10 +1205,24 @@ export default function JobTrackPage() {
                           <p className="text-[10px] text-zinc-600 uppercase tracking-wide">Quoted</p>
                           <p className="text-sm font-medium text-zinc-300">{fmt(group.totalQuoted)}</p>
                         </div>
-                        <div>
-                          <p className="text-[10px] text-zinc-600 uppercase tracking-wide">Paid</p>
-                          <p className="text-sm font-medium text-emerald-400">{fmt(group.totalPaid)}</p>
-                        </div>
+                        {group.totalFullPaid > 0 && (
+                          <div>
+                            <p className="text-[10px] text-zinc-600 uppercase tracking-wide">Full Paid</p>
+                            <p className="text-sm font-medium text-emerald-400">{fmt(group.totalFullPaid)}</p>
+                          </div>
+                        )}
+                        {group.totalHalfPaid > 0 && (
+                          <div>
+                            <p className="text-[10px] text-zinc-600 uppercase tracking-wide">Half Paid</p>
+                            <p className="text-sm font-medium text-lime-400">{fmt(group.totalHalfPaid)}</p>
+                          </div>
+                        )}
+                        {group.totalFullPaid === 0 && group.totalHalfPaid === 0 && (
+                          <div>
+                            <p className="text-[10px] text-zinc-600 uppercase tracking-wide">Collected</p>
+                            <p className="text-sm font-medium text-emerald-400">{fmt(group.totalPaid)}</p>
+                          </div>
+                        )}
                         <div>
                           <p className="text-[10px] text-zinc-600 uppercase tracking-wide">Pending</p>
                           <p className="text-sm font-medium text-amber-400">{fmt(group.totalPending)}</p>
