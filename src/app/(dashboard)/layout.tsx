@@ -159,8 +159,9 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
     {
       label: 'Client Management',
       items: [
-        { href: '/cs/job-track', label: 'Job Track',           icon: ListTodo },
-        { href: '/crm',          label: 'CRM & Client Health', icon: Heart },
+        { href: '/cs/dashboard',  label: 'CS Dashboard',        icon: LayoutDashboard },
+        { href: '/cs/job-track',  label: 'Job Track',           icon: ListTodo },
+        { href: '/crm',           label: 'CRM & Client Health', icon: Heart },
       ],
     },
     {
@@ -333,7 +334,7 @@ const ROLE_DEFAULT_ROUTES: Record<string, string> = {
   CREATIVE_DIRECTOR: '/admin/workload',
   SENIOR_ART_DIRECTOR: '/admin/workload',
   SALES: '/sales',
-  CLIENT_SERVICING: '/cs/job-track',
+  CLIENT_SERVICING: '/cs/dashboard',
   JUNIOR_ART_DIRECTOR: '/designer',
   GRAPHIC_DESIGNER: '/designer',
   JUNIOR_DESIGNER: '/designer',
