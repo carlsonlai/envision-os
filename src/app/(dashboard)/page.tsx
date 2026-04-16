@@ -6,8 +6,8 @@ import { useEffect } from 'react'
 
 const ROLE_ROUTES: Record<string, string> = {
   ADMIN: '/command',
-  CREATIVE_DIRECTOR: '/cd',
-  SENIOR_ART_DIRECTOR: '/cd',
+  CREATIVE_DIRECTOR: '/admin/workload',
+  SENIOR_ART_DIRECTOR: '/admin/workload',
   SALES: '/sales',
   CLIENT_SERVICING: '/cs',
   JUNIOR_ART_DIRECTOR: '/designer',

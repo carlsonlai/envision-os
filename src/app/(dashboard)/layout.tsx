@@ -25,7 +25,6 @@ import {
   FolderKanban,
   Settings,
   HeartHandshake,
-  Layers,
   CalendarDays,
   Bot,
   Megaphone,
@@ -84,9 +83,8 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
     {
       label: 'Creative',
       items: [
-        { href: '/cd',           label: 'Creative Workflow', icon: Layers,   exact: true },
-        { href: '/designer',     label: 'Designer Queue',    icon: Palette },
-        { href: '/admin/workload', label: 'Workload',        icon: Activity },
+        { href: '/admin/workload', label: 'Team Workload',   icon: Activity, exact: true },
+        { href: '/designer',       label: 'Designer Queue',  icon: Palette },
       ],
     },
     {
@@ -165,11 +163,10 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
   CREATIVE_DIRECTOR: [
     {
       items: [
-        { href: '/cd',           label: 'Creative Dashboard',  icon: Layers,   exact: true },
-        { href: '/admin/workload',label: 'Team Workload',      icon: Activity },
-        { href: '/designer',     label: 'All Designer Tasks',  icon: ListTodo },
-        { href: '/command/freelancers', label: 'Freelancers',  icon: Users },
-        { href: '/kpi',          label: 'Team KPI',            icon: BarChart3 },
+        { href: '/admin/workload', label: 'Team Workload',       icon: Activity, exact: true },
+        { href: '/designer',       label: 'All Designer Tasks',  icon: ListTodo },
+        { href: '/command/freelancers', label: 'Freelancers',    icon: Users },
+        { href: '/kpi',            label: 'Team KPI',            icon: BarChart3 },
       ],
     },
     PERSONAL_GROUP,
@@ -179,10 +176,9 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
   SENIOR_ART_DIRECTOR: [
     {
       items: [
-        { href: '/cd',           label: 'Creative Dashboard', icon: Layers,   exact: true },
-        { href: '/admin/workload',label: 'Team Workload',     icon: Activity },
-        { href: '/designer',     label: 'My Tasks',           icon: ListTodo },
-        { href: '/kpi',          label: 'My KPI',             icon: BarChart3 },
+        { href: '/admin/workload', label: 'Team Workload', icon: Activity, exact: true },
+        { href: '/designer',       label: 'My Tasks',      icon: ListTodo },
+        { href: '/kpi',            label: 'My KPI',        icon: BarChart3 },
       ],
     },
     PERSONAL_GROUP,
@@ -306,8 +302,8 @@ const ROLE_LABELS: Record<string, string> = {
 
 const ROLE_DEFAULT_ROUTES: Record<string, string> = {
   ADMIN: '/command',
-  CREATIVE_DIRECTOR: '/cd',
-  SENIOR_ART_DIRECTOR: '/cd',
+  CREATIVE_DIRECTOR: '/admin/workload',
+  SENIOR_ART_DIRECTOR: '/admin/workload',
   SALES: '/sales',
   CLIENT_SERVICING: '/cs',
   JUNIOR_ART_DIRECTOR: '/designer',
