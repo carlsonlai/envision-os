@@ -2,11 +2,11 @@
  * POST /api/admin/assign-cs-workload
  *
  * Assigns projects to CS staff (Khayrin & Alia) based on Lark group chat membership.
- * For each project with a larkFolderId, fetches group members from Lark API
+ * For each project with a larkFolderId (stores Lark chat_id), fetches group members from Lark API
  * and assigns the project to whichever CS person is in that chat.
  *
  * Query params:
- *   ?revert=true  — clears all assignedCSId (resets to null)
+ *   ?revert=true  â clears all assignedCSId (resets to null)
  *
  * Restricted to ADMIN role.
  */
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const isRevert = url.searchParams.get('revert') === 'true'
 
   try {
-    // ── REVERT MODE: clear all CS assignments ──
+    // ââ REVERT MODE: clear all CS assignments ââ
     if (isRevert) {
       const result = await prisma.project.updateMany({
         where: { assignedCSId: { not: null } },
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       })
     }
 
-    // ── ASSIGN MODE: use Lark chat membership ──
+    // ââ ASSIGN MODE: use Lark chat membership ââ
 
     // 1. Find Khayrin and Alia in the DB (by role + name pattern)
     const csUsers = await prisma.user.findMany({
@@ -108,7 +108,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     if (!khayrin.larkOpenId || !alia.larkOpenId) {
       return NextResponse.json({
-        error: 'Khayrin or Alia missing larkOpenId — run Lark staff sync first',
+        error: 'Khayrin or Alia missing larkOpenId â run Lark staff sync first',
         khayrinLarkId: khayrin.larkOpenId ?? null,
         aliaLarkId: alia.larkOpenId ?? null,
       }, { status: 400 })
@@ -167,7 +167,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         const aliaInChat = memberOpenIds.includes(alia.larkOpenId!)
 
         if (khayrinInChat && aliaInChat) {
-          // Both in chat — keep Khayrin (first match) but note it
+          // Both in chat â keep Khayrin (first match) but note it
           assignedName = 'Khayrin (both in chat)'
         }
 
