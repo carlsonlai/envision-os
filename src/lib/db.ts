@@ -55,7 +55,9 @@ export async function getProjectForRole(
     where: { id: projectId },
     include: {
       client: true,
-      assignedCS: { select: { id: true, name: true, email: true } },
+      assignedCS: {
+        select: { id: true, name: true, email: true },
+      },
       brief: true,
       deliverableItems: {
         orderBy: { createdAt: 'asc' },
