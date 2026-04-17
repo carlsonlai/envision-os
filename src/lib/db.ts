@@ -4,7 +4,7 @@ import { PrismaPg } from '@prisma/adapter-pg'
 import { isDesignerRole, isSeniorDesigner } from '@/lib/permissions'
 
 function createPrismaClient(): PrismaClient {
-  // Prefer Neon pooled connection (PgBouncer) for serverless runtime — falls back to DATABASE_URL for migrations/local dev.
+  // Prefer Neon pooled connection (PgBouncer) for serverless runtime â falls back to DATABASE_URL for migrations/local dev.
   const connectionString =
     process.env.POSTGRES_PRISMA_URL ??
     process.env.DATABASE_URL ??
@@ -134,6 +134,12 @@ export async function getProjectsForRole(userRole: string, userId?: string) {
           },
         },
       },
+      csAssignments: {
+        select: {
+          user: { select: { id: true, name: true } },
+        },
+        orderBy: { claimedAt: 'asc' as const },
+      },
       brief: {
         select: {
           id: true,
@@ -173,7 +179,7 @@ export async function getProjectsForRole(userRole: string, userId?: string) {
         invoiceNumberMap[row.id] = row.invoiceNumber ?? null
       }
     } catch {
-      // invoiceNumber column may not exist yet — ignore until migration runs
+      // invoiceNumber column may not exist yet â ignore until migration runs
     }
 
     try {
@@ -191,7 +197,7 @@ export async function getProjectsForRole(userRole: string, userId?: string) {
         quotationsMap[row.projectId].push(row)
       }
     } catch {
-      // quotations table may not exist yet — ignore until migration runs
+      // quotations table may not exist yet â ignore until migration runs
     }
   }
 
