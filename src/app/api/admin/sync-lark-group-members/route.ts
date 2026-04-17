@@ -132,38 +132,101 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
               },
               update: {}, // no-op if exists
             })
-]Z[Y[X\Ë\Ú
-Â[YNY[X\[YKÜ[YY[X\Ü[ÚYX]ÚYYK\Ù\Y\Ù\YJB\Ý[\ÜÚYÛY[ËÜX]Y
-ÊÂHØ]ÚÂËÈ[XYH^\ÝÈ8 %ÛÝ[\È^\Ý[Â]Z[Y[X\Ë\Ú
-Â[YNY[X\[YKÜ[YY[X\Ü[ÚYX]ÚYYK\Ù\Y\Ù\YJB\Ý[\ÜÚYÛY[Ë^\Ý[ÊÊÂBB\Ý[]Z[Ë\Ú
-]Z[
-B\Ý[Þ[ÙY
-ÊÂHØ]Ú
-\HÂ\Ý[\ÜË\Ú
-Z[YÈÞ[ÈÜÚXÝÛÙ_H
-Ú]	ØÚ]YJN	Ù\[Ý[Ù[Ù\ÜÈ\Y\ÜØYÙH	Ý[ÛÝÛßX
-B\Ý[ÚÚ\Y
-ÊÂBB]\^\ÜÛÙKÛÛÈ]N\Ý[JBHØ]Ú
-\ÜHÂÙÙÙ\\Ü	ÔÔÕØ\KØYZ[ÜÞ[Ë[\ËYÜÝ\[Y[X\È\ÜËÈ\ÜÙ]\ÜY\ÜØYÙJ\ÜHJB]\^\ÜÛÙKÛÛÈ\Ü\Ü[Ý[Ù[Ù\ÜÈ\ÜY\ÜØYÙH	ÔÞ[ÈZ[Y	ÈKÈÝ]\Î
-LB
-BBBÊ
-ÑUØ\KØYZ[ÜÞ[Ë[\ËYÜÝ\[Y[X\Â
-]\ÈÚXÝÈÚ]Z\Ý\[\ÈÚ]Y[X\È
-]Y]ËÈÜ]\ÊK
-Â^Ü\Þ[È[Ý[ÛÑU
-\N^\]Y\Ý
-NÛZ\ÙO^\ÜÛÙOÂHÂÛÛÝÙ\ÜÚ[ÛH]ØZ]Ù]Ù\\Ù\ÜÚ[Û]]Ü[ÛÊBY
-\Ù\ÜÚ[ÛË\Ù\HÂ]\^\ÜÛÙKÛÛÈ\Ü	Õ[]]Ü^Y	ÈKÈÝ]\Î
-HJBBY
-Ù\ÜÚ[Û\Ù\ÛHOOH	ÐQRSÈ	Ù\ÜÚ[Û\Ù\ÛHOOH	ÐÓQSÔÑTPÒSÉÊHÂ]\^\ÜÛÙKÛÛÈ\Ü	ÐYZ[ÜÔÈÛIÈKÈÝ]\Î
-ÈJBBÛÛÝÈÙX\Ú\[\ÈHH]ÈT
-\K\
-BÛÛÝÚXÝY[\HÙX\Ú\[\ËÙ]
-	ÜÚXÝY	ÊBÛÛÝÚXÝÈH]ØZ]\ÛXKÚXÝ[X[JÂÚ\NÂÚXÝY[\ÈÈYÚXÝY[\HßJKÔÂÈ\ÐÚ]YÈÝ[HKÈ\ÑÛ\YÈÝ[HKKKÙ[XÝÂYYKÛÙNYK\ÐÚ]YYK\ÑÛ\YYKÜÐ\ÜÚYÛY[ÎÂÙ[XÝÂ\Ù\ÈÙ[XÝÈYYK[YNYK\ÓÜ[YYHHKKKKJBÛÛÝ]Y]ÈHÚXÝËX\
-O
-ÂÚXÝYYÚXÝÛÙNÛÙKÚ]Y\ÐÚ]YÏÈ\ÑÛ\YÝ\[\ÜÚYÛY[ÎÜÐ\ÜÚYÛY[ËX\
-HO
-Â\Ù\YK\Ù\Y[YNK\Ù\[YK\ÓÜ[YK\Ù\\ÓÜ[YJJKJJB]\^\ÜÛÙKÛÛÈ]N]Y]ÈJBHØ]Ú
-\ÜHÂÙÙÙ\\Ü	ÑÑUØ\KØYZ[ÜÞ[Ë[\ËYÜÝ\[Y[X\È\ÜËÈ\ÜÙ]\ÜY\ÜØYÙJ\ÜHJB]\^\ÜÛÙKÛÛÈ\Ü\Ü[Ý[Ù[Ù\ÜÈ\ÜY\ÜØYÙH	Ô]Y]ÈZ[Y	ÈKÈÝ]\Î
-LB
-BBB
+
+            detail.members.push({
+              name: member.name,
+              openId: member.open_id,
+              matched: true,
+              userId: user.id,
+            })
+            result.assignments.created++
+          } catch {
+            // Already exists â count as existing
+            detail.members.push({
+              name: member.name,
+              openId: member.open_id,
+              matched: true,
+              userId: user.id,
+            })
+            result.assignments.existing++
+          }
+        }
+
+        result.details.push(detail)
+        result.synced++
+      } catch (err) {
+        result.errors.push(
+          `Failed to sync "${project.code}" (chat ${chatId}): ${err instanceof Error ? err.message : 'unknown'}`
+        )
+        result.skipped++
+      }
+    }
+
+    return NextResponse.json({ data: result })
+  } catch (error) {
+    logger.error('POST /api/admin/sync-lark-group-members error:', { error: getErrorMessage(error) })
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Sync failed' },
+      { status: 500 }
+    )
+  }
+}
+
+/**
+ * GET /api/admin/sync-lark-group-members
+ * Returns projects with their current Lark chat members (preview, no DB writes).
+ */
+export async function GET(req: NextRequest): Promise<NextResponse> {
+  try {
+    const session = await getServerSession(authOptions)
+    if (!session?.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+    if (session.user.role !== 'ADMIN' && session.user.role !== 'CLIENT_SERVICING') {
+      return NextResponse.json({ error: 'Admin or CS only' }, { status: 403 })
+    }
+
+    const { searchParams } = new URL(req.url)
+    const projectIdFilter = searchParams.get('projectId')
+
+    const projects = await prisma.project.findMany({
+      where: {
+        ...(projectIdFilter ? { id: projectIdFilter } : {}),
+        OR: [
+          { larkChatId: { not: null } },
+          { larkFolderId: { not: null } },
+        ],
+      },
+      select: {
+        id: true,
+        code: true,
+        larkChatId: true,
+        larkFolderId: true,
+        csAssignments: {
+          select: {
+            user: { select: { id: true, name: true, larkOpenId: true } },
+          },
+        },
+      },
+    })
+
+    const preview = projects.map(p => ({
+      projectId: p.id,
+      projectCode: p.code,
+      chatId: p.larkChatId ?? p.larkFolderId,
+      currentAssignments: p.csAssignments.map(a => ({
+        userId: a.user.id,
+        name: a.user.name,
+        larkOpenId: a.user.larkOpenId,
+      })),
+    }))
+
+    return NextResponse.json({ data: preview })
+  } catch (error) {
+    logger.error('GET /api/admin/sync-lark-group-members error:', { error: getErrorMessage(error) })
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Preview failed' },
+      { status: 500 }
+    )
+  }
+}
