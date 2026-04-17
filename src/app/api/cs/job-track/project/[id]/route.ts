@@ -67,3 +67,38 @@ export async function PATCH(
     return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }
+
+/**
+ * DELETE /api/cs/job-track/project/[id]
+ *
+ * Delete a project and all related records via cascade.
+ * Only ADMIN and CLIENT_SERVICING roles can delete.
+ */
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
+  const session = await getServerSession(authOptions)
+  if (!session?.user || !ALLOWED_ROLES.includes(session.user.role)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { id } = await params
+
+  try {
+    // Use Prisma's cascading delete (schema has onDelete: Cascade for most relations)
+    const project = await prisma.project.delete({
+      where: { id },
+      select: { id: true, code: true },
+    })
+
+    return NextResponse.json({ success: true, code: project.code })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    // Check for not-found
+    if (message.includes('Record to delete does not exist')) {
+      return NextResponse.json({ error: 'Project not found' }, { status: 404 })
+    }
+    return NextResponse.json({ success: false, error: message }, { status: 500 })
+  }
+}
