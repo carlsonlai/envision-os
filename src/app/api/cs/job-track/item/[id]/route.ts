@@ -80,3 +80,43 @@ export async function PATCH(
     return NextResponse.json({ success: false, error: message }, { status: 500 })
   }
 }
+
+/**
+ * DELETE /api/cs/job-track/item/[id]
+ *
+ * Delete a single deliverable item.
+ * Only ADMIN and CLIENT_SERVICING roles can delete.
+ */
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+): Promise<NextResponse> {
+  const session = await getServerSession(authOptions)
+  if (!session?.user || !ALLOWED_ROLES.includes(session.user.role)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const { id } = await params
+
+  try {
+    // Check the item exists first
+    const existing = await prisma.$queryRawUnsafe<{ id: string }[]>(
+      `SELECT id FROM "deliverable_items" WHERE id = $1`,
+      id
+    )
+    if (!existing.length) {
+      return NextResponse.json({ error: 'Item not found' }, { status: 404 })
+    }
+
+    // Delete related records first (revisions, file versions, QC checks)
+    await prisma.$queryRawUnsafe(`DELETE FROM "revisions" WHERE "deliverableItemId" = $1`, id)
+    await prisma.$queryRawUnsafe(`DELETE FROM "file_versions" WHERE "deliverableItemId" = $1`, id)
+    await prisma.$queryRawUnsafe(`DELETE FROM "qc_checks" WHERE "deliverableItemId" = $1`, id)
+    await prisma.$queryRawUnsafe(`DELETE FROM "deliverable_items" WHERE id = $1`, id)
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error)
+    return NextResponse.json({ success: false, error: message }, { status: 500 })
+  }
+}
