@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { getChatbotConfig, type ChatbotConfig, type QuickAction } from '@/lib/chatbot-config'
 
-// âââ Types ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Types ──────────────────────────────────────────────────────────────────
 
 interface ChatMessage {
   id: string
@@ -30,7 +30,7 @@ interface RoleChatbotProps {
   defaultExpanded?: boolean
 }
 
-// âââ Markdown-lite renderer âââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Markdown-lite renderer ─────────────────────────────────────────────────
 // Handles **bold**, *italic*, `code`, and line breaks
 function renderMarkdown(text: string): React.ReactNode {
   const parts = text.split(/(\*\*.*?\*\*|\*.*?\*|`.*?`|\n)/g)
@@ -53,7 +53,7 @@ function renderMarkdown(text: string): React.ReactNode {
   })
 }
 
-// âââ Component ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Component ──────────────────────────────────────────────────────────────
 
 export default function RoleChatbot({ role, defaultExpanded = true }: RoleChatbotProps) {
   const { data: session } = useSession()
@@ -201,7 +201,7 @@ export default function RoleChatbot({ role, defaultExpanded = true }: RoleChatbo
     setIsStreaming(false)
   }
 
-  // âââ Collapsed state (floating button) ââââââââââââââââââââââââââââââââââ
+  // ─── Collapsed state (floating button) ──────────────────────────────────
   if (!isExpanded) {
     return (
       <button
@@ -215,7 +215,7 @@ export default function RoleChatbot({ role, defaultExpanded = true }: RoleChatbo
     )
   }
 
-  // âââ Expanded chatbot âââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ─── Expanded chatbot ───────────────────────────────────────────────────
   return (
     <div className="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-40 flex flex-col w-[360px] max-h-[560px] rounded-xl border border-zinc-800/80 bg-[#0d0d14] shadow-2xl shadow-black/50 overflow-hidden">
       {/* Header */}
