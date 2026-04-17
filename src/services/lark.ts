@@ -310,7 +310,7 @@ export async function notify(channel: LarkChannel, event: LarkEvent): Promise<vo
   }
 }
 
-// ─── Staff / Contact API ──────────────────────────────────────────────────────
+// âââ Staff / Contact API ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 export interface LarkDepartment {
   openDepartmentId: string
@@ -325,7 +325,7 @@ export interface LarkStaffMember {
   jobTitle?: string
   employeeNo?: string
   departmentIds: string[]
-  /** Department display name — resolved after getDepartments() call */
+  /** Department display name â resolved after getDepartments() call */
   departmentName?: string
   avatar?: string
   isActive: boolean
@@ -363,7 +363,7 @@ export async function getDepartments(): Promise<LarkDepartment[]> {
       headers: { Authorization: `Bearer ${token}` },
     })
 
-    if (res.data.code !== 0) break // permission not granted yet — return empty
+    if (res.data.code !== 0) break // permission not granted yet â return empty
 
     for (const d of res.data.data.items ?? []) {
       depts.push({
@@ -379,7 +379,7 @@ export async function getDepartments(): Promise<LarkDepartment[]> {
   return depts
 }
 
-type LarkUserItem = {
+export type LarkUserItem = {
   open_id: string
   name: string
   email?: string
@@ -430,6 +430,15 @@ async function fetchChatMembers(chatId: string, token: string): Promise<LarkUser
 }
 
 /**
+ * Public wrapper: fetch human members of a Lark group chat.
+ * Returns array of { open_id, name } for each human member.
+ */
+export async function getGroupChatMembers(chatId: string): Promise<LarkUserItem[]> {
+  const token = await getToken()
+  return fetchChatMembers(chatId, token)
+}
+
+/**
  * Fetch all users for a single department_id, handling pagination.
  * Root department (sentinel '__root__') uses numeric department_id=0.
  */
@@ -463,7 +472,7 @@ async function fetchUsersForDept(
       headers: { Authorization: `Bearer ${token}` },
     })
 
-    if (res.data.code !== 0) break   // no permission for this dept — skip silently
+    if (res.data.code !== 0) break   // no permission for this dept â skip silently
 
     items.push(...(res.data.data.items ?? []))
     pageToken = res.data.data.has_more ? res.data.data.page_token : undefined
@@ -499,8 +508,8 @@ async function fetchUserById(
  *
  * Strategy (in order):
  *  1. Call /contact/v3/scopes to discover what the app is authorised to see.
- *     - authed_departments → fetch users dept-by-dept (handles restricted scope)
- *     - authed_users       → fetch individual users (handles user-level grants)
+ *     - authed_departments â fetch users dept-by-dept (handles restricted scope)
+ *     - authed_users       â fetch individual users (handles user-level grants)
  *  2. If scopes returned nothing, fall back to iterating getDepartments() result.
  *  3. Last-resort: try the root department (dept_id=0).
  *
@@ -509,11 +518,11 @@ async function fetchUserById(
 export async function getStaff(): Promise<LarkStaffMember[]> {
   const token = await getToken()
 
-  // ── Build dept name map (best-effort — empty is fine) ─────────────────────
+  // ââ Build dept name map (best-effort â empty is fine) âââââââââââââââââââââ
   const depts = await getDepartments()
   const deptMap = new Map(depts.map(d => [d.openDepartmentId, d.name]))
 
-  // ── Helper: convert raw Lark user → LarkStaffMember ───────────────────────
+  // ââ Helper: convert raw Lark user â LarkStaffMember âââââââââââââââââââââââ
   function mapUser(u: LarkUserItem): LarkStaffMember {
     const userDeptIds = u.department_ids ?? []
     return {
@@ -542,7 +551,7 @@ export async function getStaff(): Promise<LarkStaffMember[]> {
     staff.push(mapUser(u))
   }
 
-  // ── Step 1: use /contact/v3/scopes to find authorised depts + users ────────
+  // ââ Step 1: use /contact/v3/scopes to find authorised depts + users ââââââââ
   let authedDepts: string[] = []
   let authedUsers: string[] = []
 
@@ -563,7 +572,7 @@ export async function getStaff(): Promise<LarkStaffMember[]> {
       authedUsers = scopeRes.data.data?.authed_users ?? []
     }
   } catch {
-    // scopes call failed — will fall through to fallbacks below
+    // scopes call failed â will fall through to fallbacks below
   }
 
   // Fetch users from each authorised department
@@ -583,7 +592,7 @@ export async function getStaff(): Promise<LarkStaffMember[]> {
     if (u) addUser(u)
   }
 
-  // ── Step 2: fallback — iterate departments from getDepartments() ───────────
+  // ââ Step 2: fallback â iterate departments from getDepartments() âââââââââââ
   if (staff.length === 0 && depts.length > 0) {
     for (const dept of depts) {
       try {
@@ -595,7 +604,7 @@ export async function getStaff(): Promise<LarkStaffMember[]> {
     }
   }
 
-  // ── Step 3: last resort — try root department (dept_id=0) ──────────────────
+  // ââ Step 3: last resort â try root department (dept_id=0) ââââââââââââââââââ
   if (staff.length === 0) {
     try {
       const items = await fetchUsersForDept('__root__', token)
@@ -605,7 +614,7 @@ export async function getStaff(): Promise<LarkStaffMember[]> {
     }
   }
 
-  // ── Step 4: final fallback — scrape members from all group chats the bot is in
+  // ââ Step 4: final fallback â scrape members from all group chats the bot is in
   // This works with im:chat:members:readonly even when contact scopes are missing.
   // Members discovered this way will have openId + name but no email or job title.
   if (staff.length === 0) {
@@ -628,14 +637,14 @@ export async function getStaff(): Promise<LarkStaffMember[]> {
     throw new Error(
       'No staff returned from Lark. Check that the app has contact:user.base:readonly scope ' +
       'and that the app availability covers all members in the Lark Developer Console ' +
-      '(Version Management & Release → App Availability → All members).'
+      '(Version Management & Release â App Availability â All members).'
     )
   }
 
   return staff
 }
 
-// ─── Gantt Chart Card ─────────────────────────────────────────────────────────
+// âââ Gantt Chart Card âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 export interface GanttRow {
   description: string
@@ -647,13 +656,13 @@ export interface GanttRow {
 }
 
 const STATUS_EMOJI: Record<string, string> = {
-  PENDING: '⏳',
-  IN_PROGRESS: '🔵',
-  WIP_UPLOADED: '🟣',
-  QC_REVIEW: '🟡',
-  APPROVED: '✅',
-  DELIVERED: '✅',
-  FA_SIGNED: '🏁',
+  PENDING: 'â³',
+  IN_PROGRESS: 'ðµ',
+  WIP_UPLOADED: 'ð£',
+  QC_REVIEW: 'ð¡',
+  APPROVED: 'â',
+  DELIVERED: 'â',
+  FA_SIGNED: 'ð',
 }
 
 const ITEM_LABELS: Record<string, string> = {
@@ -669,7 +678,7 @@ const ITEM_LABELS: Record<string, string> = {
 
 /**
  * Send a rich Gantt-style project timeline card to the CREATIVE Lark channel.
- * This replaces the SVG/image Gantt with a structured Lark card table — no image
+ * This replaces the SVG/image Gantt with a structured Lark card table â no image
  * server required. Each deliverable is a row with status, deadline, assignee.
  */
 export async function sendGanttCard(
@@ -683,7 +692,7 @@ export async function sendGanttCard(
   const chatId = process.env.LARK_CHANNEL_CREATIVE ?? process.env.LARK_CHANNEL_CS
 
   if (!chatId) {
-    logger.warn('[Lark] No LARK_CHANNEL_CREATIVE configured — skipping Gantt card')
+    logger.warn('[Lark] No LARK_CHANNEL_CREATIVE configured â skipping Gantt card')
     return
   }
 
@@ -691,7 +700,7 @@ export async function sendGanttCard(
     ? deadline.toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: 'numeric' })
     : 'TBD'
 
-  const modeLabel = mode === 'AUTOPILOT' ? '🤖 Autopilot' : '🧑‍💼 Copilot'
+  const modeLabel = mode === 'AUTOPILOT' ? 'ð¤ Autopilot' : 'ð§âð¼ Copilot'
   const projectUrl = `${process.env.NEXTAUTH_URL ?? ''}/cs/projects`
 
   // Build table rows as markdown text blocks
@@ -699,7 +708,7 @@ export async function sendGanttCard(
   const tableSep = `|---|---|---|---|---|---|`
   const tableRows = rows
     .map((row, i) => {
-      const emoji = STATUS_EMOJI[row.status] ?? '⏳'
+      const emoji = STATUS_EMOJI[row.status] ?? 'â³'
       const dl = row.deadline
         ? row.deadline.toLocaleDateString('en-MY', { day: '2-digit', month: 'short' })
         : 'TBD'
@@ -715,7 +724,7 @@ export async function sendGanttCard(
   const cardContent = {
     config: { wide_screen_mode: true },
     header: {
-      title: { tag: 'plain_text', content: `📋 Project Timeline: ${projectCode}` },
+      title: { tag: 'plain_text', content: `ð Project Timeline: ${projectCode}` },
       template: 'indigo',
     },
     elements: [
@@ -798,7 +807,7 @@ export async function sendCopilotReview(
   const chatId = process.env.LARK_CHANNEL_CS
 
   if (!chatId) {
-    logger.warn('[Lark] No LARK_CHANNEL_CS configured — skipping copilot review card')
+    logger.warn('[Lark] No LARK_CHANNEL_CS configured â skipping copilot review card')
     return
   }
 
@@ -808,7 +817,7 @@ export async function sendCopilotReview(
   const cardContent = {
     config: { wide_screen_mode: true },
     header: {
-      title: { tag: 'plain_text', content: `🧑‍💼 Copilot: New Project Needs Review — ${projectCode}` },
+      title: { tag: 'plain_text', content: `ð§âð¼ Copilot: New Project Needs Review â ${projectCode}` },
       template: 'yellow',
     },
     elements: [
@@ -837,7 +846,7 @@ export async function sendCopilotReview(
           },
           {
             is_short: true,
-            text: { tag: 'lark_md', content: `**Status:** ⏸ PROJECTED (awaiting CS review)` },
+            text: { tag: 'lark_md', content: `**Status:** â¸ PROJECTED (awaiting CS review)` },
           },
         ],
       },
@@ -847,7 +856,7 @@ export async function sendCopilotReview(
         actions: [
           {
             tag: 'button',
-            text: { tag: 'plain_text', content: '📋 Review Project Brief' },
+            text: { tag: 'plain_text', content: 'ð Review Project Brief' },
             type: 'primary',
             url: projectUrl,
           },
@@ -878,12 +887,12 @@ export async function sendCopilotReview(
   }
 }
 
-// ─── Drive / Project Folder Listing ──────────────────────────────────────────
+// âââ Drive / Project Folder Listing ââââââââââââââââââââââââââââââââââââââââââ
 
 export interface LarkProjectFolder {
-  /** Lark Drive folder token — use as larkFolderId in DB */
+  /** Lark Drive folder token â use as larkFolderId in DB */
   token: string
-  /** Folder name — expected to match project code e.g. "PRJ-0001" */
+  /** Folder name â expected to match project code e.g. "PRJ-0001" */
   name: string
   createdAt?: number
   modifiedAt?: number
@@ -928,7 +937,7 @@ export async function listFolderChildren(folderToken: string): Promise<LarkProje
 
     if (res.data.code !== 0) {
       throw new Error(
-        `Lark Drive listFolderChildren failed: code ${res.data.code} — ${res.data.msg ?? 'unknown error'}. ` +
+        `Lark Drive listFolderChildren failed: code ${res.data.code} â ${res.data.msg ?? 'unknown error'}. ` +
         `Ensure the Lark app has drive:drive:readonly scope and access to folder ${folderToken}.`
       )
     }
@@ -966,7 +975,7 @@ export async function getLarkProjectFolders(): Promise<LarkProjectFolder[]> {
   return all.filter(f => /^[A-Z]{2,5}-\d{3,6}$/i.test(f.name.trim()))
 }
 
-// ─── Group Chat Listing ───────────────────────────────────────────────────────
+// âââ Group Chat Listing âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 export interface LarkGroupChat {
   chatId: string
@@ -975,7 +984,7 @@ export interface LarkGroupChat {
   description?: string
 }
 
-/** Fixed internal group name keywords — add here to permanently exclude a group pattern */
+/** Fixed internal group name keywords â add here to permanently exclude a group pattern */
 const INTERNAL_GROUP_KEYWORDS = [
   'envicion crm',
   'tasks assistant',
@@ -1070,7 +1079,7 @@ export async function getLarkGroupChats(): Promise<LarkGroupChat[]> {
 
     if (res.data.code !== 0) {
       throw new Error(
-        `Lark getLarkGroupChats failed: code ${res.data.code} — ${res.data.msg ?? 'unknown error'}`
+        `Lark getLarkGroupChats failed: code ${res.data.code} â ${res.data.msg ?? 'unknown error'}`
       )
     }
 
@@ -1116,7 +1125,7 @@ export async function createProjectChat(
     }>(
       `${LARK_BASE}/im/v1/chats`,
       {
-        name: `${projectCode} — ${clientName}`,
+        name: `${projectCode} â ${clientName}`,
         description: `Project workspace for ${projectCode}`,
         owner_id: appId,
         owner_id_type: 'app_id',
@@ -1132,7 +1141,7 @@ export async function createProjectChat(
     )
 
     if (res.data.code !== 0 || !res.data.data?.chat_id) {
-      logger.error(`[Lark] createProjectChat failed: code ${res.data.code} — ${res.data.msg}`)
+      logger.error(`[Lark] createProjectChat failed: code ${res.data.code} â ${res.data.msg}`)
       return null
     }
 
