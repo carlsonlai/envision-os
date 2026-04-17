@@ -5,8 +5,8 @@
  * for the Job Track dashboard used by Client Servicing.
  *
  * Query params:
- *   paymentStatus  — filter: HALF_PAID | FULL_PAID | PAID | PENDING | PROGRESS | UNPAID
- *   search         — search by account/project name
+ *   paymentStatus  â filter: HALF_PAID | FULL_PAID | PAID | PENDING | PROGRESS | UNPAID
+ *   search         â search by account/project name
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -130,6 +130,26 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
         ).catch(() => [] as ItemRow[])
       : []
 
+    // Fetch project members (PIC) from csAssignments
+    interface MemberRow { projectId: string; userId: string; userName: string }
+    const members: MemberRow[] = projectIds.length > 0
+      ? await prisma.$queryRawUnsafe<MemberRow[]>(
+          `SELECT pca."projectId", pca."userId", u.name AS "userName"
+           FROM "project_cs_assignments" pca
+           JOIN "users" u ON u.id = pca."userId"
+           WHERE pca."projectId" IN (${projectIds.map((_, i) => `$${i + 1}`).join(', ')})
+           ORDER BY pca."claimedAt" ASC`,
+          ...projectIds
+        ).catch(() => [] as MemberRow[])
+      : []
+
+    // Group members by projectId
+    const membersByProject = new Map<string, Array<{ userId: string; name: string }>>()
+    for (const m of members) {
+      if (!membersByProject.has(m.projectId)) membersByProject.set(m.projectId, [])
+      membersByProject.get(m.projectId)!.push({ userId: m.userId, name: m.userName })
+    }
+
     // Group items by projectId
     const itemsByProject = new Map<string, ItemRow[]>()
     for (const item of items) {
@@ -138,7 +158,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     }
 
     // Build project groups
-    // totalQuoted = project.quotedAmount (contract value — same as CS Hub)
+    // totalQuoted = project.quotedAmount (contract value â same as CS Hub)
     // totalPaid / totalPending = summed from deliverable items with payment data
     const groups = projects
       .map(proj => {
@@ -196,6 +216,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
           totalFullPaid,
           totalPending,
           items: filteredItems,
+          members: membersByProject.get(proj.id) ?? [],
         }
       })
       .filter(Boolean)
