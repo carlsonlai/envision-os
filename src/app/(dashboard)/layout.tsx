@@ -38,6 +38,7 @@ import {
   Library,
   Cpu,
 } from 'lucide-react'
+import RoleChatbot from '@/components/chatbot/RoleChatbot'
 
 interface NavItem {
   href: string
@@ -51,7 +52,7 @@ interface NavGroup {
   items: NavItem[]
 }
 
-// ── Personal section reused across roles ────────────────────────────────────
+// ââ Personal section reused across roles ââââââââââââââââââââââââââââââââââââ
 const PERSONAL_GROUP: NavGroup = {
   label: 'Personal',
   items: [
@@ -64,7 +65,7 @@ const PERSONAL_GROUP: NavGroup = {
 
 const NAV_BY_ROLE: Record<string, NavGroup[]> = {
 
-  // ─── ADMIN ────────────────────────────────────────────────────────────────
+  // âââ ADMIN ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   ADMIN: [
     {
       items: [
@@ -140,7 +141,7 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
     },
   ],
 
-  // ─── SALES ────────────────────────────────────────────────────────────────
+  // âââ SALES ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   SALES: [
     {
       items: [
@@ -153,8 +154,8 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
     PERSONAL_GROUP,
   ],
 
-  // ─── CLIENT SERVICING ─────────────────────────────────────────────────────
-  // CS is the bridge between clients and creative — needs full visibility
+  // âââ CLIENT SERVICING âââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // CS is the bridge between clients and creative â needs full visibility
   CLIENT_SERVICING: [
     {
       label: 'Client Management',
@@ -181,7 +182,7 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
     PERSONAL_GROUP,
   ],
 
-  // ─── CREATIVE DIRECTOR ────────────────────────────────────────────────────
+  // âââ CREATIVE DIRECTOR ââââââââââââââââââââââââââââââââââââââââââââââââââââ
   CREATIVE_DIRECTOR: [
     {
       items: [
@@ -197,7 +198,7 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
     PERSONAL_GROUP,
   ],
 
-  // ─── SENIOR ART DIRECTOR ──────────────────────────────────────────────────
+  // âââ SENIOR ART DIRECTOR ââââââââââââââââââââââââââââââââââââââââââââââââââ
   SENIOR_ART_DIRECTOR: [
     {
       items: [
@@ -212,7 +213,7 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
     PERSONAL_GROUP,
   ],
 
-  // ─── JUNIOR ART DIRECTOR (sees all jobs, manages own) ─────────────────────
+  // âââ JUNIOR ART DIRECTOR (sees all jobs, manages own) âââââââââââââââââââââ
   JUNIOR_ART_DIRECTOR: [
     {
       items: [
@@ -267,7 +268,7 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
     PERSONAL_GROUP,
   ],
 
-  // ─── AI SALES AGENT ───────────────────────────────────────────────────────
+  // âââ AI SALES AGENT âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   AI_SALES_AGENT: [
     {
       label: 'AI Sales',
@@ -287,7 +288,7 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
     },
   ],
 
-  // ─── AI CS AGENT ──────────────────────────────────────────────────────────
+  // âââ AI CS AGENT ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   AI_CS_AGENT: [
     {
       label: 'AI Client Services',
@@ -382,7 +383,7 @@ export default function DashboardLayout({
     }
   }, [pathname])
 
-  // Render the dashboard shell immediately — middleware guarantees the user is
+  // Render the dashboard shell immediately â middleware guarantees the user is
   // authenticated, so the worst case here is a one-frame render with empty nav
   // while `useSession()` rehydrates from the cookie. This keeps FCP fast.
   const userRole = session?.user?.role ?? ''
@@ -404,7 +405,7 @@ export default function DashboardLayout({
         />
       )}
 
-      {/* Sidebar — desktop always visible, mobile slide-in */}
+      {/* Sidebar â desktop always visible, mobile slide-in */}
       <aside className={`
         fixed md:static inset-y-0 left-0 z-50
         w-60 flex-shrink-0 flex flex-col border-r border-zinc-800/60 bg-[#0d0d14]
@@ -430,7 +431,7 @@ export default function DashboardLayout({
           </button>
         </div>
 
-        {/* Nav — grouped sections */}
+        {/* Nav â grouped sections */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto">
           {navGroups.map((group, gi) => (
             <div key={gi} className={gi > 0 ? 'mt-4' : ''}>
@@ -518,6 +519,9 @@ export default function DashboardLayout({
 
         {/* Page content */}
         <main className="flex-1 overflow-auto p-4 md:p-6 pb-20 md:pb-6">{children}</main>
+
+        {/* Role-specific AI Chatbot */}
+        {userRole && <RoleChatbot role={userRole} defaultExpanded={false} />}
 
         {/* Mobile Bottom Nav */}
         <nav className="fixed bottom-0 left-0 right-0 z-30 flex md:hidden border-t border-zinc-800 bg-[#0d0d14]">
