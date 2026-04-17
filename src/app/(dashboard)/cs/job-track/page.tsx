@@ -8,12 +8,12 @@ import {
   TrendingUp, DollarSign, Loader2, Zap, LayoutGrid, List,
   ShieldCheck, ShieldAlert, ShieldX, Database, Briefcase,
   MessageSquare, ExternalLink, Pencil, X, Save, Users, UserCheck,
-  FolderKanban, AlertTriangle, Activity,
+  FolderKanban, AlertTriangle, Activity, Trash2,
 } from 'lucide-react'
 
 type ViewMode = 'grouped' | 'pipeline' | 'table' | 'live' | 'kanban' | 'activity'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// âââ Types ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 interface JobItem {
   id: string
@@ -34,6 +34,11 @@ interface JobItem {
   isConfirmed: boolean
 }
 
+interface ProjectMember {
+  userId: string
+  name: string
+}
+
 interface ProjectGroup {
   projectId: string
   clientId: string | null
@@ -48,6 +53,7 @@ interface ProjectGroup {
   totalFullPaid: number
   totalPending: number
   items: JobItem[]
+  members: ProjectMember[]
 }
 
 interface StaffMember {
@@ -100,7 +106,7 @@ interface EditState {
   group: ProjectGroup
 }
 
-// ─── Kanban Types ────────────────────────────────────────────────────────────
+// âââ Kanban Types ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 type KanbanProjectStatus = 'PROJECTED' | 'ONGOING' | 'COMPLETED' | 'BILLED' | 'PAID'
 
@@ -133,7 +139,7 @@ const KANBAN_COLUMNS: {
   { status: 'PAID',      label: 'Paid',      icon: CheckCircle2,   accent: 'text-emerald-400', borderColor: 'border-emerald-500/30', bgColor: 'bg-emerald-500/5',  textColor: 'text-emerald-300', dropHighlight: 'ring-2 ring-emerald-400/50 bg-emerald-500/10' },
 ]
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// âââ Helpers ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 function fmt(n: number): string {
   return `RM ${n.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
@@ -174,7 +180,7 @@ const BILLING_STAGES: Record<string, { label: string; cls: string }> = {
 }
 
 function PayBadge({ status }: { status: string | null }) {
-  if (!status) return <span className="text-zinc-600 text-xs">—</span>
+  if (!status) return <span className="text-zinc-600 text-xs">â</span>
   const stage = BILLING_STAGES[status]
   if (!stage) return (
     <span className="inline-flex items-center rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide bg-zinc-700 text-zinc-400">
@@ -211,7 +217,7 @@ function BukkuVerifyBadge({
   localAmount: number | null
   verifyData: BukkuVerifyData | null
 }) {
-  if (!docNo) return <span className="text-zinc-700 text-[10px]">—</span>
+  if (!docNo) return <span className="text-zinc-700 text-[10px]">â</span>
   if (!verifyData) return null
 
   const map = docType === 'quote' ? verifyData.quoteMap : verifyData.invoiceMap
@@ -233,7 +239,7 @@ function BukkuVerifyBadge({
     )
   }
   return (
-    <span title={`Verified — ${fmt(entry.amount)} · ${entry.status}`} className="inline-flex items-center gap-0.5 text-[10px] text-emerald-400">
+    <span title={`Verified â ${fmt(entry.amount)} Â· ${entry.status}`} className="inline-flex items-center gap-0.5 text-[10px] text-emerald-400">
       <ShieldCheck className="h-3 w-3" />Verified
     </span>
   )
@@ -253,7 +259,7 @@ function BukkuStatusPill({ status }: { status: string }) {
   )
 }
 
-// ─── Activity Helpers ─────────────────────────────────────────────────────────
+// âââ Activity Helpers âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 const ACTION_LABELS: Record<string, string> = {
   STATUS_CHANGE: 'Status Changed',
@@ -336,7 +342,7 @@ function renderMetadata(meta: Record<string, unknown>): React.ReactNode[] {
   return nodes
 }
 
-// ─── Edit Drawer ──────────────────────────────────────────────────────────────
+// âââ Edit Drawer ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 interface EditDrawerProps {
   editState: EditState
@@ -459,7 +465,7 @@ function EditDrawer({ editState, csStaff, designers, onClose, onSaved }: EditDra
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
 
-          {/* ── Company Name ──────────────────────────────────────────────── */}
+          {/* ââ Company Name ââââââââââââââââââââââââââââââââââââââââââââââââ */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Company Name</label>
             <div className="flex gap-2">
@@ -482,7 +488,7 @@ function EditDrawer({ editState, csStaff, designers, onClose, onSaved }: EditDra
             </div>
           </div>
 
-          {/* ── Staff Assignment ──────────────────────────────────────────── */}
+          {/* ââ Staff Assignment ââââââââââââââââââââââââââââââââââââââââââââ */}
           <div className="rounded-lg border border-zinc-800 bg-zinc-900/40 p-4 space-y-3">
             <div className="flex items-center gap-2">
               <Users className="h-3.5 w-3.5 text-zinc-500" />
@@ -501,7 +507,7 @@ function EditDrawer({ editState, csStaff, designers, onClose, onSaved }: EditDra
                     disabled={savingCS}
                     className="flex-1 rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500 disabled:opacity-60"
                   >
-                    <option value="">— Unassigned —</option>
+                    <option value="">â Unassigned â</option>
                     {csStaff.map(u => (
                       <option key={u.id} value={u.id}>{u.name}</option>
                     ))}
@@ -517,7 +523,7 @@ function EditDrawer({ editState, csStaff, designers, onClose, onSaved }: EditDra
                   onChange={e => setDesignerId(e.target.value)}
                   className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-2 py-1.5 text-xs text-zinc-200 focus:outline-none focus:border-indigo-500"
                 >
-                  <option value="">— Unassigned —</option>
+                  <option value="">â Unassigned â</option>
                   {designers.map(u => (
                     <option key={u.id} value={u.id}>{u.name}</option>
                   ))}
@@ -527,7 +533,7 @@ function EditDrawer({ editState, csStaff, designers, onClose, onSaved }: EditDra
             <p className="text-[10px] text-zinc-600">CS change saves immediately. Designer saves with the main Save button.</p>
           </div>
 
-          {/* ── Description ───────────────────────────────────────────────── */}
+          {/* ââ Description âââââââââââââââââââââââââââââââââââââââââââââââââ */}
           <div className="space-y-1.5">
             <label className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest">Project / Item Description</label>
             <textarea
@@ -541,12 +547,12 @@ function EditDrawer({ editState, csStaff, designers, onClose, onSaved }: EditDra
 
           <div className="border-t border-zinc-800" />
 
-          {/* ── Job Type toggle ────────────────────────────────────────────── */}
+          {/* ââ Job Type toggle ââââââââââââââââââââââââââââââââââââââââââââââ */}
           <div className="flex items-center justify-between">
             <div>
               <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-widest mb-0.5">Job Type</p>
               <p className="text-sm font-medium text-zinc-200">
-                {isConfirmed ? <span className="text-emerald-400">✓ Confirmed Job</span> : <span className="text-blue-400">◎ Pitching Job</span>}
+                {isConfirmed ? <span className="text-emerald-400">â Confirmed Job</span> : <span className="text-blue-400">â Pitching Job</span>}
               </p>
             </div>
             {!isConfirmed ? (
@@ -570,11 +576,11 @@ function EditDrawer({ editState, csStaff, designers, onClose, onSaved }: EditDra
           </div>
 
           {!isConfirmed ? (
-            /* ── PITCHING fields ──────────────────────────────────────── */
+            /* ââ PITCHING fields ââââââââââââââââââââââââââââââââââââââââ */
             <div className="rounded-lg border border-blue-900/40 bg-blue-950/20 p-4 space-y-3">
               <div className="flex items-center gap-2 mb-1">
                 <Briefcase className="h-3.5 w-3.5 text-blue-400" />
-                <span className="text-xs font-semibold text-blue-400">Pitching — Project Status</span>
+                <span className="text-xs font-semibold text-blue-400">Pitching â Project Status</span>
               </div>
               <div className="space-y-1.5">
                 <label className="text-xs font-medium text-zinc-400">Project Status</label>
@@ -583,7 +589,7 @@ function EditDrawer({ editState, csStaff, designers, onClose, onSaved }: EditDra
                   onChange={e => setPaymentStatus(e.target.value)}
                   className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500"
                 >
-                  <option value="">— Select Status —</option>
+                  <option value="">â Select Status â</option>
                   <option value="STARTED">Started</option>
                   <option value="PROGRESS">In Progress / Pitching</option>
                   <option value="PENDING">Pending Decision</option>
@@ -598,12 +604,12 @@ function EditDrawer({ editState, csStaff, designers, onClose, onSaved }: EditDra
                   onChange={e => setStatusNotes(e.target.value)}
                   rows={2}
                   className="w-full rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500 resize-none"
-                  placeholder="Pitch notes, client feedback…"
+                  placeholder="Pitch notes, client feedbackâ¦"
                 />
               </div>
             </div>
           ) : (
-            /* ── CONFIRMED fields ─────────────────────────────────────── */
+            /* ââ CONFIRMED fields âââââââââââââââââââââââââââââââââââââââ */
             <div className="space-y-4">
               {/* Quotation */}
               <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4 space-y-3">
@@ -684,7 +690,7 @@ function EditDrawer({ editState, csStaff, designers, onClose, onSaved }: EditDra
                       onChange={e => setPaymentStatus(e.target.value)}
                       className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500"
                     >
-                      <option value="">— Select —</option>
+                      <option value="">â Select â</option>
                       <option value="STARTED">Started</option>
                       <option value="PROGRESS">In Progress</option>
                       <option value="COMPLETED">Completed</option>
@@ -697,7 +703,7 @@ function EditDrawer({ editState, csStaff, designers, onClose, onSaved }: EditDra
                       onChange={e => setPaymentStatus(e.target.value)}
                       className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500"
                     >
-                      <option value="">— Select —</option>
+                      <option value="">â Select â</option>
                       <option value="STARTED">Started</option>
                       <option value="PARTIALLY_BILLED">Partially Billed</option>
                       <option value="COMPLETED">Completed</option>
@@ -735,7 +741,7 @@ function EditDrawer({ editState, csStaff, designers, onClose, onSaved }: EditDra
                     onChange={e => setStatusNotes(e.target.value)}
                     rows={2}
                     className="w-full rounded-md border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-200 focus:outline-none focus:border-indigo-500 resize-none"
-                    placeholder="Internal notes…"
+                    placeholder="Internal notesâ¦"
                   />
                 </div>
               </div>
@@ -756,7 +762,7 @@ function EditDrawer({ editState, csStaff, designers, onClose, onSaved }: EditDra
             className="flex-1 flex items-center justify-center gap-2 rounded-md bg-indigo-600 hover:bg-indigo-500 px-4 py-2.5 text-sm font-medium text-white transition-colors disabled:opacity-60"
           >
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-            {saving ? 'Saving…' : 'Save Changes'}
+            {saving ? 'Savingâ¦' : 'Save Changes'}
           </button>
           <button
             type="button"
@@ -771,7 +777,7 @@ function EditDrawer({ editState, csStaff, designers, onClose, onSaved }: EditDra
   )
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// âââ Main Component âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
 export default function JobTrackPage() {
   const [groups, setGroups] = useState<ProjectGroup[]>([])
@@ -794,14 +800,18 @@ export default function JobTrackPage() {
   const [designers, setDesigners] = useState<StaffMember[]>([])
   const [scopeFilter, setScopeFilter] = useState<'all' | 'mine'>('all')
 
-  // ── Kanban state ─────────────────────────────────────────────────────────
+  // ââ Delete state ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'item' | 'project'; id: string; label: string } | null>(null)
+  const [deleting, setDeleting] = useState(false)
+
+  // ââ Kanban state âââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   const [kanbanProjects, setKanbanProjects] = useState<KanbanProject[]>([])
   const [kanbanLoading, setKanbanLoading] = useState(false)
   const [kanbanDragging, setKanbanDragging] = useState('')
   const [kanbanOverCol, setKanbanOverCol] = useState<KanbanProjectStatus | null>(null)
   const kanbanDragCounters = useRef<Partial<Record<KanbanProjectStatus, number>>>({})
 
-  // ── Activity state ──────────────────────────────────────────────────────
+  // ââ Activity state ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   interface ActivityItem {
     id: string
     action: string
@@ -956,6 +966,28 @@ export default function JobTrackPage() {
 
   const openEdit = (item: JobItem, group: ProjectGroup) => setEditState({ item, group })
 
+  const handleDelete = async () => {
+    if (!deleteConfirm) return
+    setDeleting(true)
+    try {
+      const endpoint = deleteConfirm.type === 'item'
+        ? `/api/cs/job-track/item/${deleteConfirm.id}`
+        : `/api/cs/job-track/project/${deleteConfirm.id}`
+      const res = await fetch(endpoint, { method: 'DELETE' })
+      if (!res.ok) {
+        const json = await res.json()
+        throw new Error(json.error ?? 'Delete failed')
+      }
+      // Refresh data
+      await load()
+      setDeleteConfirm(null)
+    } catch {
+      // silent â could add toast
+    } finally {
+      setDeleting(false)
+    }
+  }
+
   const displayGroups = groups
     .map(g => ({
       ...g,
@@ -985,7 +1017,7 @@ export default function JobTrackPage() {
     return acc
   }, {})
 
-  // ─── Render ────────────────────────────────────────────────────────────────
+  // âââ Render ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
 
   return (
     <div className="space-y-6">
@@ -1003,7 +1035,7 @@ export default function JobTrackPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-xl font-semibold text-zinc-100">Job Track</h1>
-          <p className="text-sm text-zinc-500 mt-0.5">All active accounts — quotations, invoices &amp; payment status</p>
+          <p className="text-sm text-zinc-500 mt-0.5">All active accounts â quotations, invoices &amp; payment status</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {/* My / All toggle */}
@@ -1056,7 +1088,7 @@ export default function JobTrackPage() {
             className="flex items-center gap-1.5 rounded-md bg-indigo-700 hover:bg-indigo-600 px-3 py-1.5 text-xs font-medium text-white transition-colors disabled:opacity-60"
           >
             {verifying ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ShieldCheck className="h-3.5 w-3.5" />}
-            {verifying ? 'Verifying…' : 'Verify with Bukku'}
+            {verifying ? 'Verifyingâ¦' : 'Verify with Bukku'}
           </button>
           {verifiedAt && !verifying && (
             <span className="text-[10px] text-zinc-500">
@@ -1080,7 +1112,7 @@ export default function JobTrackPage() {
             className="flex items-center gap-1.5 rounded-md bg-emerald-700 hover:bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition-colors disabled:opacity-60"
           >
             {syncingBukku ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Zap className="h-3.5 w-3.5" />}
-            {syncingBukku ? 'Syncing…' : 'Sync from Bukku'}
+            {syncingBukku ? 'Syncingâ¦' : 'Sync from Bukku'}
           </button>
         </div>
       </div>
@@ -1089,12 +1121,12 @@ export default function JobTrackPage() {
       {importLog.length > 0 && (
         <div className="rounded-lg border border-zinc-700 bg-zinc-900 p-3 text-xs text-zinc-400 max-h-40 overflow-y-auto space-y-0.5">
           {importLog.map((line, i) => (
-            <div key={i} className={line.startsWith('✓') ? 'text-emerald-400' : line.startsWith('✗') ? 'text-rose-400' : 'text-amber-400'}>{line}</div>
+            <div key={i} className={line.startsWith('â') ? 'text-emerald-400' : line.startsWith('â') ? 'text-rose-400' : 'text-amber-400'}>{line}</div>
           ))}
         </div>
       )}
 
-      {/* ── Kanban Board View ──────────────────────────────────────────── */}
+      {/* ââ Kanban Board View ââââââââââââââââââââââââââââââââââââââââââââ */}
       {view === 'kanban' ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
@@ -1251,7 +1283,7 @@ export default function JobTrackPage() {
         <div className="space-y-3">
           {activityLoading ? (
             <div className="flex items-center justify-center py-20 text-zinc-500">
-              <Loader2 className="h-5 w-5 animate-spin mr-2" />Loading activity…
+              <Loader2 className="h-5 w-5 animate-spin mr-2" />Loading activityâ¦
             </div>
           ) : activityItems.length === 0 ? (
             <div className="text-center py-20 text-zinc-500 text-sm">No recent activity found.</div>
@@ -1331,7 +1363,7 @@ export default function JobTrackPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
               <input
                 type="text"
-                placeholder="Search contact or document number…"
+                placeholder="Search contact or document numberâ¦"
                 value={liveBukkuSearch}
                 onChange={e => setLiveBukkuSearch(e.target.value)}
                 className="w-full rounded-md border border-zinc-700 bg-zinc-900 pl-9 pr-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-[#6366f1]"
@@ -1339,7 +1371,7 @@ export default function JobTrackPage() {
             </div>
             {verifyData && (
               <span className="text-xs text-zinc-500">
-                {verifyData.quotations.length} quotations · {verifyData.invoices.length} invoices from Bukku
+                {verifyData.quotations.length} quotations Â· {verifyData.invoices.length} invoices from Bukku
               </span>
             )}
           </div>
@@ -1347,7 +1379,7 @@ export default function JobTrackPage() {
           {verifying ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="h-6 w-6 animate-spin text-zinc-500" />
-              <span className="ml-3 text-sm text-zinc-500">Fetching live data from Bukku…</span>
+              <span className="ml-3 text-sm text-zinc-500">Fetching live data from Bukkuâ¦</span>
             </div>
           ) : !verifyData ? (
             <div className="rounded-xl border border-zinc-800 bg-zinc-900 p-12 text-center">
@@ -1389,7 +1421,7 @@ export default function JobTrackPage() {
                               <p className="text-sm font-semibold text-zinc-100">{fmt(doc.total_amount)}</p>
                               <p className="text-[10px] text-zinc-500">
                                 {new Date(doc.date).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                {doc.due_date && <> · Due {new Date(doc.due_date).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })}</>}
+                                {doc.due_date && <> Â· Due {new Date(doc.due_date).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })}</>}
                               </p>
                             </div>
                             <a
@@ -1457,7 +1489,7 @@ export default function JobTrackPage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-500" />
               <input
                 type="text"
-                placeholder="Search company, project, quote or invoice…"
+                placeholder="Search company, project, quote or invoiceâ¦"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
                 className="w-full rounded-md border border-zinc-700 bg-zinc-900 pl-9 pr-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 focus:outline-none focus:border-[#6366f1]"
@@ -1523,7 +1555,7 @@ export default function JobTrackPage() {
               </p>
             </div>
           ) : view === 'pipeline' ? (
-            /* ── Billing Pipeline view ───────────────────────────────── */
+            /* ââ Billing Pipeline view âââââââââââââââââââââââââââââââââ */
             (() => {
               // Map item status + revision count to a creative stage label
               const getCreativeStage = (item: JobItem): string => {
@@ -1634,7 +1666,7 @@ export default function JobTrackPage() {
               )
             })()
           ) : view === 'table' ? (
-            /* ── Flat table view ─────────────────────────────────────── */
+            /* ââ Flat table view âââââââââââââââââââââââââââââââââââââââ */
             <div className="rounded-xl border border-zinc-800 overflow-hidden">
               <div className="grid grid-cols-[160px_minmax(0,1fr)_50px_140px_140px_100px_90px_110px_36px] gap-2 px-4 py-2.5 bg-zinc-800/60 text-[10px] font-semibold uppercase tracking-widest text-zinc-500 border-b border-zinc-800">
                 <span>Company</span>
@@ -1658,7 +1690,7 @@ export default function JobTrackPage() {
                     <JobKindBadge item={row} />
                   </div>
                   <div className="min-w-0">
-                    <p className="text-zinc-200 text-xs leading-snug line-clamp-2">{row.description ?? '—'}</p>
+                    <p className="text-zinc-200 text-xs leading-snug line-clamp-2">{row.description ?? 'â'}</p>
                     {!isJobConfirmed(row) && (
                       <p className="text-blue-400/70 text-[10px] mt-0.5 flex items-center gap-1">
                         <MessageSquare className="h-2.5 w-2.5" />
@@ -1676,7 +1708,7 @@ export default function JobTrackPage() {
                         <FileText className="h-3 w-3 text-zinc-500 group-hover/link:text-indigo-400 flex-shrink-0" />
                         <span className="text-xs text-zinc-300 group-hover/link:text-indigo-400 font-mono underline-offset-2 group-hover/link:underline">{row.quoteNo}</span>
                       </a>
-                    ) : <span className="text-zinc-700 text-xs">—</span>}
+                    ) : <span className="text-zinc-700 text-xs">â</span>}
                     <BukkuVerifyBadge docNo={row.quoteNo} docType="quote" localAmount={row.qteAmount} verifyData={verifyData} />
                   </div>
                   <div className="space-y-1">
@@ -1685,7 +1717,7 @@ export default function JobTrackPage() {
                         <Receipt className="h-3 w-3 text-zinc-500 group-hover/link:text-indigo-400 flex-shrink-0" />
                         <span className="text-xs text-zinc-300 group-hover/link:text-indigo-400 font-mono underline-offset-2 group-hover/link:underline">{row.invoiceNo}</span>
                       </a>
-                    ) : <span className="text-zinc-700 text-xs">—</span>}
+                    ) : <span className="text-zinc-700 text-xs">â</span>}
                     <BukkuVerifyBadge docNo={row.invoiceNo} docType="invoice" localAmount={row.qteAmount} verifyData={verifyData} />
                     {row.invoiceSentStatus && <InvBadge status={row.invoiceSentStatus} />}
                   </div>
@@ -1694,7 +1726,7 @@ export default function JobTrackPage() {
                       <span className="text-xs font-medium text-zinc-200">
                         RM {row.qteAmount.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>
-                    ) : <span className="text-zinc-700 text-xs">—</span>}
+                    ) : <span className="text-zinc-700 text-xs">â</span>}
                   </div>
                   <div className="flex justify-center">
                     <PayBadge status={row.paymentStatus} />
@@ -1708,7 +1740,7 @@ export default function JobTrackPage() {
                       <span className="text-xs text-zinc-500">
                         Inv: {new Date(row.invoiceDate).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })}
                       </span>
-                    ) : <span className="text-zinc-700 text-xs">—</span>}
+                    ) : <span className="text-zinc-700 text-xs">â</span>}
                   </div>
                   <div className="flex justify-center">
                     <button
@@ -1719,12 +1751,20 @@ export default function JobTrackPage() {
                     >
                       <Pencil className="h-3 w-3" />
                     </button>
+                    <button
+                      type="button"
+                      onClick={() => setDeleteConfirm({ type: 'item', id: row.id, label: row.description ?? row.itemType })}
+                      className="p-1 rounded text-zinc-600 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                      title="Delete"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                    </button>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            /* ── Grouped accordion view ────────────────────────────── */
+            /* ââ Grouped accordion view ââââââââââââââââââââââââââââââ */
             <div className="space-y-2">
               {displayGroups.map(group => {
                 const isOpen = expanded.has(group.projectId)
@@ -1749,6 +1789,15 @@ export default function JobTrackPage() {
                           {group.csName && (
                             <span className="inline-flex items-center gap-1 text-[10px] text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 rounded px-1.5 py-0.5">
                               <UserCheck className="h-2.5 w-2.5" />{group.csName}
+                            </span>
+                          )}
+                          {group.members && group.members.length > 0 && (
+                            <span className="inline-flex items-center gap-1 text-[10px] text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded px-1.5 py-0.5">
+                              <Users className="h-2.5 w-2.5" />
+                              {group.members.length <= 3
+                                ? group.members.map(m => m.name.split(' ')[0]).join(', ')
+                                : `${group.members.slice(0, 2).map(m => m.name.split(' ')[0]).join(', ')} +${group.members.length - 2}`
+                              }
                             </span>
                           )}
                           {pitchingCount > 0 && (
@@ -1819,7 +1868,7 @@ export default function JobTrackPage() {
                           >
                             <div className="min-w-0 space-y-0.5">
                               <JobKindBadge item={item} />
-                              <p className="text-zinc-200 text-xs leading-snug line-clamp-2">{item.description ?? '—'}</p>
+                              <p className="text-zinc-200 text-xs leading-snug line-clamp-2">{item.description ?? 'â'}</p>
                               {!isJobConfirmed(item) && (
                                 <p className="text-blue-400/70 text-[10px] flex items-center gap-1">
                                   <MessageSquare className="h-2.5 w-2.5" />
@@ -1842,7 +1891,7 @@ export default function JobTrackPage() {
                                 </a>
                               ) : (
                                 isJobConfirmed(item)
-                                  ? <span className="text-zinc-700 text-xs">—</span>
+                                  ? <span className="text-zinc-700 text-xs">â</span>
                                   : <span className="text-blue-400/50 text-[10px]">Pending quote</span>
                               )}
                               <BukkuVerifyBadge docNo={item.quoteNo} docType="quote" localAmount={item.qteAmount} verifyData={verifyData} />
@@ -1856,7 +1905,7 @@ export default function JobTrackPage() {
                                 </a>
                               ) : (
                                 isJobConfirmed(item)
-                                  ? <span className="text-zinc-700 text-xs">—</span>
+                                  ? <span className="text-zinc-700 text-xs">â</span>
                                   : <span className="text-blue-400/50 text-[10px]">Pending invoice</span>
                               )}
                               <BukkuVerifyBadge docNo={item.invoiceNo} docType="invoice" localAmount={item.qteAmount} verifyData={verifyData} />
@@ -1868,7 +1917,7 @@ export default function JobTrackPage() {
                                 <span className="text-xs font-medium text-zinc-200">
                                   RM {item.qteAmount.toLocaleString('en-MY', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                                 </span>
-                              ) : <span className="text-zinc-700 text-xs">—</span>}
+                              ) : <span className="text-zinc-700 text-xs">â</span>}
                             </div>
 
                             <div className="flex justify-center">
@@ -1884,10 +1933,10 @@ export default function JobTrackPage() {
                                 <span className="text-xs text-zinc-500">
                                   Inv: {new Date(item.invoiceDate).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })}
                                 </span>
-                              ) : <span className="text-zinc-700 text-xs">—</span>}
+                              ) : <span className="text-zinc-700 text-xs">â</span>}
                             </div>
 
-                            <div className="flex justify-center">
+                            <div className="flex justify-center gap-1">
                               <button
                                 type="button"
                                 onClick={() => openEdit(item, group)}
@@ -1896,9 +1945,27 @@ export default function JobTrackPage() {
                               >
                                 <Pencil className="h-3 w-3" />
                               </button>
+                              <button
+                                type="button"
+                                onClick={() => setDeleteConfirm({ type: 'item', id: item.id, label: item.description ?? item.itemType })}
+                                className="p-1 rounded text-zinc-600 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                                title="Delete"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </button>
                             </div>
                           </div>
                         ))}
+                        {/* Delete entire project */}
+                        <div className="flex justify-end px-4 py-2 border-t border-zinc-800/50">
+                          <button
+                            type="button"
+                            onClick={() => setDeleteConfirm({ type: 'project', id: group.projectId, label: `${group.client} (${group.account})` })}
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          >
+                            <Trash2 className="h-3 w-3" /> Delete Project
+                          </button>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -1909,10 +1976,44 @@ export default function JobTrackPage() {
 
           {summary && !loading && (
             <p className="text-xs text-zinc-600 text-center">
-              {summary.totalAccounts} accounts · {summary.totalItems} line items
+              {summary.totalAccounts} accounts Â· {summary.totalItems} line items
             </p>
           )}
         </>
+      )}
+
+      {/* ââ Delete Confirmation Dialog ââââââââââââââââââââââââââââââââ */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div className="bg-zinc-900 border border-zinc-700 rounded-xl p-6 max-w-sm w-full mx-4 space-y-4">
+            <h3 className="text-zinc-100 font-semibold text-sm">
+              Delete {deleteConfirm.type === 'item' ? 'Job Item' : 'Project'}?
+            </h3>
+            <p className="text-zinc-400 text-xs">
+              Are you sure you want to delete <span className="text-zinc-200 font-medium">{deleteConfirm.label}</span>?
+              {deleteConfirm.type === 'project' && ' This will remove the project and all its deliverable items.'}
+              {' '}This action cannot be undone.
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirm(null)}
+                className="px-3 py-1.5 rounded-lg text-xs text-zinc-400 hover:text-zinc-200 bg-zinc-800 hover:bg-zinc-700 transition-colors"
+                disabled={deleting}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-3 py-1.5 rounded-lg text-xs text-white bg-rose-600 hover:bg-rose-500 transition-colors disabled:opacity-50"
+                disabled={deleting}
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )
