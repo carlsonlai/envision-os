@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import Link from 'next/link'
 import { Zap, LogOut, ExternalLink } from 'lucide-react'
+import RoleChatbot from '@/components/chatbot/RoleChatbot'
 
 export default function ClientLayout({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession()
@@ -54,6 +55,9 @@ export default function ClientLayout({ children }: { children: React.ReactNode }
 
       {/* Page content */}
       <main>{children}</main>
+
+      {/* Client Portal AI Chatbot */}
+      <RoleChatbot role="CLIENT" defaultExpanded={false} />
 
       {/* Footer */}
       <footer className="mt-16 border-t border-zinc-200 py-6 px-6">
