@@ -25,6 +25,7 @@ import {
   Pencil,
   Search,
   Save,
+  Users,
 } from 'lucide-react'
 import { formatCurrency, formatDeadline } from '@/lib/utils'
 import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
@@ -53,6 +54,7 @@ interface Project {
   client?: { id: string; companyName: string; contactPerson: string }
   assignedCS?: { id: string; name: string } | null
   assignedCSId?: string | null
+  csAssignments?: Array<{ user: { id: string; name: string } }>
   createdAt: string
 }
 
@@ -130,6 +132,7 @@ export default function AdminProjectsPage() {
   const [larkSyncing, setLarkSyncing]         = useState(false)
   const [larkResult, setLarkResult]           = useState<LarkSyncResult | null>(null)
   const [showLarkPanel, setShowLarkPanel]     = useState(false)
+  const [memberSyncing, setMemberSyncing]     = useState(false)
 
   // Delete
   const [deleteConfirm, setDeleteConfirm]     = useState<{ id: string; code: string } | null>(null)
@@ -193,14 +196,30 @@ export default function AdminProjectsPage() {
       setShowLarkPanel(true)
       if (json.data.created > 0) {
         await fetchProjects()
-        addToast('success', `Lark sync complete — ${json.data.created} project(s) imported.`)
+        addToast('success', `Lark sync complete â ${json.data.created} project(s) imported.`)
       } else {
-        addToast('success', 'Lark sync complete — all projects already up to date.')
+        addToast('success', 'Lark sync complete â all projects already up to date.')
       }
     } catch (err) {
       addToast('error', err instanceof Error ? err.message : 'Lark sync failed')
     } finally {
       setLarkSyncing(false)
+    }
+  }
+
+  async function syncMembers() {
+    setMemberSyncing(true)
+    try {
+      const res = await fetch('/api/admin/sync-lark-group-members', { method: 'POST' })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error ?? 'Member sync failed')
+      const data = json.data as { synced: number; assignments: { created: number; unmatched: number } }
+      await fetchProjects()
+      addToast('success', `Synced members for ${data.synced} project(s) â ${data.assignments.created} assignment(s).`)
+    } catch (err) {
+      addToast('error', err instanceof Error ? err.message : 'Member sync failed')
+    } finally {
+      setMemberSyncing(false)
     }
   }
 
@@ -400,12 +419,20 @@ export default function AdminProjectsPage() {
           </div>
           <div className="flex items-center gap-2">
             <button type="button"
+              onClick={syncMembers}
+              disabled={memberSyncing}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 hover:text-zinc-100 text-sm font-medium transition-colors disabled:opacity-50"
+            >
+              <Users className={`w-4 h-4 ${memberSyncing ? 'animate-spin' : ''}`} />
+              {memberSyncing ? 'Syncingâ¦' : 'Sync Members'}
+            </button>
+            <button type="button"
               onClick={syncFromLark}
               disabled={larkSyncing}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 hover:text-zinc-100 text-sm font-medium transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 ${larkSyncing ? 'animate-spin' : ''}`} />
-              {larkSyncing ? 'Syncing…' : 'Sync Lark'}
+              {larkSyncing ? 'Syncingâ¦' : 'Sync Lark'}
             </button>
             <button type="button"
               onClick={() => { setShowForm(p => !p); setShowNewClient(false); setFormError('') }}
@@ -453,7 +480,7 @@ export default function AdminProjectsPage() {
                   <div className="flex flex-wrap gap-2">
                     {larkResult.projects.filter(p => p.isNew).map(p => (
                       <span key={p.chatId} className="px-2.5 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300">
-                        <span className="font-mono text-emerald-200">{p.code}</span> — {p.name}
+                        <span className="font-mono text-emerald-200">{p.code}</span> â {p.name}
                       </span>
                     ))}
                   </div>
@@ -514,7 +541,7 @@ export default function AdminProjectsPage() {
                     <div className="relative">
                       <select value={formClientId} onChange={e => setFormClientId(e.target.value)}
                         className="w-full appearance-none bg-zinc-800/70 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 transition-colors pr-9">
-                        <option value="">— Select client —</option>
+                        <option value="">â Select client â</option>
                         {clients.map(c => (
                           <option key={c.id} value={c.id}>{c.companyName}</option>
                         ))}
@@ -551,7 +578,7 @@ export default function AdminProjectsPage() {
                       <button type="button" onClick={handleCreateClient} disabled={ncLoading}
                         className="cursor-pointer w-full flex items-center justify-center gap-2 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 text-white text-xs font-medium transition-colors">
                         {ncLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
-                        {ncLoading ? 'Saving…' : 'Save Client & Select'}
+                        {ncLoading ? 'Savingâ¦' : 'Save Client & Select'}
                       </button>
                     </div>
                   )}
@@ -597,7 +624,7 @@ export default function AdminProjectsPage() {
                   <div className="relative">
                     <select value={formCSId} onChange={e => setFormCSId(e.target.value)}
                       className="w-full appearance-none bg-zinc-800/70 border border-zinc-700 rounded-xl px-3.5 py-2.5 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 transition-colors pr-9">
-                      <option value="">— Unassigned —</option>
+                      <option value="">â Unassigned â</option>
                       {csUsers.map(u => (
                         <option key={u.id} value={u.id}>{u.name}</option>
                       ))}
@@ -622,7 +649,7 @@ export default function AdminProjectsPage() {
                 <button type="submit" disabled={formLoading}
                   className="flex items-center gap-2 px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-medium transition-colors">
                   {formLoading && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {formLoading ? 'Creating…' : 'Create Project'}
+                  {formLoading ? 'Creatingâ¦' : 'Create Project'}
                 </button>
               </div>
             </form>
@@ -638,7 +665,7 @@ export default function AdminProjectsPage() {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search by name or code…"
+              placeholder="Search by name or codeâ¦"
               className="w-full bg-zinc-900 border border-zinc-800 rounded-xl pl-9 pr-3.5 py-2.5 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500/60 focus:ring-1 focus:ring-indigo-500/30 transition-colors"
             />
             {search && (
@@ -709,6 +736,7 @@ export default function AdminProjectsPage() {
                     <th className="text-right px-4 py-3.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider w-32">Quoted (RM)</th>
                     <th className="text-left px-4 py-3.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider w-28 hidden lg:table-cell">Deadline</th>
                     <th className="text-left px-4 py-3.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider w-32 hidden xl:table-cell">CS</th>
+                    <th className="text-left px-4 py-3.5 text-xs font-semibold text-zinc-500 uppercase tracking-wider w-40 hidden xl:table-cell">Team</th>
                     <th className="px-4 py-3.5 w-28"></th>
                   </tr>
                 </thead>
@@ -833,7 +861,7 @@ export default function AdminProjectsPage() {
                               )}
                             </div>
                           ) : (
-                            <span className="text-xs text-zinc-600">—</span>
+                            <span className="text-xs text-zinc-600">â</span>
                           )}
                         </td>
                         <td className="px-4 py-4">
@@ -843,16 +871,29 @@ export default function AdminProjectsPage() {
                         </td>
                         <td className="px-4 py-4 text-right">
                           <span className="text-sm font-medium text-zinc-300 tabular-nums">
-                            {project.quotedAmount > 0 ? formatCurrency(project.quotedAmount) : <span className="text-zinc-600 text-xs">—</span>}
+                            {project.quotedAmount > 0 ? formatCurrency(project.quotedAmount) : <span className="text-zinc-600 text-xs">â</span>}
                           </span>
                         </td>
                         <td className="px-4 py-4 hidden lg:table-cell">
-                          <span className="text-xs text-zinc-500">{formatDeadline(project.deadline) || '—'}</span>
+                          <span className="text-xs text-zinc-500">{formatDeadline(project.deadline) || 'â'}</span>
                         </td>
                         <td className="px-4 py-4 hidden xl:table-cell">
                           {project.assignedCS
                             ? <span className="text-xs text-zinc-400">{project.assignedCS.name}</span>
-                            : <span className="text-xs text-zinc-600">—</span>}
+                            : <span className="text-xs text-zinc-600">â</span>}
+                        </td>
+                        <td className="px-4 py-4 hidden xl:table-cell">
+                          {project.csAssignments && project.csAssignments.length > 0
+                            ? (
+                              <div className="flex flex-wrap gap-1">
+                                {project.csAssignments.map(a => (
+                                  <span key={a.user.id} className="inline-flex items-center text-[10px] text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded px-1.5 py-0.5">
+                                    {a.user.name.split(' ')[0]}
+                                  </span>
+                                ))}
+                              </div>
+                            )
+                            : <span className="text-xs text-zinc-600">â</span>}
                         </td>
                         <td className="px-4 py-4">
                           <div className="flex items-center justify-end gap-1.5">
@@ -922,7 +963,7 @@ export default function AdminProjectsPage() {
                         <span className="font-mono text-xs font-semibold text-indigo-400">{project.code}</span>
                         {isLark && <span className="ml-2 text-[10px] text-zinc-500">Lark</span>}
                         <p className="mt-0.5 text-sm font-medium text-zinc-100 leading-snug line-clamp-2">
-                          {project.client?.companyName ?? '—'}
+                          {project.client?.companyName ?? 'â'}
                         </p>
                         <p className="text-xs text-zinc-500 mt-0.5">{project.client?.companyName ?? ''}</p>
                       </div>
@@ -933,7 +974,7 @@ export default function AdminProjectsPage() {
 
                     {/* Amount + Deadline */}
                     <div className="flex items-center justify-between text-xs text-zinc-400">
-                      <span>RM {project.quotedAmount != null ? Number(project.quotedAmount).toLocaleString('en-MY', { minimumFractionDigits: 2 }) : '—'}</span>
+                      <span>RM {project.quotedAmount != null ? Number(project.quotedAmount).toLocaleString('en-MY', { minimumFractionDigits: 2 }) : 'â'}</span>
                       {project.deadline && (
                         <span className="text-zinc-500">{new Date(project.deadline).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
                       )}
@@ -942,6 +983,18 @@ export default function AdminProjectsPage() {
                     {/* CS */}
                     {cs && (
                       <p className="text-xs text-zinc-500">CS: <span className="text-zinc-300">{cs.name}</span></p>
+                    )}
+
+                    {/* Team / PIC */}
+                    {project.csAssignments && project.csAssignments.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        <span className="text-xs text-zinc-500 mr-0.5">Team:</span>
+                        {project.csAssignments.map(a => (
+                          <span key={a.user.id} className="inline-flex items-center text-[10px] text-violet-400 bg-violet-500/10 border border-violet-500/20 rounded px-1.5 py-0.5">
+                            {a.user.name.split(' ')[0]}
+                          </span>
+                        ))}
+                      </div>
                     )}
 
                     {/* Actions */}
@@ -998,7 +1051,7 @@ export default function AdminProjectsPage() {
               <button type="button" onClick={handleDeleteProject} disabled={deleting}
                 className="flex-1 px-4 py-2 rounded-xl bg-red-600 hover:bg-red-500 text-sm font-medium text-white transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
                 {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
-                {deleting ? 'Deleting…' : 'Delete'}
+                {deleting ? 'Deletingâ¦' : 'Delete'}
               </button>
             </div>
           </div>
