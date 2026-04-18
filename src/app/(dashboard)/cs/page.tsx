@@ -14,7 +14,10 @@ import {
   X,
   LayoutGrid,
   List,
+  Flag,
+  Bell,
 } from 'lucide-react'
+import { getPusherClient } from '@/lib/pusher-client'
 
 type ProjectStatus = 'PROJECTED' | 'ONGOING' | 'COMPLETED' | 'BILLED' | 'PAID'
 type ViewMode = 'board' | 'list'
@@ -30,6 +33,49 @@ interface Project {
   client?: { companyName: string; contactPerson: string; email: string }
   updatedAt: string
 }
+
+// Pusher payloads — shapes match the server emitters in
+// src/app/api/projects/[id]/items/[itemId]/status/route.ts and escalate/route.ts
+interface StatusChangedPayload {
+  itemId: string
+  projectId: string
+  projectCode: string
+  itemType: string
+  to: string
+  changedByName: string | null
+  timestamp: string
+}
+
+interface EscalatedPayload {
+  itemId: string
+  projectId: string
+  projectCode: string
+  categoryLabel: string
+  description: string
+  blocking: boolean
+  timestamp: string
+}
+
+// Local notification-feed entry — union-typed by kind so the render switch stays
+// exhaustive. Keep fields minimal; full payload still lives on the backend audit log.
+type LiveEvent =
+  | {
+      id: string
+      kind: 'status'
+      projectId: string
+      projectCode: string
+      message: string
+      at: string
+    }
+  | {
+      id: string
+      kind: 'escalation'
+      projectId: string
+      projectCode: string
+      blocking: boolean
+      message: string
+      at: string
+    }
 
 interface PipelineColumn {
   status: ProjectStatus
@@ -107,11 +153,12 @@ function isOverdue(deadline: string | null): boolean {
 interface ProjectCardProps {
   project: Project
   showAlert?: boolean
+  flashing?: boolean
   onDragStart: (id: string) => void
   isDragging: boolean
 }
 
-function ProjectCard({ project, showAlert, onDragStart, isDragging }: ProjectCardProps) {
+function ProjectCard({ project, showAlert, flashing, onDragStart, isDragging }: ProjectCardProps) {
   const overdue = isOverdue(project.deadline)
 
   return (
@@ -128,7 +175,9 @@ function ProjectCard({ project, showAlert, onDragStart, isDragging }: ProjectCar
           ? 'opacity-40 scale-95'
           : 'hover:border-zinc-600/60'
       } ${
-        showAlert
+        flashing
+          ? 'border-[#818cf8]/70 bg-[#6366f1]/10 ring-2 ring-[#6366f1]/40 shadow-[0_0_0_4px_rgba(99,102,241,0.12)]'
+          : showAlert
           ? 'border-red-500/30 bg-red-500/5'
           : overdue
           ? 'border-amber-500/20 bg-amber-500/5'
@@ -199,6 +248,12 @@ export default function CSPage() {
   const [overCol, setOverCol] = useState<ProjectStatus | null>(null)
   const dragCounters = useRef<Partial<Record<ProjectStatus, number>>>({})
 
+  // Live notifications from designers — status changes and escalations land here
+  const [liveEvents, setLiveEvents] = useState<LiveEvent[]>([])
+  const [flashProjectIds, setFlashProjectIds] = useState<Set<string>>(new Set())
+  const [notifOpen, setNotifOpen] = useState(false)
+  const [seenEventIds, setSeenEventIds] = useState<Set<string>>(new Set())
+
   useEffect(() => {
     async function loadProjects() {
       try {
@@ -212,6 +267,87 @@ export default function CSPage() {
       }
     }
     loadProjects()
+  }, [])
+
+  // Real-time: subscribe to cs-alerts channel for status changes and escalations
+  // from designers. Channel must match src/services/pusher.ts CHANNELS.cs.
+  useEffect(() => {
+    const pusher = getPusherClient()
+    if (!pusher) return
+    const channel = pusher.subscribe('cs-alerts')
+
+    const statusHandler = (payload: StatusChangedPayload) => {
+      // Patch local project status if we have it cached
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.id === payload.projectId ? { ...p, updatedAt: payload.timestamp } : p
+        )
+      )
+      setLiveEvents((prev) =>
+        [
+          {
+            id: `status-${payload.itemId}-${payload.timestamp}`,
+            kind: 'status' as const,
+            projectId: payload.projectId,
+            projectCode: payload.projectCode,
+            message: `${payload.itemType} → ${payload.to.replace(/_/g, ' ')} by ${payload.changedByName ?? 'designer'}`,
+            at: payload.timestamp,
+          },
+          ...prev,
+        ].slice(0, 8)
+      )
+      setFlashProjectIds((prev) => {
+        const next = new Set(prev)
+        next.add(payload.projectId)
+        return next
+      })
+      // Clear flash after 6s
+      setTimeout(() => {
+        setFlashProjectIds((prev) => {
+          const next = new Set(prev)
+          next.delete(payload.projectId)
+          return next
+        })
+      }, 6000)
+    }
+
+    const escalatedHandler = (payload: EscalatedPayload) => {
+      setLiveEvents((prev) =>
+        [
+          {
+            id: `esc-${payload.itemId}-${payload.timestamp}`,
+            kind: 'escalation' as const,
+            projectId: payload.projectId,
+            projectCode: payload.projectCode,
+            blocking: payload.blocking,
+            message: `${payload.blocking ? 'BLOCKING — ' : ''}${payload.categoryLabel}: ${payload.description.slice(0, 80)}`,
+            at: payload.timestamp,
+          },
+          ...prev,
+        ].slice(0, 8)
+      )
+      setFlashProjectIds((prev) => {
+        const next = new Set(prev)
+        next.add(payload.projectId)
+        return next
+      })
+      // Escalations hold the flash longer — they're higher-signal than routine status changes.
+      setTimeout(() => {
+        setFlashProjectIds((prev) => {
+          const next = new Set(prev)
+          next.delete(payload.projectId)
+          return next
+        })
+      }, 12000)
+    }
+
+    channel.bind('status-changed', statusHandler)
+    channel.bind('escalated', escalatedHandler)
+    return () => {
+      channel.unbind('status-changed', statusHandler)
+      channel.unbind('escalated', escalatedHandler)
+      pusher.unsubscribe('cs-alerts')
+    }
   }, [])
 
   async function loadClients() {
@@ -305,6 +441,107 @@ export default function CSPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Realtime notification bell — fed by cs-alerts Pusher channel */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                setNotifOpen((prev) => !prev)
+                // Mark all current events as seen when opening
+                if (!notifOpen) {
+                  setSeenEventIds((prev) => {
+                    const next = new Set(prev)
+                    for (const e of liveEvents) next.add(e.id)
+                    return next
+                  })
+                }
+              }}
+              title="Designer activity"
+              className="relative rounded-lg border border-zinc-700 bg-zinc-800/60 p-1.5 text-zinc-400 hover:text-zinc-100 hover:border-zinc-600 transition-colors"
+            >
+              <Bell className="h-3.5 w-3.5" />
+              {liveEvents.some((e) => !seenEventIds.has(e.id)) && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500" />
+                </span>
+              )}
+            </button>
+            {notifOpen && (
+              <div className="absolute right-0 mt-2 w-80 rounded-xl border border-zinc-800 bg-[#0d0d14] shadow-2xl z-40">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-zinc-800/60">
+                  <span className="text-xs font-semibold text-zinc-300 uppercase tracking-wide">
+                    Designer activity
+                  </span>
+                  {liveEvents.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLiveEvents([])
+                        setSeenEventIds(new Set())
+                      }}
+                      className="text-[10px] text-zinc-500 hover:text-zinc-300 transition-colors"
+                    >
+                      Clear all
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-96 overflow-y-auto">
+                  {liveEvents.length === 0 ? (
+                    <div className="px-3 py-6 text-center text-xs text-zinc-600">
+                      No recent activity.
+                      <br />
+                      You&apos;ll see designer updates here in real time.
+                    </div>
+                  ) : (
+                    liveEvents.map((evt) => {
+                      const isEsc = evt.kind === 'escalation'
+                      const blocking = evt.kind === 'escalation' && evt.blocking
+                      return (
+                        <Link
+                          key={evt.id}
+                          href={`/cs/projects/${evt.projectId}`}
+                          onClick={() => setNotifOpen(false)}
+                          className={`flex items-start gap-2 px-3 py-2.5 border-b border-zinc-800/40 hover:bg-zinc-800/30 transition-colors ${
+                            blocking ? 'bg-red-500/5' : ''
+                          }`}
+                        >
+                          <div
+                            className={`mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full ${
+                              isEsc
+                                ? blocking
+                                  ? 'bg-red-500/15 text-red-400'
+                                  : 'bg-amber-500/15 text-amber-400'
+                                : 'bg-[#6366f1]/15 text-[#818cf8]'
+                            }`}
+                          >
+                            {isEsc ? <Flag className="h-3 w-3" /> : <Zap className="h-3 w-3" />}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-[11px] font-mono font-semibold text-[#818cf8]">
+                                {evt.projectCode}
+                              </span>
+                              <span className="text-[10px] text-zinc-600">
+                                {new Date(evt.at).toLocaleTimeString('en-MY', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </span>
+                            </div>
+                            <p className="mt-0.5 text-[11px] text-zinc-300 line-clamp-2">
+                              {evt.message}
+                            </p>
+                          </div>
+                        </Link>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* View toggle */}
           <div className="flex items-center rounded-lg border border-zinc-700 bg-zinc-800/60 p-0.5">
             <button
@@ -528,6 +765,7 @@ export default function CSPage() {
                       key={project.id}
                       project={project}
                       showAlert={col.status === 'COMPLETED'}
+                      flashing={flashProjectIds.has(project.id)}
                       onDragStart={setDraggingId}
                       isDragging={draggingId === project.id}
                     />
