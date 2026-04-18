@@ -6,10 +6,10 @@
  * by matching each member's open_id to users.larkOpenId.
  *
  * Optional query param:
- *   ?projectId=xxx  â sync only a single project
+ *   ?projectId=xxx  — sync only a single project
  *
- * GET  â preview which projects would be synced and current member counts.
- * POST â execute the sync.
+ * GET  — preview which projects would be synced and current member counts.
+ * POST — execute the sync.
  *
  * Requires: ADMIN role
  */
@@ -70,7 +70,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       },
     })
 
-    // Build a map of larkOpenId â userId for all users with a larkOpenId
+    // Build a map of larkOpenId → userId for all users with a larkOpenId
     const usersWithLark = await prisma.user.findMany({
       where: { larkOpenId: { not: null } },
       select: { id: true, name: true, larkOpenId: true },
@@ -141,7 +141,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             })
             result.assignments.created++
           } catch {
-            // Already exists â count as existing
+            // Already exists — count as existing
             detail.members.push({
               name: member.name,
               openId: member.open_id,
