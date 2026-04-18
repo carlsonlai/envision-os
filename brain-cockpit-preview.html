@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Envicion OS — Brain Cockpit (Preview)</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root { color-scheme: dark; }
+  body { background:#09090b; font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .ico { width:16px; height:16px; stroke-width:1.8; }
+  .ico-lg { width:18px; height:18px; stroke-width:1.8; }
+  .ico-xl { width:20px; height:20px; stroke-width:1.8; }
+</style>
+</head>
+<body class="text-zinc-100">
+<!-- Preview banner -->
+<div class="border-b border-amber-500/30 bg-amber-500/10 px-4 py-2 text-center text-xs text-amber-200">
+  Preview mode — seed data. Live page lives at <span class="font-mono">/admin/brain</span> once you run <span class="font-mono">npm run dev</span>.
+</div>
+
+<div class="mx-auto max-w-7xl px-6 py-8">
+  <!-- Header -->
+  <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
+    <div>
+      <div class="flex items-center gap-2">
+        <div class="rounded-lg bg-gradient-to-br from-[#6366f1] to-[#8b5cf6] p-2">
+          <!-- brain -->
+          <svg xmlns="http://www.w3.org/2000/svg" class="ico-lg text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.25A2.75 2.75 0 0 0 7 6v0a2.75 2.75 0 0 0-2 4.648A2.75 2.75 0 0 0 5 16a2.75 2.75 0 0 0 4 2.457V21m5.25-17.75A2.75 2.75 0 0 1 17 6v0a2.75 2.75 0 0 1 2 4.648A2.75 2.75 0 0 1 19 16a2.75 2.75 0 0 1-4 2.457V21M12 6v13"/></svg>
+        </div>
+        <h1 class="text-2xl font-bold tracking-tight">AI Brain Cockpit</h1>
+      </div>
+      <p class="mt-1 text-sm text-zinc-400">Envicion OS — CEO+COO layer. Decisions, margin guard, pace.</p>
+    </div>
+    <div class="flex items-center gap-2">
+      <button class="flex items-center gap-2 rounded-md border border-[#6366f1]/40 bg-[#6366f1]/10 px-3 py-2 text-sm text-[#a5b4fc] hover:bg-[#6366f1]/20">
+        <svg xmlns="http://www.w3.org/2000/svg" class="ico" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 3.25A2.75 2.75 0 0 0 7 6v0a2.75 2.75 0 0 0-2 4.648A2.75 2.75 0 0 0 5 16a2.75 2.75 0 0 0 4 2.457V21m5.25-17.75A2.75 2.75 0 0 1 17 6v0a2.75 2.75 0 0 1 2 4.648A2.75 2.75 0 0 1 19 16a2.75 2.75 0 0 1-4 2.457V21M12 6v13"/></svg>
+        Run Brain
+      </button>
+      <button class="flex items-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300 hover:bg-emerald-500/20">
+        <svg xmlns="http://www.w3.org/2000/svg" class="ico" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3v3m6.364 1.636-2.121 2.121M21 12h-3M18.364 18.364l-2.121-2.121M12 21v-3M5.636 18.364l2.121-2.121M3 12h3M5.636 5.636l2.121 2.121"/></svg>
+        Profit Sweep
+      </button>
+      <button class="flex items-center gap-2 rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm text-zinc-300 hover:bg-zinc-800">
+        <svg xmlns="http://www.w3.org/2000/svg" class="ico" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4v6h6M20 20v-6h-6M20 10a8 8 0 0 0-14.9-3M4 14a8 8 0 0 0 14.9 3"/></svg>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Stat cards -->
+  <div class="mb-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+    <!-- Target -->
+    <div class="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs uppercase tracking-wide text-zinc-500">Monthly target</span>
+        <span class="rounded-md border border-[#6366f1]/30 bg-[#6366f1]/10 p-1.5 text-[#a5b4fc]">
+          <svg xmlns="http://www.w3.org/2000/svg" class="ico" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.2" fill="currentColor"/></svg>
+        </span>
+      </div>
+      <div class="mt-3 text-2xl font-bold text-zinc-100">RM 80,000</div>
+      <div class="mt-1 text-xs text-zinc-500">18/30 days elapsed</div>
+    </div>
+    <!-- Paid -->
+    <div class="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs uppercase tracking-wide text-zinc-500">Paid this month</span>
+        <span class="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-1.5 text-emerald-300">
+          <svg xmlns="http://www.w3.org/2000/svg" class="ico" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2v20m5-15H9.5A2.5 2.5 0 0 0 7 9.5v0A2.5 2.5 0 0 0 9.5 12h5a2.5 2.5 0 0 1 2.5 2.5v0a2.5 2.5 0 0 1-2.5 2.5H6"/></svg>
+        </span>
+      </div>
+      <div class="mt-3 text-2xl font-bold text-zinc-100">RM 36,420</div>
+      <div class="mt-1 text-xs text-zinc-500">46% of target</div>
+    </div>
+    <!-- Pace -->
+    <div class="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs uppercase tracking-wide text-zinc-500">Pace</span>
+        <span class="rounded-md border border-amber-500/30 bg-amber-500/10 p-1.5 text-amber-300">
+          <svg xmlns="http://www.w3.org/2000/svg" class="ico" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M22 17l-8.5-8.5-5 5L2 7"/></svg>
+        </span>
+      </div>
+      <div class="mt-3 text-2xl font-bold text-zinc-100">Behind</div>
+      <div class="mt-1 text-xs text-zinc-500">Month 60% elapsed</div>
+    </div>
+    <!-- Incidents -->
+    <div class="rounded-lg border border-zinc-800 bg-zinc-900/60 p-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs uppercase tracking-wide text-zinc-500">Open incidents</span>
+        <span class="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-1.5 text-emerald-300">
+          <svg xmlns="http://www.w3.org/2000/svg" class="ico" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </span>
+      </div>
+      <div class="mt-3 text-2xl font-bold text-zinc-100">0</div>
+      <div class="mt-1 text-xs text-zinc-500">All green</div>
+    </div>
+  </div>
+
+  <!-- Latest Brain pass -->
+  <section class="mb-6 rounded-lg border border-zinc-800 bg-zinc-900/60">
+    <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+      <div class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="ico text-[#a5b4fc]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/><path stroke-linecap="round" d="M9 9h6v6H9z"/></svg>
+        <h2 class="text-sm font-semibold">Latest Brain pass</h2>
+      </div>
+      <div class="text-xs text-zinc-500">4m ago · COMPLETED</div>
+    </div>
+    <div class="p-4">
+      <ul class="space-y-3">
+        <li class="rounded-md border border-zinc-800 bg-zinc-950/60 p-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide bg-[#6366f1]/15 text-[#a5b4fc] border-[#6366f1]/30">PM_AI</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide bg-amber-500/15 text-amber-300 border-amber-500/30">PENDING APPROVAL</span>
+            <span class="rounded-full border border-zinc-700 bg-zinc-800/60 px-2 py-0.5 text-[10px] text-zinc-300">95% conf</span>
+            <span class="rounded-full border border-zinc-700 bg-zinc-800/60 px-2 py-0.5 text-[10px] text-zinc-300">RM 43,580 impact</span>
+            <span class="ml-auto text-[11px] text-zinc-500">4m ago</span>
+          </div>
+          <div class="mt-2 text-sm font-semibold text-zinc-100">ALERT BOSS REVENUE GAP CRITICAL</div>
+          <div class="mt-1 text-xs text-zinc-400">Revenue pace 46% vs month elapsed 60%. Gap RM 43,580 across 12 days remaining. Boss review required — target unlikely to hit.</div>
+        </li>
+        <li class="rounded-md border border-zinc-800 bg-zinc-950/60 p-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide bg-[#6366f1]/15 text-[#a5b4fc] border-[#6366f1]/30">PM_AI</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide bg-emerald-500/15 text-emerald-300 border-emerald-500/30">AUTO EXECUTED</span>
+            <span class="rounded-full border border-zinc-700 bg-zinc-800/60 px-2 py-0.5 text-[10px] text-zinc-300">85% conf</span>
+            <span class="ml-auto text-[11px] text-zinc-500">4m ago</span>
+          </div>
+          <div class="mt-2 text-sm font-semibold text-zinc-100">ACCELERATE LEAD GEN</div>
+          <div class="mt-1 text-xs text-zinc-400">Lead gen dropped 42% week-over-week (7 vs 12). Traffic Agent should investigate creative fatigue + reallocate budget.</div>
+        </li>
+        <li class="rounded-md border border-zinc-800 bg-zinc-950/60 p-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide bg-[#6366f1]/15 text-[#a5b4fc] border-[#6366f1]/30">PM_AI</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide bg-emerald-500/15 text-emerald-300 border-emerald-500/30">AUTO EXECUTED</span>
+            <span class="rounded-full border border-zinc-700 bg-zinc-800/60 px-2 py-0.5 text-[10px] text-zinc-300">90% conf</span>
+            <span class="ml-auto text-[11px] text-zinc-500">4m ago</span>
+          </div>
+          <div class="mt-2 text-sm font-semibold text-zinc-100">REVIEW STALLED PROJECTS</div>
+          <div class="mt-1 text-xs text-zinc-400">4 active projects have had no updates in 3+ days. Delivery Agent should reassign or escalate.</div>
+        </li>
+        <li class="rounded-md border border-zinc-800 bg-zinc-950/60 p-3">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide bg-[#6366f1]/15 text-[#a5b4fc] border-[#6366f1]/30">PM_AI</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] uppercase tracking-wide bg-emerald-500/15 text-emerald-300 border-emerald-500/30">AUTO EXECUTED</span>
+            <span class="rounded-full border border-zinc-700 bg-zinc-800/60 px-2 py-0.5 text-[10px] text-zinc-300">85% conf</span>
+            <span class="ml-auto text-[11px] text-zinc-500">4m ago</span>
+          </div>
+          <div class="mt-2 text-sm font-semibold text-zinc-100">REDUCE REVISION BURN</div>
+          <div class="mt-1 text-xs text-zinc-400">3 projects have deliverables at or past revision limit — unpaid rework eroding margin.</div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Heatmap grid -->
+  <div class="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <!-- Projects -->
+    <section class="rounded-lg border border-zinc-800 bg-zinc-900/60">
+      <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+        <div class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="ico text-emerald-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="9"/><path stroke-linecap="round" d="M12 12l4-3"/></svg>
+          <h2 class="text-sm font-semibold">Project margin (worst first)</h2>
+        </div>
+        <div class="text-xs text-zinc-500">14 scanned</div>
+      </div>
+      <div class="max-h-[420px] overflow-y-auto p-4">
+        <ul class="space-y-2">
+          <!-- red (negative) -->
+          <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+            <span class="font-mono text-sm text-[#a5b4fc]">ENV-2026-011</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] bg-red-500/15 text-red-300 border-red-500/30">-12% margin</span>
+            <span class="rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[10px] text-amber-300">revisions 5/4</span>
+            <span class="ml-auto text-xs text-zinc-400">rev RM 3,500 · cost RM 3,920</span>
+          </li>
+          <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+            <span class="font-mono text-sm text-[#a5b4fc]">ENV-2026-008</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] bg-red-500/15 text-red-300 border-red-500/30">4% margin</span>
+            <span class="rounded-full border border-red-500/30 bg-red-500/15 px-2 py-0.5 text-[10px] text-red-300">overdue + unbilled</span>
+            <span class="ml-auto text-xs text-zinc-400">rev RM 6,800 · cost RM 6,528</span>
+          </li>
+          <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+            <span class="font-mono text-sm text-[#a5b4fc]">ENV-2026-015</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] bg-amber-500/15 text-amber-300 border-amber-500/30">14% margin</span>
+            <span class="ml-auto text-xs text-zinc-400">rev RM 4,200 · cost RM 3,612</span>
+          </li>
+          <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+            <span class="font-mono text-sm text-[#a5b4fc]">ENV-2026-017</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] bg-amber-500/15 text-amber-300 border-amber-500/30">18% margin</span>
+            <span class="rounded-full border border-amber-500/30 bg-amber-500/15 px-2 py-0.5 text-[10px] text-amber-300">revisions 3/2</span>
+            <span class="ml-auto text-xs text-zinc-400">rev RM 5,500 · cost RM 4,510</span>
+          </li>
+          <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+            <span class="font-mono text-sm text-[#a5b4fc]">ENV-2026-021</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] bg-yellow-500/10 text-yellow-200 border-yellow-500/30">27% margin</span>
+            <span class="ml-auto text-xs text-zinc-400">rev RM 8,900 · cost RM 6,497</span>
+          </li>
+          <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+            <span class="font-mono text-sm text-[#a5b4fc]">ENV-2026-019</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] bg-yellow-500/10 text-yellow-200 border-yellow-500/30">31% margin</span>
+            <span class="ml-auto text-xs text-zinc-400">rev RM 12,400 · cost RM 8,556</span>
+          </li>
+          <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+            <span class="font-mono text-sm text-[#a5b4fc]">ENV-2026-023</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] bg-emerald-500/15 text-emerald-300 border-emerald-500/30">42% margin</span>
+            <span class="ml-auto text-xs text-zinc-400">rev RM 7,500 · cost RM 4,350</span>
+          </li>
+          <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+            <span class="font-mono text-sm text-[#a5b4fc]">ENV-2026-014</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] bg-emerald-500/15 text-emerald-300 border-emerald-500/30">48% margin</span>
+            <span class="ml-auto text-xs text-zinc-400">rev RM 9,200 · cost RM 4,784</span>
+          </li>
+          <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+            <span class="font-mono text-sm text-[#a5b4fc]">ENV-2026-024</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] bg-emerald-500/15 text-emerald-300 border-emerald-500/30">55% margin</span>
+            <span class="ml-auto text-xs text-zinc-400">rev RM 15,600 · cost RM 7,020</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+    <!-- Clients -->
+    <section class="rounded-lg border border-zinc-800 bg-zinc-900/60">
+      <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+        <div class="flex items-center gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" class="ico text-amber-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M22 17l-8.5-8.5-5 5L2 7"/></svg>
+          <h2 class="text-sm font-semibold">Client margin</h2>
+        </div>
+        <div class="text-xs text-zinc-500">8 clients</div>
+      </div>
+      <div class="max-h-[420px] overflow-y-auto p-4">
+        <ul class="space-y-2">
+          <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+            <span class="text-sm font-medium text-zinc-100">Kekabu Coffee</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] bg-red-500/15 text-red-300 border-red-500/30">6%</span>
+            <span class="rounded-full border border-zinc-700 bg-zinc-800/60 px-2 py-0.5 text-[10px] text-zinc-300">3 proj</span>
+            <span class="ml-auto text-xs text-zinc-400">rev RM 10,300 · profit RM 618</span>
+          </li>
+          <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+            <span class="text-sm font-medium text-zinc-100">Ratu Fashion</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] bg-amber-500/15 text-amber-300 border-amber-500/30">19%</span>
+            <span class="rounded-full border border-zinc-700 bg-zinc-800/60 px-2 py-0.5 text-[10px] text-zinc-300">2 proj</span>
+            <span class="ml-auto text-xs text-zinc-400">rev RM 12,700 · profit RM 2,413</span>
+          </li>
+          <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+            <span class="text-sm font-medium text-zinc-100">Batik Heritage Sdn Bhd</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] bg-yellow-500/10 text-yellow-200 border-yellow-500/30">28%</span>
+            <span class="rounded-full border border-zinc-700 bg-zinc-800/60 px-2 py-0.5 text-[10px] text-zinc-300">4 proj</span>
+            <span class="ml-auto text-xs text-zinc-400">rev RM 24,500 · profit RM 6,860</span>
+          </li>
+          <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+            <span class="text-sm font-medium text-zinc-100">SkyOrbit Aviation</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] bg-emerald-500/15 text-emerald-300 border-emerald-500/30">44%</span>
+            <span class="rounded-full border border-zinc-700 bg-zinc-800/60 px-2 py-0.5 text-[10px] text-zinc-300">1 proj</span>
+            <span class="ml-auto text-xs text-zinc-400">rev RM 15,600 · profit RM 6,864</span>
+          </li>
+          <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+            <span class="text-sm font-medium text-zinc-100">Nusa Wellness Group</span>
+            <span class="rounded-full border px-2 py-0.5 text-[10px] bg-emerald-500/15 text-emerald-300 border-emerald-500/30">51%</span>
+            <span class="rounded-full border border-zinc-700 bg-zinc-800/60 px-2 py-0.5 text-[10px] text-zinc-300">2 proj</span>
+            <span class="ml-auto text-xs text-zinc-400">rev RM 18,200 · profit RM 9,282</span>
+          </li>
+        </ul>
+      </div>
+    </section>
+  </div>
+
+  <!-- Agent decisions feed -->
+  <section class="mb-6 rounded-lg border border-zinc-800 bg-zinc-900/60">
+    <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+      <div class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="ico text-[#a5b4fc]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h7v8l10-12h-7V2z"/></svg>
+        <h2 class="text-sm font-semibold">Agent decisions feed</h2>
+      </div>
+      <div class="text-xs text-zinc-500">last 8</div>
+    </div>
+    <div class="max-h-[360px] overflow-y-auto p-4">
+      <ul class="space-y-2">
+        <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+          <span class="rounded-full border px-2 py-0.5 text-[10px] uppercase bg-[#6366f1]/15 text-[#a5b4fc] border-[#6366f1]/30">PM_AI</span>
+          <span class="text-xs font-medium text-zinc-100">ISSUE CHANGE ORDER</span>
+          <span class="rounded-full border px-2 py-0.5 text-[10px] bg-emerald-500/15 text-emerald-300 border-emerald-500/30">AUTO EXECUTED</span>
+          <span class="text-xs text-zinc-400">RM 525</span>
+          <span class="ml-auto text-xs text-zinc-500">2m ago</span>
+          <div class="basis-full text-xs text-zinc-400">Project ENV-2026-011 has 5 revisions vs 4 limit. Further rework should be a paid change order.</div>
+        </li>
+        <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+          <span class="rounded-full border px-2 py-0.5 text-[10px] uppercase bg-emerald-500/15 text-emerald-300 border-emerald-500/30">PAYMENT_AGENT</span>
+          <span class="text-xs font-medium text-zinc-100">TRIGGER INVOICE NOW</span>
+          <span class="rounded-full border px-2 py-0.5 text-[10px] bg-emerald-500/15 text-emerald-300 border-emerald-500/30">AUTO EXECUTED</span>
+          <span class="text-xs text-zinc-400">RM 6,800</span>
+          <span class="ml-auto text-xs text-zinc-500">2m ago</span>
+          <div class="basis-full text-xs text-zinc-400">Project ENV-2026-008 is COMPLETED past deadline with zero billing. Payment Agent should issue invoice immediately.</div>
+        </li>
+        <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+          <span class="rounded-full border px-2 py-0.5 text-[10px] uppercase bg-[#6366f1]/15 text-[#a5b4fc] border-[#6366f1]/30">PM_AI</span>
+          <span class="text-xs font-medium text-zinc-100">SUGGEST PRICING INCREASE</span>
+          <span class="rounded-full border px-2 py-0.5 text-[10px] bg-amber-500/15 text-amber-300 border-amber-500/30">PENDING APPROVAL</span>
+          <span class="text-xs text-zinc-400">RM 1,957</span>
+          <span class="ml-auto text-xs text-zinc-500">2m ago</span>
+          <div class="basis-full text-xs text-zinc-400">Kekabu Coffee portfolio margin 6% &lt; 25% floor across 3 projects. Consider repricing or throttling.</div>
+        </li>
+        <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+          <span class="rounded-full border px-2 py-0.5 text-[10px] uppercase bg-cyan-500/15 text-cyan-300 border-cyan-500/30">SALES_AGENT</span>
+          <span class="text-xs font-medium text-zinc-100">SEND FOLLOWUP SEQUENCE</span>
+          <span class="rounded-full border px-2 py-0.5 text-[10px] bg-emerald-500/15 text-emerald-300 border-emerald-500/30">AUTO EXECUTED</span>
+          <span class="ml-auto text-xs text-zinc-500">8m ago</span>
+          <div class="basis-full text-xs text-zinc-400">12 leads stalled in QUALIFIED for 48h+. Triggered 3-step nurture sequence.</div>
+        </li>
+        <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+          <span class="rounded-full border px-2 py-0.5 text-[10px] uppercase bg-violet-500/15 text-violet-300 border-violet-500/30">DELIVERY_AGENT</span>
+          <span class="text-xs font-medium text-zinc-100">REASSIGN DESIGNER</span>
+          <span class="rounded-full border px-2 py-0.5 text-[10px] bg-emerald-500/15 text-emerald-300 border-emerald-500/30">AUTO EXECUTED</span>
+          <span class="ml-auto text-xs text-zinc-500">12m ago</span>
+          <div class="basis-full text-xs text-zinc-400">ENV-2026-021 item #3 stalled 2d with JR designer at capacity. Moved to GRAPHIC_DESIGNER pool.</div>
+        </li>
+        <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+          <span class="rounded-full border px-2 py-0.5 text-[10px] uppercase bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30">LEAD_ENGINE</span>
+          <span class="text-xs font-medium text-zinc-100">ROTATE AD CREATIVE</span>
+          <span class="rounded-full border px-2 py-0.5 text-[10px] bg-emerald-500/15 text-emerald-300 border-emerald-500/30">AUTO EXECUTED</span>
+          <span class="ml-auto text-xs text-zinc-500">30m ago</span>
+          <div class="basis-full text-xs text-zinc-400">Campaign "Raya 2026" CTR dropped below 1.2% threshold. Rotated to variant B.</div>
+        </li>
+        <li class="flex flex-wrap items-center gap-2 rounded-md border border-zinc-800 bg-zinc-950/60 px-3 py-2">
+          <span class="rounded-full border px-2 py-0.5 text-[10px] uppercase bg-amber-500/15 text-amber-300 border-amber-500/30">QA_AGENT</span>
+          <span class="text-xs font-medium text-zinc-100">BLOCK RELEASE</span>
+          <span class="rounded-full border px-2 py-0.5 text-[10px] bg-amber-500/15 text-amber-300 border-amber-500/30">PENDING APPROVAL</span>
+          <span class="ml-auto text-xs text-zinc-500">1h ago</span>
+          <div class="basis-full text-xs text-zinc-400">ENV-2026-017 failed brand contrast check (WCAG AA). CS review required.</div>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- Recent runs -->
+  <section class="rounded-lg border border-zinc-800 bg-zinc-900/60">
+    <div class="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
+      <div class="flex items-center gap-2">
+        <svg xmlns="http://www.w3.org/2000/svg" class="ico text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="4" y="4" width="16" height="16" rx="2"/></svg>
+        <h2 class="text-sm font-semibold">Recent agent runs</h2>
+      </div>
+    </div>
+    <div class="p-4">
+      <ul class="divide-y divide-zinc-800">
+        <li class="flex flex-wrap items-center gap-2 py-2 text-xs">
+          <span class="rounded-full border px-2 py-0.5 uppercase bg-[#6366f1]/15 text-[#a5b4fc] border-[#6366f1]/30">PM_AI</span>
+          <span class="rounded-full border px-2 py-0.5 bg-emerald-500/15 text-emerald-300 border-emerald-500/30">COMPLETED</span>
+          <span class="text-zinc-400">manual</span>
+          <span class="flex-1 text-zinc-300">4 decisions: ALERT_BOSS_REVENUE_GAP_CRITICAL, ACCELERATE_LEAD_GEN, REVIEW_STALLED_PROJECTS, REDUCE_REVISION_BURN</span>
+          <span class="text-zinc-500">4m ago</span>
+        </li>
+        <li class="flex flex-wrap items-center gap-2 py-2 text-xs">
+          <span class="rounded-full border px-2 py-0.5 uppercase bg-[#6366f1]/15 text-[#a5b4fc] border-[#6366f1]/30">PM_AI</span>
+          <span class="rounded-full border px-2 py-0.5 bg-emerald-500/15 text-emerald-300 border-emerald-500/30">COMPLETED</span>
+          <span class="text-zinc-400">cron</span>
+          <span class="flex-1 text-zinc-300">14 projects, 3 leaks: REVISION_OVERRUN, OVERDUE_UNBILLED, CLIENT_MARGIN_EROSION</span>
+          <span class="text-zinc-500">5m ago</span>
+        </li>
+        <li class="flex flex-wrap items-center gap-2 py-2 text-xs">
+          <span class="rounded-full border px-2 py-0.5 uppercase bg-cyan-500/15 text-cyan-300 border-cyan-500/30">SALES_AGENT</span>
+          <span class="rounded-full border px-2 py-0.5 bg-emerald-500/15 text-emerald-300 border-emerald-500/30">COMPLETED</span>
+          <span class="text-zinc-400">cron</span>
+          <span class="flex-1 text-zinc-300">Triggered nurture for 12 stalled leads</span>
+          <span class="text-zinc-500">8m ago</span>
+        </li>
+        <li class="flex flex-wrap items-center gap-2 py-2 text-xs">
+          <span class="rounded-full border px-2 py-0.5 uppercase bg-fuchsia-500/15 text-fuchsia-300 border-fuchsia-500/30">LEAD_ENGINE</span>
+          <span class="rounded-full border px-2 py-0.5 bg-emerald-500/15 text-emerald-300 border-emerald-500/30">COMPLETED</span>
+          <span class="text-zinc-400">cron</span>
+          <span class="flex-1 text-zinc-300">Rotated 2 ad creatives; CTR recovered on Meta</span>
+          <span class="text-zinc-500">30m ago</span>
+        </li>
+        <li class="flex flex-wrap items-center gap-2 py-2 text-xs">
+          <span class="rounded-full border px-2 py-0.5 uppercase bg-amber-500/15 text-amber-300 border-amber-500/30">QA_AGENT</span>
+          <span class="rounded-full border px-2 py-0.5 bg-emerald-500/15 text-emerald-300 border-emerald-500/30">COMPLETED</span>
+          <span class="text-zinc-400">event</span>
+          <span class="flex-1 text-zinc-300">WCAG contrast check on ENV-2026-017 — blocked release</span>
+          <span class="text-zinc-500">1h ago</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <div class="mt-6 text-center text-xs text-zinc-600">
+    Preview · This is what /admin/brain will render from live data · All currency in RM
+  </div>
+</div>
+</body>
+</html>

@@ -7,6 +7,7 @@ import {
   storeFeedbackOnRevision,
 } from '@/services/feedback-processor'
 import { notify } from '@/services/lark'
+import { createRevisionAtomic } from '@/lib/revision-limit'
 import { logger, getErrorMessage } from '@/lib/logger'
 
 export async function POST(req: NextRequest) {
@@ -121,7 +122,7 @@ export async function POST(req: NextRequest) {
             actionUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/cs/projects/${project.id}`,
           }).catch(() => {})
         } else if (decision === 'REVISION_REQUESTED' && csUser) {
-          // AI rewrite + create new revision
+          // AI rewrite + create new revision (limit-safe via createRevisionAtomic)
           let clarifiedFeedback = message.text
           try {
             const processed = await processFeedback({
@@ -133,35 +134,48 @@ export async function POST(req: NextRequest) {
             })
             clarifiedFeedback = processed.clarifiedFeedback
 
-            const revision = await prisma.revision.create({
-              data: {
-                deliverableItemId: deliveredItem.id,
-                revisionNumber: deliveredItem.revisionCount + 1,
-                requestedById: csUser.id,
-                feedback: message.text,
-                status: 'PENDING',
-              },
+            // Single chokepoint — inbound client webhooks MUST NOT bypass the
+            // revision limit. If at cap, reply to the client and alert CS; do
+            // not silently create an over-limit revision.
+            const result = await createRevisionAtomic({
+              itemId: deliveredItem.id,
+              userId: csUser.id,
+              feedback: message.text,
             })
-            await prisma.deliverableItem.update({
-              where: { id: deliveredItem.id },
-              data: { revisionCount: { increment: 1 }, status: 'IN_PROGRESS' },
-            })
-            if (clarifiedFeedback !== message.text) {
-              await storeFeedbackOnRevision(revision.id, {
-                clarifiedFeedback,
-                designerBrief: clarifiedFeedback,
-                requirementChecklist: processed.requirementChecklist as never,
-                clientResponseDraft: processed.clientResponseDraft,
-                sentiment: processed.sentiment,
-                escalate: processed.escalate,
-              })
+
+            if (!result.ok && result.reason === 'limit_hit') {
+              await sendMessage(
+                message.from,
+                `Hi ${client.contactPerson}, we've received your message but this project has reached its included revision limit (${result.limit}/${result.limit}). Your CS will be in touch to discuss next steps.`
+              ).catch(() => {})
+              await notify('CS', {
+                title: 'Revision Limit Reached (via WhatsApp)',
+                body: `**${client.contactPerson}** attempted a revision for **${project.code}** — ${result.itemType} at limit (${result.limit}). CS decision required.`,
+                projectCode: project.code,
+                actionLabel: 'Review in Envicion OS',
+                actionUrl: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/cs/projects/${project.id}`,
+              }).catch(() => {})
+            } else if (result.ok) {
+              if (clarifiedFeedback !== message.text) {
+                await storeFeedbackOnRevision(result.revision.id, {
+                  clarifiedFeedback,
+                  designerBrief: clarifiedFeedback,
+                  requirementChecklist: processed.requirementChecklist as never,
+                  clientResponseDraft: processed.clientResponseDraft,
+                  sentiment: processed.sentiment,
+                  escalate: processed.escalate,
+                })
+              }
+              await sendMessage(
+                message.from,
+                `Thanks ${client.contactPerson}! 📝 We've noted your revision request and will get right on it. We'll notify you once it's ready.`
+              ).catch(() => {})
+              await notify('CREATIVE', {
+                title: '🔄 Revision via WhatsApp',
+                body: `**${client.contactPerson}** requested changes for **${project.code}** — ${result.itemType} (${result.revisionNumber}/${result.itemRevisionLimit}).\n**Brief:** ${clarifiedFeedback.slice(0, 150)}`,
+                projectCode: project.code,
+              }).catch(() => {})
             }
-            await sendMessage(message.from, `Thanks ${client.contactPerson}! 📝 We've noted your revision request and will get right on it. We'll notify you once it's ready.`).catch(() => {})
-            await notify('CREATIVE', {
-              title: '🔄 Revision via WhatsApp',
-              body: `**${client.contactPerson}** requested changes for **${project.code}** — ${deliveredItem.itemType}.\n**Brief:** ${clarifiedFeedback.slice(0, 150)}`,
-              projectCode: project.code,
-            }).catch(() => {})
           } catch (err) {
             logger.warn('[WhatsApp] Revision creation failed:', { error: getErrorMessage(err) })
           }
