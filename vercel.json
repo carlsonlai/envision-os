@@ -8,6 +8,7 @@
           "src/app/api/cron/**": { "maxDuration": 60 }
     },
     "crons": [
-          { "path": "/api/cron/sync-lark", "schedule": "0 3 * * *" }
+          { "path": "/api/cron/sync-lark", "schedule": "0 3 * * *" },
+          { "path": "/api/cron/whatsapp",  "schedule": "0 * * * *" }
     ]
 }

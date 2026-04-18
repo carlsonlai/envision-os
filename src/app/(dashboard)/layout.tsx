@@ -95,6 +95,7 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
         { href: '/sales',          label: 'Sales Pipeline',   icon: TrendingUp,   exact: true },
         { href: '/sales/personal', label: 'My Sales Command', icon: UserCheck },
         { href: '/sales/whatsapp', label: 'WhatsApp Inbox',   icon: MessageCircle },
+        { href: '/admin/payment-collection', label: 'Payment Collection', icon: DollarSign },
         { href: '/kpi',            label: 'Agency KPI',       icon: BarChart3 },
       ],
     },
@@ -163,6 +164,7 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
         { href: '/cs/dashboard',  label: 'CS Dashboard',        icon: LayoutDashboard },
         { href: '/cs/job-track',  label: 'Job Track',           icon: ListTodo },
         { href: '/crm',           label: 'CRM & Client Health', icon: Heart },
+        { href: '/admin/payment-collection', label: 'Payment Collection', icon: DollarSign },
       ],
     },
     {

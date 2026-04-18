@@ -49,10 +49,16 @@ export interface BukkuContact {
 export interface BukkuPayment {
   id: string
   invoice_id: string
+  invoice_number?: string
+  contact_id?: string
+  contact_name?: string
   amount: number
   payment_date: string
   payment_method: string
   reference?: string
+  status?: string
+  created_at?: string
+  updated_at?: string
 }
 
 export interface CreateContactData {
@@ -324,6 +330,40 @@ export async function pollPayments(since: Date): Promise<BukkuPayment[]> {
     logger.error('Bukku pollPayments error', { error: axiosError.message })
     throw new Error(`Failed to poll Bukku payments: ${axiosError.message}`)
   }
+}
+
+export async function listPayments(params: BukkuListParams = {}): Promise<BukkuListResponse<BukkuPayment>> {
+  try {
+    const headers = await getHeaders()
+    const response = await axios.get<BukkuListResponse<BukkuPayment>>(`${BUKKU_BASE}/payments`, {
+      headers,
+      params: {
+        per_page: 50,
+        ...params,
+      },
+    })
+    return {
+      data: response.data.data ?? [],
+      meta: response.data.meta ?? { total: 0, page: 1, per_page: 50, last_page: 1 },
+    }
+  } catch (error) {
+    const axiosError = error as AxiosError
+    throw new Error(`Failed to list Bukku payments: ${axiosError.message}`)
+  }
+}
+
+export async function listAllPayments(): Promise<BukkuPayment[]> {
+  const payments: BukkuPayment[] = []
+  let page = 1
+
+  for (;;) {
+    const result = await listPayments({ page, per_page: 100 })
+    payments.push(...result.data)
+    if (page >= result.meta.last_page) break
+    page++
+  }
+
+  return payments
 }
 
 export function parseLineItems(doc: BukkuInvoice | BukkuQuotation): ParsedLineItem[] {
