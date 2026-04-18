@@ -30,6 +30,8 @@ export const EVENTS = {
   FA_SIGNED: 'fa-signed',
   UNBILLED_ALERT: 'unbilled-alert',
   STATUS_CHANGED: 'status-changed',
+  ESCALATED: 'escalated',
+  CLARIFICATION_REQUESTED: 'clarification-requested',
 } as const
 
 export async function triggerEvent(

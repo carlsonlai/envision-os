@@ -812,7 +812,11 @@ export async function sendCopilotReview(
   }
 
   const projectUrl = `${process.env.NEXTAUTH_URL ?? ''}/cs/projects/${projectId}`
-  const sourceLabel = source === 'quotation' ? 'Quotation' : 'Invoice'
+  // CLAUDE.md rule: never expose invoice/quotation/pricing/payment wording
+  // in Lark messages. Use a neutral "source document" reference — staff
+  // can see the actual financial ref in Bukku / EnvicionOS.
+  void source
+  const sourceRef = `Ref ${referenceNumber}`
 
   const cardContent = {
     config: { wide_screen_mode: true },
@@ -825,7 +829,7 @@ export async function sendCopilotReview(
         tag: 'div',
         text: {
           tag: 'lark_md',
-          content: `A new project has been created from Bukku ${sourceLabel} **#${referenceNumber}** and is waiting for your review.\n\n**Action required:** Please review the project brief, confirm deliverables, and assign designers before marking as Ongoing.`,
+          content: `A new project has been created (source ${sourceRef}) and is waiting for your review.\n\n**Action required:** Please review the project brief, confirm deliverables, and assign designers before marking as Ongoing.`,
         },
       },
       { tag: 'hr' },
@@ -838,7 +842,7 @@ export async function sendCopilotReview(
           },
           {
             is_short: true,
-            text: { tag: 'lark_md', content: `**Source:** ${sourceLabel} #${referenceNumber}` },
+            text: { tag: 'lark_md', content: `**Source:** ${sourceRef}` },
           },
           {
             is_short: true,
