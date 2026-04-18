@@ -1,6 +1,6 @@
 'use client'
 
-/* CS Dashboard â real-time project overview for Client Servicing */
+/* CS Dashboard — real-time project overview for Client Servicing */
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import {
@@ -10,7 +10,7 @@ import {
   TrendingUp, Bell, ArrowRight, Hand, UserCheck,
 } from 'lucide-react'
 
-// âââ Types âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 interface DashboardItem {
   id: string
@@ -58,7 +58,7 @@ interface ActivityItem {
   itemType: string | null
 }
 
-// âââ Helpers âââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmt(n: number): string {
   return `RM ${n.toLocaleString('en-MY', { minimumFractionDigits: 0 })}`
@@ -130,7 +130,7 @@ function getActionColor(action: string): string {
 
 type FilterTab = 'all' | 'mine' | 'unclaimed'
 
-// âââ Main Component ââââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+// ─── Main Component ──────────────────────────────────────────────────────────
 
 export default function CSDashboardPage() {
   const [projects, setProjects] = useState<DashboardProject[]>([])
@@ -171,7 +171,7 @@ export default function CSDashboardPage() {
     void loadActivity()
   }, [loadProjects, loadActivity])
 
-  // âââ Claim / Unclaim ââââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ─── Claim / Unclaim ────────────────────────────────────────────────────────
   const handleClaim = async (projectId: string) => {
     setClaiming(projectId)
     try {
@@ -204,7 +204,7 @@ export default function CSDashboardPage() {
     }
   }
 
-  // âââ Filtered projects ââââââââââââââââââââââââââââââââââââââââââââââââââââââ
+  // ─── Filtered projects ──────────────────────────────────────────────────────
   const filteredProjects = projects.filter((p) => {
     if (filter === 'mine') return p.isMyClaim
     if (filter === 'unclaimed') return p.claimedBy.length === 0
@@ -234,7 +234,7 @@ export default function CSDashboardPage() {
             <LayoutDashboard className="h-5 w-5 text-blue-400" />
             CS Dashboard
           </h1>
-          <p className="text-sm text-zinc-500 mt-0.5">All projects â claim the ones you&apos;re handling</p>
+          <p className="text-sm text-zinc-500 mt-0.5">All projects — claim the ones you&apos;re handling</p>
         </div>
         <button
           type="button"
@@ -293,7 +293,7 @@ export default function CSDashboardPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-20 text-zinc-500">
-          <Loader2 className="h-5 w-5 animate-spin mr-2" />Loading projectsâ¦
+          <Loader2 className="h-5 w-5 animate-spin mr-2" />Loading projects…
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
@@ -438,7 +438,7 @@ export default function CSDashboardPage() {
                           <span
                             key={item.id}
                             className={`inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium ${STATUS_STYLES[item.status] ?? 'bg-zinc-700 text-zinc-400'}`}
-                            title={`${item.description ?? item.itemType} â ${item.status}`}
+                            title={`${item.description ?? item.itemType} — ${item.status}`}
                           >
                             {item.itemType.replace(/_/g, ' ')}
                           </span>
@@ -467,7 +467,7 @@ export default function CSDashboardPage() {
             </h2>
             {activityLoading ? (
               <div className="flex items-center justify-center py-10 text-zinc-500">
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />Loadingâ¦
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />Loading…
               </div>
             ) : activity.length === 0 ? (
               <p className="text-xs text-zinc-500 text-center py-10">No recent activity.</p>
@@ -492,7 +492,7 @@ export default function CSDashboardPage() {
                     {a.performerName && (
                       <p className="text-[10px] text-zinc-500 mt-0.5">
                         by {a.performerName}
-                        {a.itemDescription && <> Â· {a.itemDescription}</>}
+                        {a.itemDescription && <> · {a.itemDescription}</>}
                       </p>
                     )}
                   </Link>
