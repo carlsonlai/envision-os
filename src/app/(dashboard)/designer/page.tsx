@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   Play,
@@ -17,7 +18,9 @@ import {
   ChevronDown,
   ChevronUp,
   ListTodo,
+  X,
 } from 'lucide-react'
+import { getPusherClient } from '@/lib/pusher-client'
 
 type ItemStatus = 'PENDING' | 'IN_PROGRESS' | 'WIP_UPLOADED' | 'QC_REVIEW' | 'APPROVED' | 'DELIVERED' | 'FA_SIGNED'
 type ItemType = 'BANNER' | 'BROCHURE' | 'LOGO' | 'SOCIAL' | 'PRINT' | 'THREE_D' | 'VIDEO' | 'OTHER'
@@ -131,6 +134,16 @@ function CapacityBar({ percent }: { percent: number }) {
   )
 }
 
+interface QueueItemProps {
+  item: DeliverableItem
+  projectCode: string
+  projectId: string
+  brief: Brief | null
+  assignedCS: AssignedUser | null
+  onAction: (action: 'start' | 'upload' | 'flag', itemId: string, projectId: string) => void
+  pendingAction: 'start' | 'upload' | null
+}
+
 function QueueItem({
   item,
   projectCode,
@@ -138,14 +151,8 @@ function QueueItem({
   brief,
   assignedCS,
   onAction,
-}: {
-  item: DeliverableItem
-  projectCode: string
-  projectId: string
-  brief: Brief | null
-  assignedCS: AssignedUser | null
-  onAction: (action: 'start' | 'upload' | 'flag', itemId: string) => void
-}) {
+  pendingAction,
+}: QueueItemProps) {
   const [showBrief, setShowBrief] = useState(false)
   const statusConfig = STATUS_STYLES[item.status]
   const StatusIcon = statusConfig.icon
@@ -273,23 +280,31 @@ function QueueItem({
       {/* Actions */}
       <div className="grid grid-cols-3 gap-1.5">
         <button type="button"
-          onClick={() => onAction('start', item.id)}
-          disabled={item.status !== 'PENDING'}
+          onClick={() => onAction('start', item.id, projectId)}
+          disabled={item.status !== 'PENDING' || pendingAction !== null}
           className="flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium border border-zinc-700/50 text-zinc-400 hover:text-white hover:bg-zinc-700/60 hover:border-zinc-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          <Play className="h-3 w-3" />
+          {pendingAction === 'start' ? (
+            <div className="h-3 w-3 animate-spin rounded-full border border-zinc-400 border-t-transparent" />
+          ) : (
+            <Play className="h-3 w-3" />
+          )}
           Start
         </button>
         <button type="button"
-          onClick={() => onAction('upload', item.id)}
-          disabled={item.status === 'PENDING' || item.status === 'APPROVED' || item.status === 'DELIVERED'}
+          onClick={() => onAction('upload', item.id, projectId)}
+          disabled={item.status === 'PENDING' || item.status === 'APPROVED' || item.status === 'DELIVERED' || pendingAction !== null}
           className="flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium border border-zinc-700/50 text-zinc-400 hover:text-white hover:bg-zinc-700/60 hover:border-zinc-600 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          <Upload className="h-3 w-3" />
+          {pendingAction === 'upload' ? (
+            <div className="h-3 w-3 animate-spin rounded-full border border-zinc-400 border-t-transparent" />
+          ) : (
+            <Upload className="h-3 w-3" />
+          )}
           Upload
         </button>
         <button type="button"
-          onClick={() => onAction('flag', item.id)}
+          onClick={() => onAction('flag', item.id, projectId)}
           className="flex items-center justify-center gap-1 rounded-md px-2 py-1.5 text-[11px] font-medium border border-red-800/40 text-red-500/70 hover:text-red-300 hover:bg-red-500/10 hover:border-red-700/50 transition-all"
         >
           <Flag className="h-3 w-3" />
@@ -309,11 +324,25 @@ function QueueItem({
   )
 }
 
+interface StatusChangedPayload {
+  itemId: string
+  projectId: string
+  to: ItemStatus
+}
+
+interface Toast {
+  message: string
+  tone: 'error' | 'success'
+}
+
 export default function DesignerPage() {
   const { data: session } = useSession()
+  const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
   const [capacity, setCapacity] = useState<CapacityInfo | null>(null)
   const [loading, setLoading] = useState(true)
+  const [pendingByItem, setPendingByItem] = useState<Record<string, 'start' | 'upload'>>({})
+  const [toast, setToast] = useState<Toast | null>(null)
 
   useEffect(() => {
     async function loadData() {
@@ -334,8 +363,8 @@ export default function DesignerPage() {
         if (myWorkload?.slots?.[0]) {
           setCapacity(myWorkload.slots[0])
         }
-      } catch (error) {
-        console.error('Failed to load designer data:', error)
+      } catch {
+        setToast({ message: 'Failed to load queue. Refresh to retry.', tone: 'error' })
       } finally {
         setLoading(false)
       }
@@ -343,31 +372,108 @@ export default function DesignerPage() {
     if (session?.user) loadData()
   }, [session])
 
-  async function handleAction(action: 'start' | 'upload' | 'flag', itemId: string) {
-    const statusMap: Record<string, string> = {
-      start: 'IN_PROGRESS',
-      upload: 'WIP_UPLOADED',
+  // Real-time: subscribe to this designer's channel so status updates from CS/CD
+  // (e.g. CS flips an item back to IN_PROGRESS after QC fail) appear instantly.
+  useEffect(() => {
+    if (!session?.user?.id) return
+    const pusher = getPusherClient()
+    if (!pusher) return
+    // Public channel name must match server-side CHANNELS.designer in src/services/pusher.ts
+    const channelName = `designer-${session.user.id}`
+    const channel = pusher.subscribe(channelName)
+    const handler = (payload: StatusChangedPayload) => {
+      setProjects((prev) =>
+        prev.map((p) =>
+          p.id === payload.projectId
+            ? {
+                ...p,
+                deliverableItems: p.deliverableItems.map((item) =>
+                  item.id === payload.itemId ? { ...item, status: payload.to } : item
+                ),
+              }
+            : p
+        )
+      )
     }
+    channel.bind('status-changed', handler)
+    return () => {
+      channel.unbind('status-changed', handler)
+      pusher.unsubscribe(channelName)
+    }
+  }, [session?.user?.id])
 
+  // Auto-dismiss toast
+  useEffect(() => {
+    if (!toast) return
+    const t = setTimeout(() => setToast(null), 4000)
+    return () => clearTimeout(t)
+  }, [toast])
+
+  async function handleAction(
+    action: 'start' | 'upload' | 'flag',
+    itemId: string,
+    projectId: string
+  ): Promise<void> {
     if (action === 'flag') {
-      alert('Flag feature: Please message your Creative Director with the issue details.')
+      router.push(`/designer/escalate/${itemId}?projectId=${projectId}`)
       return
     }
 
-    try {
-      // Update item status optimistically
-      setProjects((prev) =>
-        prev.map((p) => ({
-          ...p,
-          deliverableItems: p.deliverableItems.map((item) =>
-            item.id === itemId
-              ? { ...item, status: statusMap[action] as ItemStatus }
-              : item
-          ),
-        }))
+    const statusMap: Record<'start' | 'upload', ItemStatus> = {
+      start: 'IN_PROGRESS',
+      upload: 'WIP_UPLOADED',
+    }
+    const nextStatus = statusMap[action]
+
+    // Snapshot for rollback on failure
+    const snapshot = projects
+
+    // Optimistic update + lock buttons
+    setPendingByItem((prev) => ({ ...prev, [itemId]: action }))
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              deliverableItems: p.deliverableItems.map((item) =>
+                item.id === itemId ? { ...item, status: nextStatus } : item
+              ),
+            }
+          : p
       )
-    } catch (error) {
-      console.error('Failed to update item:', error)
+    )
+
+    try {
+      const res = await fetch(
+        `/api/projects/${projectId}/items/${itemId}/status`,
+        {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: nextStatus }),
+        }
+      )
+      if (!res.ok) {
+        const err: { error?: string } = await res.json().catch(() => ({}))
+        setProjects(snapshot)
+        setToast({
+          message: err.error ?? `Could not ${action} this item.`,
+          tone: 'error',
+        })
+        return
+      }
+      setToast({
+        message: action === 'start' ? 'Job started.' : 'WIP uploaded — CS notified.',
+        tone: 'success',
+      })
+    } catch {
+      setProjects(snapshot)
+      setToast({ message: 'Network error — please retry.', tone: 'error' })
+    } finally {
+      setPendingByItem((prev) => {
+        const next = { ...prev }
+        delete next[itemId]
+        return next
+      })
     }
   }
 
@@ -403,6 +509,29 @@ export default function DesignerPage() {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
+      {/* Toast */}
+      {toast && (
+        <div
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-lg border px-4 py-3 shadow-lg backdrop-blur ${
+            toast.tone === 'error'
+              ? 'border-red-500/30 bg-red-500/10 text-red-300'
+              : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-300'
+          }`}
+          role="status"
+          aria-live="polite"
+        >
+          <span className="text-xs font-medium">{toast.message}</span>
+          <button
+            type="button"
+            onClick={() => setToast(null)}
+            className="text-zinc-500 hover:text-zinc-200"
+            aria-label="Dismiss"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      )}
+
       <div>
         <h1 className="text-xl font-semibold text-zinc-100">My Queue</h1>
         <p className="text-sm text-zinc-500 mt-0.5">
@@ -468,6 +597,7 @@ export default function DesignerPage() {
                 brief={item.brief}
                 assignedCS={item.assignedCS}
                 onAction={handleAction}
+                pendingAction={pendingByItem[item.id] ?? null}
               />
             ))
           )}
@@ -496,6 +626,7 @@ export default function DesignerPage() {
                 brief={item.brief}
                 assignedCS={item.assignedCS}
                 onAction={handleAction}
+                pendingAction={pendingByItem[item.id] ?? null}
               />
             ))
           )}
@@ -524,6 +655,7 @@ export default function DesignerPage() {
                 brief={item.brief}
                 assignedCS={item.assignedCS}
                 onAction={handleAction}
+                pendingAction={pendingByItem[item.id] ?? null}
               />
             ))
           )}
