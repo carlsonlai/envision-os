@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import {
   ResponsiveContainer,
   AreaChart,
@@ -22,7 +22,29 @@ import {
   Users,
   UserPlus,
   AlertCircle,
+  Loader2,
 } from 'lucide-react'
+
+interface ApiPlatform {
+  id: string
+  name: string
+  connected: boolean
+  followers: number | null
+  followerGrowth: number | null
+  reach: number | null
+  engagement: number | null
+  leads: number | null
+  posts: number | null
+  error?: string
+}
+
+interface AnalyticsResponse {
+  success: boolean
+  connectedCount: number
+  totalPlatforms: number
+  platforms: ApiPlatform[]
+  lastUpdated: string
+}
 
 const PLATFORM_STATS = [
   {
@@ -167,18 +189,78 @@ const getHeatmapTextColor = (value: number): string => {
   return 'text-zinc-400'
 }
 
+function mergeStats(
+  mock: (typeof PLATFORM_STATS)[0],
+  live: ApiPlatform[]
+): (typeof PLATFORM_STATS)[0] {
+  const platform = live.find(
+    (p) =>
+      p.id === mock.platform ||
+      (mock.platform === 'rednote' && p.id === 'rednote')
+  )
+  if (!platform?.connected) return mock
+  return {
+    ...mock,
+    followers: platform.followers ?? mock.followers,
+    engagement: platform.engagement ?? mock.engagement,
+    reach: platform.reach ?? mock.reach,
+    posts: platform.posts ?? mock.posts,
+  }
+}
+
 export default function AnalyticsPage() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d')
+  const [liveData, setLiveData] = useState<ApiPlatform[]>([])
+  const [liveLoading, setLiveLoading] = useState(true)
+  const [connectedCount, setConnectedCount] = useState(0)
+
+  useEffect(() => {
+    fetch('/api/social/analytics')
+      .then((r) =>
+        r.ok
+          ? (r.json() as Promise<AnalyticsResponse>)
+          : Promise.reject()
+      )
+      .then((data) => {
+        setLiveData(data.platforms)
+        setConnectedCount(data.connectedCount)
+      })
+      .catch(() => {
+        // silently fallback to mock
+      })
+      .finally(() => setLiveLoading(false))
+  }, [])
 
   const reachData = useMemo(() => generateReachData(), [])
 
+  const platformStats = useMemo(
+    () => PLATFORM_STATS.map((p) => mergeStats(p, liveData)),
+    [liveData]
+  )
+
+  const kpiTotals = useMemo(
+    () => ({
+      totalReach: platformStats.reduce((s, p) => s + p.reach, 0),
+      avgEngagement: parseFloat(
+        (
+          platformStats.reduce((s, p) => s + p.engagement, 0) /
+          platformStats.length
+        ).toFixed(1)
+      ),
+      totalPosts: platformStats.reduce((s, p) => s + p.posts, 0),
+      totalLeads:
+        liveData.reduce((s, p) => s + (p.leads ?? 0), 0) || 23,
+    }),
+    [platformStats, liveData]
+  )
+
   const platformEngagementData = useMemo(
     () =>
-      PLATFORM_STATS.map((p) => ({
+      platformStats.map((p) => ({
         name: `${p.emoji} ${p.platform.charAt(0).toUpperCase() + p.platform.slice(1)}`,
         value: p.engagement,
       })),
-    []
+    [platformStats]
   )
 
   return (
@@ -211,12 +293,28 @@ export default function AnalyticsPage() {
               ))}
             </div>
 
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
-              <AlertCircle className="w-4 h-4 text-amber-400" />
-              <span className="text-xs font-medium text-amber-400">
-                UI Preview — Connect platforms for live data
-              </span>
-            </div>
+            {connectedCount > 0 ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30">
+                <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs font-medium text-emerald-400">
+                  {connectedCount} platform{connectedCount !== 1 ? 's' : ''} live
+                </span>
+              </div>
+            ) : liveLoading ? (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-zinc-800 border border-zinc-700">
+                <Loader2 className="w-4 h-4 text-zinc-400 animate-spin" />
+                <span className="text-xs font-medium text-zinc-400">
+                  Checking connections…
+                </span>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+                <AlertCircle className="w-4 h-4 text-amber-400" />
+                <span className="text-xs font-medium text-amber-400">
+                  UI Preview — Connect platforms for live data
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -227,7 +325,9 @@ export default function AnalyticsPage() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-zinc-400 text-sm mb-1">Total Reach</p>
-                <p className="text-2xl font-bold text-zinc-100">45,200</p>
+                <p className="text-2xl font-bold text-zinc-100">
+                  {kpiTotals.totalReach.toLocaleString()}
+                </p>
               </div>
               <div className="p-2 bg-emerald-500/10 rounded-lg">
                 <Users className="w-5 h-5 text-emerald-400" />
@@ -249,7 +349,9 @@ export default function AnalyticsPage() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-zinc-400 text-sm mb-1">Engagement Rate</p>
-                <p className="text-2xl font-bold text-zinc-100">4.8%</p>
+                <p className="text-2xl font-bold text-zinc-100">
+                  {kpiTotals.avgEngagement}%
+                </p>
               </div>
               <div className="p-2 bg-violet-500/10 rounded-lg">
                 <Heart className="w-5 h-5 text-violet-400" />
@@ -271,7 +373,9 @@ export default function AnalyticsPage() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-zinc-400 text-sm mb-1">Posts Published</p>
-                <p className="text-2xl font-bold text-zinc-100">24</p>
+                <p className="text-2xl font-bold text-zinc-100">
+                  {kpiTotals.totalPosts}
+                </p>
               </div>
               <div className="p-2 bg-blue-500/10 rounded-lg">
                 <Zap className="w-5 h-5 text-blue-400" />
@@ -291,7 +395,9 @@ export default function AnalyticsPage() {
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-zinc-400 text-sm mb-1">Leads Generated</p>
-                <p className="text-2xl font-bold text-zinc-100">23</p>
+                <p className="text-2xl font-bold text-zinc-100">
+                  {kpiTotals.totalLeads}
+                </p>
               </div>
               <div className="p-2 bg-amber-500/10 rounded-lg">
                 <UserPlus className="w-5 h-5 text-amber-400" />
@@ -315,7 +421,7 @@ export default function AnalyticsPage() {
             Platform Performance
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {PLATFORM_STATS.map((stat) => (
+            {platformStats.map((stat) => (
               <div
                 key={stat.platform}
                 className={`rounded-2xl border ${stat.border} ${stat.bg} p-5`}
@@ -327,6 +433,15 @@ export default function AnalyticsPage() {
                       <h3 className="font-semibold text-zinc-100 capitalize">
                         {stat.platform}
                       </h3>
+                      {liveData.find((p) => p.id === stat.platform)
+                        ?.connected && (
+                        <div className="flex items-center gap-1">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          <span className="text-[10px] text-emerald-400">
+                            Live
+                          </span>
+                        </div>
+                      )}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">
