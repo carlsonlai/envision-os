@@ -261,7 +261,43 @@ export default function AgentControlPage() {
     )
   }
 
-  if (!data) return null
+  if (!data) {
+    // Surface load failures instead of rendering a blank page (e.g. when the
+    // /api/admin/agents endpoint 500s because a Prisma migration is missing).
+    return (
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <header className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold text-white flex items-center gap-2">
+              <Cpu className="w-6 h-6 text-indigo-400" /> Agent Control
+            </h1>
+            <p className="text-sm text-zinc-400 mt-1">
+              Autonomous agents — auto-with-override. Tune confidence and value caps per agent.
+            </p>
+          </div>
+          <button
+            onClick={load}
+            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-200 text-sm"
+          >
+            <RefreshCw className="w-4 h-4" /> Retry
+          </button>
+        </header>
+
+        <div className="rounded-lg border border-red-500/30 bg-red-500/10 text-red-200 px-4 py-3 text-sm flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+          <div className="space-y-1">
+            <div className="font-medium">Could not load agent control data.</div>
+            <div className="text-red-300/80 text-xs break-all">
+              {error ?? 'The /api/admin/agents endpoint returned an unexpected response.'}
+            </div>
+            <div className="text-red-300/60 text-xs">
+              If this is the first deploy, the agent tables migration may not have been applied yet.
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
