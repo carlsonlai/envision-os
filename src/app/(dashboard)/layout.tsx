@@ -38,8 +38,6 @@ import {
   Library,
   Cpu,
 } from 'lucide-react'
-import RoleChatbot from '@/components/chatbot/RoleChatbot'
-
 interface NavItem {
   href: string
   label: string
@@ -130,7 +128,8 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
     {
       label: 'Autonomy',
       items: [
-        { href: '/admin/agents', label: 'Agent Control', icon: Cpu, exact: true },
+        { href: '/admin/brain',  label: 'AI Brain',      icon: Brain, exact: true },
+        { href: '/admin/agents', label: 'Agent Control',  icon: Cpu,   exact: true },
       ],
     },
     {
@@ -521,9 +520,6 @@ export default function DashboardLayout({
 
         {/* Page content */}
         <main className="flex-1 overflow-auto p-4 md:p-6 pb-20 md:pb-6">{children}</main>
-
-        {/* Role-specific AI Chatbot */}
-        {userRole && <RoleChatbot role={userRole} defaultExpanded={false} />}
 
         {/* Mobile Bottom Nav */}
         <nav className="fixed bottom-0 left-0 right-0 z-30 flex md:hidden border-t border-zinc-800 bg-[#0d0d14]">
