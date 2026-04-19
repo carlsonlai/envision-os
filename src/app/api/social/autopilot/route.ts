@@ -34,8 +34,7 @@ async function ensurePostsTable() {
       "imagePrompt" TEXT,
       "imageUrl"    TEXT,
       "bestTime"    TEXT,
-      status        TEXT NOT NULL DEFAULT 'scheduled'
-                    CHECK (status IN ('scheduled','posted','failed','draft')),
+      status        TEXT NOT NULL DEFAULT 'pending',
       "scheduledAt" TIMESTAMPTZ,
       "postedAt"    TIMESTAMPTZ,
       "createdAt"   TIMESTAMPTZ DEFAULT NOW(),
@@ -43,9 +42,14 @@ async function ensurePostsTable() {
       metadata      JSONB DEFAULT '{}'
     )
   `)
-  // Add imageUrl column to existing tables created before this migration
+  // Add columns for tables created before these migrations
+  await prisma.$executeRawUnsafe(`ALTER TABLE "ScheduledPost" ADD COLUMN IF NOT EXISTS "imageUrl" TEXT`)
+  await prisma.$executeRawUnsafe(`ALTER TABLE "ScheduledPost" ADD COLUMN IF NOT EXISTS "contentType" TEXT`)
+  // Drop old status CHECK constraint so 'pending' and 'approved' are valid
   await prisma.$executeRawUnsafe(`
-    ALTER TABLE "ScheduledPost" ADD COLUMN IF NOT EXISTS "imageUrl" TEXT
+    DO $$ BEGIN
+      ALTER TABLE "ScheduledPost" DROP CONSTRAINT IF EXISTS "ScheduledPost_status_check";
+    EXCEPTION WHEN OTHERS THEN NULL; END $$;
   `)
 }
 
@@ -389,7 +393,7 @@ export async function POST(req: NextRequest) {
         const slot = schedule[i % schedule.length]
         await prisma.$executeRawUnsafe(
           `INSERT INTO "ScheduledPost" (platform, caption, hashtags, "imagePrompt", "bestTime", status, "scheduledAt")
-           VALUES ($1, $2, $3, $4, $5, 'scheduled', $6)`,
+           VALUES ($1, $2, $3, $4, $5, 'pending', $6)`,
           post.platform,
           post.caption,
           post.hashtags,
@@ -398,7 +402,7 @@ export async function POST(req: NextRequest) {
           slot.scheduledAt.toISOString()
         )
       }
-      log.push(`✅ Generated and scheduled ${posts.length} posts across Instagram, Facebook, and LinkedIn`)
+      log.push(`✅ Generated ${posts.length} posts — pending your approval in the Content Factory`)
     }
 
     // ── TASK: schedule ────────────────────────────────────────────────────────
@@ -545,7 +549,7 @@ export async function POST(req: NextRequest) {
   }
 }
 
-// GET /api/social/autopilot — return scheduled posts queue
+// GET /api/social/autopilot — return posts queue
 export async function GET(_req: NextRequest) {
   const session = await getServerSession(authOptions)
   if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -555,14 +559,66 @@ export async function GET(_req: NextRequest) {
   const posts = await prisma.$queryRawUnsafe<Array<{
     id: string; platform: string; caption: string; hashtags: string[];
     imagePrompt: string | null; bestTime: string | null; status: string;
-    scheduledAt: string | null; postedAt: string | null; createdAt: string
+    contentType: string | null; scheduledAt: string | null; postedAt: string | null; createdAt: string
   }>>(
-    `SELECT id, platform, caption, hashtags, "imagePrompt", "bestTime", status,
+    `SELECT id, platform, caption, hashtags, "imagePrompt", "bestTime", "contentType", status,
             "scheduledAt", "postedAt", "createdAt"
      FROM "ScheduledPost"
-     ORDER BY COALESCE("scheduledAt", "createdAt") ASC
-     LIMIT 50`
+     ORDER BY COALESCE("scheduledAt", "createdAt") DESC
+     LIMIT 100`
   )
 
   return NextResponse.json({ data: posts })
+}
+
+// PATCH /api/social/autopilot — update post (approve / edit / reject)
+export async function PATCH(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  await ensurePostsTable()
+
+  interface PatchBody {
+    id: string
+    status?: string
+    caption?: string
+    hashtags?: string[]
+  }
+  const body = (await req.json()) as PatchBody
+  const { id, status, caption, hashtags } = body
+
+  if (!id) return NextResponse.json({ error: 'Missing post id' }, { status: 400 })
+
+  if (status !== undefined && caption === undefined) {
+    await prisma.$executeRawUnsafe(
+      `UPDATE "ScheduledPost" SET status = $1, "updatedAt" = NOW() WHERE id = $2`,
+      status, id
+    )
+  }
+
+  if (caption !== undefined) {
+    await prisma.$executeRawUnsafe(
+      `UPDATE "ScheduledPost" SET caption = $1, hashtags = $2, "updatedAt" = NOW() WHERE id = $3`,
+      caption, hashtags ?? [], id
+    )
+    // Also mark as approved after edit
+    await prisma.$executeRawUnsafe(
+      `UPDATE "ScheduledPost" SET status = 'approved', "updatedAt" = NOW() WHERE id = $1`,
+      id
+    )
+  }
+
+  return NextResponse.json({ ok: true })
+}
+
+// DELETE /api/social/autopilot?id=xxx — hard-delete a rejected post
+export async function DELETE(req: NextRequest) {
+  const session = await getServerSession(authOptions)
+  if (!session?.user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const id = req.nextUrl.searchParams.get('id')
+  if (!id) return NextResponse.json({ error: 'Missing id' }, { status: 400 })
+
+  await prisma.$executeRawUnsafe(`DELETE FROM "ScheduledPost" WHERE id = $1`, id)
+  return NextResponse.json({ ok: true })
 }
