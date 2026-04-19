@@ -1,470 +1,1030 @@
 'use client'
 
-import { useState, useRef, useEffect, useCallback } from 'react'
+import { useState, useMemo } from 'react'
 import {
-  Image as ImageIcon,
-  Video,
-  Download,
-  Loader2,
-  RefreshCw,
-  ChevronLeft,
-  ChevronRight,
-  Film,
-  Music2,
-  Layers,
-  Clock,
-  CheckCircle2,
-  AlertCircle,
-  Play,
-  ExternalLink,
+  Library,
+  Upload,
+  DownloadCloud,
+  Eye,
+  Trash2,
+  Copy,
+  X,
   Search,
+  Grid as GridIcon,
+  List as ListIcon,
+  ImageIcon,
+  Video,
+  FileText,
+  Layers,
+  FolderOpen,
+  Sparkles,
+  ArrowRight,
+  Check,
 } from 'lucide-react'
 
-// ── Types ────────────────────────────────────────────────────────────────────
-
-type Tab = 'kling' | 'envato'
-type EnvatoSite = 'videohive.net' | 'audiojungle.net' | 'graphicriver.net' | 'photodune.net'
-
-interface KlingTask {
-  task_id: string
-  task_status: 'submitted' | 'processing' | 'succeed' | 'failed'
-  task_status_msg?: string
-  task_result?: {
-    videos?: { url: string; duration: string }[]
-  }
+interface MediaAsset {
+  id: string
+  name: string
+  type: 'image' | 'video' | 'document' | 'template' | 'ai-generated'
+  size: string
+  date: string
+  category: 'brand' | 'social' | 'client' | 'template' | 'ai'
+  platform?: string
+  usageCount: number
+  gradient: string
+  tags: string[]
 }
 
-interface EnvatoItem {
-  id: number
-  item: string
-  description: string
-  previews: {
-    landscape_preview?: { landscape_url: string }
-    icon_with_landscape_preview?: { landscape_url: string }
-  }
-  url: string
-  rating: { rating: number; count: number }
-  cost: number
-  site: string
-}
+const MOCK_ASSETS: MediaAsset[] = [
+  {
+    id: '1',
+    name: 'Primary Logo',
+    type: 'image',
+    size: '2.4 MB',
+    date: '2026-04-15',
+    category: 'brand',
+    usageCount: 12,
+    gradient: 'from-violet-900 to-indigo-900',
+    tags: ['logo', 'primary', 'brand'],
+  },
+  {
+    id: '2',
+    name: 'Color Palette Guidelines',
+    type: 'document',
+    size: '1.8 MB',
+    date: '2026-04-14',
+    category: 'brand',
+    usageCount: 8,
+    gradient: 'from-pink-900 to-rose-900',
+    tags: ['colors', 'guidelines', 'brand'],
+  },
+  {
+    id: '3',
+    name: 'Instagram Post Template',
+    type: 'template',
+    size: '5.2 MB',
+    date: '2026-04-18',
+    category: 'template',
+    usageCount: 24,
+    gradient: 'from-sky-900 to-blue-900',
+    tags: ['instagram', 'social', 'template'],
+  },
+  {
+    id: '4',
+    name: 'TikTok Thumbnail v1',
+    type: 'image',
+    size: '0.8 MB',
+    date: '2026-04-12',
+    category: 'social',
+    platform: 'TikTok',
+    usageCount: 15,
+    gradient: 'from-emerald-900 to-teal-900',
+    tags: ['tiktok', 'thumbnail', 'video'],
+  },
+  {
+    id: '5',
+    name: 'Brand Showcase Video',
+    type: 'video',
+    size: '45.3 MB',
+    date: '2026-04-10',
+    category: 'brand',
+    usageCount: 5,
+    gradient: 'from-amber-900 to-orange-900',
+    tags: ['brand', 'video', 'showcase'],
+  },
+  {
+    id: '6',
+    name: 'LinkedIn Banner 2026',
+    type: 'image',
+    size: '3.1 MB',
+    date: '2026-04-16',
+    category: 'social',
+    platform: 'LinkedIn',
+    usageCount: 6,
+    gradient: 'from-blue-900 to-cyan-900',
+    tags: ['linkedin', 'banner', 'professional'],
+  },
+  {
+    id: '7',
+    name: 'Client Proposal Template',
+    type: 'document',
+    size: '2.7 MB',
+    date: '2026-04-13',
+    category: 'client',
+    usageCount: 3,
+    gradient: 'from-purple-900 to-violet-900',
+    tags: ['proposal', 'client', 'template'],
+  },
+  {
+    id: '8',
+    name: 'AI Generated Background',
+    type: 'image',
+    size: '4.2 MB',
+    date: '2026-04-18',
+    category: 'ai',
+    usageCount: 2,
+    gradient: 'from-rose-900 to-pink-900',
+    tags: ['ai', 'background', 'generated'],
+  },
+  {
+    id: '9',
+    name: 'Story Template Design',
+    type: 'template',
+    size: '3.6 MB',
+    date: '2026-04-17',
+    category: 'template',
+    usageCount: 18,
+    gradient: 'from-fuchsia-900 to-purple-900',
+    tags: ['story', 'instagram', 'template'],
+  },
+  {
+    id: '10',
+    name: 'Presentation Deck Q2',
+    type: 'document',
+    size: '8.9 MB',
+    date: '2026-04-11',
+    category: 'client',
+    usageCount: 4,
+    gradient: 'from-slate-800 to-zinc-900',
+    tags: ['presentation', 'q2', 'business'],
+  },
+  {
+    id: '11',
+    name: 'Product Showcase Reel',
+    type: 'video',
+    size: '52.1 MB',
+    date: '2026-04-09',
+    category: 'social',
+    platform: 'Instagram',
+    usageCount: 9,
+    gradient: 'from-orange-900 to-red-900',
+    tags: ['instagram', 'reel', 'product'],
+  },
+  {
+    id: '12',
+    name: 'Brand Font Guide',
+    type: 'document',
+    size: '1.2 MB',
+    date: '2026-04-14',
+    category: 'brand',
+    usageCount: 7,
+    gradient: 'from-indigo-900 to-blue-900',
+    tags: ['typography', 'fonts', 'brand'],
+  },
+  {
+    id: '13',
+    name: 'Twitter Banner Design',
+    type: 'image',
+    size: '1.5 MB',
+    date: '2026-04-15',
+    category: 'social',
+    platform: 'X',
+    usageCount: 4,
+    gradient: 'from-gray-900 to-black',
+    tags: ['twitter', 'x', 'banner'],
+  },
+  {
+    id: '14',
+    name: 'AI Generated Avatar',
+    type: 'image',
+    size: '0.6 MB',
+    date: '2026-04-18',
+    category: 'ai',
+    usageCount: 1,
+    gradient: 'from-cyan-900 to-blue-900',
+    tags: ['ai', 'avatar', 'portrait'],
+  },
+  {
+    id: '15',
+    name: 'Carousel Template Pack',
+    type: 'template',
+    size: '6.8 MB',
+    date: '2026-04-16',
+    category: 'template',
+    usageCount: 14,
+    gradient: 'from-lime-900 to-green-900',
+    tags: ['carousel', 'instagram', 'template'],
+  },
+  {
+    id: '16',
+    name: 'Client Case Study',
+    type: 'document',
+    size: '4.3 MB',
+    date: '2026-04-12',
+    category: 'client',
+    usageCount: 5,
+    gradient: 'from-teal-900 to-cyan-900',
+    tags: ['case', 'study', 'client'],
+  },
+  {
+    id: '17',
+    name: 'YouTube Thumbnail Collection',
+    type: 'image',
+    size: '2.9 MB',
+    date: '2026-04-17',
+    category: 'social',
+    platform: 'YouTube',
+    usageCount: 11,
+    gradient: 'from-red-900 to-rose-900',
+    tags: ['youtube', 'thumbnail', 'video'],
+  },
+  {
+    id: '18',
+    name: 'Seasonal Campaign Mockup',
+    type: 'image',
+    size: '7.4 MB',
+    date: '2026-04-13',
+    category: 'brand',
+    usageCount: 3,
+    gradient: 'from-emerald-900 to-green-900',
+    tags: ['campaign', 'seasonal', 'mockup'],
+  },
+  {
+    id: '19',
+    name: 'AI Generated Pattern',
+    type: 'image',
+    size: '2.1 MB',
+    date: '2026-04-18',
+    category: 'ai',
+    usageCount: 2,
+    gradient: 'from-orange-900 to-amber-900',
+    tags: ['ai', 'pattern', 'texture'],
+  },
+  {
+    id: '20',
+    name: 'Email Template System',
+    type: 'template',
+    size: '4.5 MB',
+    date: '2026-04-15',
+    category: 'template',
+    usageCount: 8,
+    gradient: 'from-sky-900 to-cyan-900',
+    tags: ['email', 'template', 'system'],
+  },
+  {
+    id: '21',
+    name: 'Client Invoice Format',
+    type: 'document',
+    size: '0.9 MB',
+    date: '2026-04-14',
+    category: 'client',
+    usageCount: 2,
+    gradient: 'from-purple-900 to-indigo-900',
+    tags: ['invoice', 'client', 'format'],
+  },
+  {
+    id: '22',
+    name: 'Pinterest Pin Design',
+    type: 'image',
+    size: '3.3 MB',
+    date: '2026-04-16',
+    category: 'social',
+    platform: 'Pinterest',
+    usageCount: 7,
+    gradient: 'from-red-900 to-pink-900',
+    tags: ['pinterest', 'pin', 'design'],
+  },
+  {
+    id: '23',
+    name: 'Product Demo Video',
+    type: 'video',
+    size: '38.7 MB',
+    date: '2026-04-11',
+    category: 'brand',
+    usageCount: 6,
+    gradient: 'from-blue-900 to-indigo-900',
+    tags: ['demo', 'product', 'video'],
+  },
+  {
+    id: '24',
+    name: 'AI Generated Illustration',
+    type: 'image',
+    size: '5.8 MB',
+    date: '2026-04-18',
+    category: 'ai',
+    usageCount: 3,
+    gradient: 'from-violet-900 to-fuchsia-900',
+    tags: ['ai', 'illustration', 'art'],
+  },
+  {
+    id: '25',
+    name: 'Webinar Template',
+    type: 'template',
+    size: '5.1 MB',
+    date: '2026-04-17',
+    category: 'template',
+    usageCount: 5,
+    gradient: 'from-slate-900 to-gray-900',
+    tags: ['webinar', 'template', 'event'],
+  },
+  {
+    id: '26',
+    name: 'Client Brand Book',
+    type: 'document',
+    size: '12.4 MB',
+    date: '2026-04-10',
+    category: 'client',
+    usageCount: 2,
+    gradient: 'from-amber-900 to-orange-900',
+    tags: ['brand', 'book', 'guidelines'],
+  },
+  {
+    id: '27',
+    name: 'TikTok Trending Sound',
+    type: 'video',
+    size: '8.2 MB',
+    date: '2026-04-18',
+    category: 'social',
+    platform: 'TikTok',
+    usageCount: 13,
+    gradient: 'from-pink-900 to-rose-900',
+    tags: ['tiktok', 'sound', 'trending'],
+  },
+  {
+    id: '28',
+    name: 'AI Generated Logo Concept',
+    type: 'image',
+    size: '3.7 MB',
+    date: '2026-04-18',
+    category: 'ai',
+    usageCount: 1,
+    gradient: 'from-emerald-900 to-teal-900',
+    tags: ['ai', 'logo', 'concept'],
+  },
+  {
+    id: '29',
+    name: 'Social Media Calendar',
+    type: 'document',
+    size: '2.3 MB',
+    date: '2026-04-16',
+    category: 'template',
+    usageCount: 4,
+    gradient: 'from-cyan-900 to-blue-900',
+    tags: ['calendar', 'social', 'planning'],
+  },
+  {
+    id: '30',
+    name: 'Brand Color Variations',
+    type: 'image',
+    size: '1.9 MB',
+    date: '2026-04-15',
+    category: 'brand',
+    usageCount: 9,
+    gradient: 'from-purple-900 to-pink-900',
+    tags: ['colors', 'brand', 'variations'],
+  },
+]
 
-// ── Kling ─────────────────────────────────────────────────────────────────────
+type FilterType = 'all' | 'image' | 'video' | 'document' | 'template' | 'ai-generated'
+type SortOption = 'newest' | 'oldest' | 'name' | 'size'
 
-function KlingGenerator() {
-  const [prompt, setPrompt] = useState('')
-  const [negativePrompt, setNegativePrompt] = useState('')
-  const [aspectRatio, setAspectRatio] = useState('16:9')
-  const [duration, setDuration] = useState('5')
-  const [mode, setMode] = useState<'std' | 'pro'>('std')
-  const [loading, setLoading] = useState(false)
-  const [polling, setPolling] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [task, setTask] = useState<KlingTask | null>(null)
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
+export default function MediaPage() {
+  const [activeType, setActiveType] = useState<FilterType>('all')
+  const [search, setSearch] = useState('')
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
+  const [selectedAsset, setSelectedAsset] = useState<MediaAsset | null>(null)
+  const [showUpload, setShowUpload] = useState(false)
+  const [sortBy, setSortBy] = useState<SortOption>('newest')
+  const [copiedId, setCopiedId] = useState<string | null>(null)
 
-  const stopPolling = useCallback(() => {
-    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null }
-    setPolling(false)
-  }, [])
+  // Filter and sort assets
+  const filteredAssets = useMemo(() => {
+    let assets = MOCK_ASSETS
 
-  const pollTask = useCallback(async (taskId: string) => {
-    try {
-      const res = await fetch(`/api/media/kling?task_id=${taskId}`)
-      const json = (await res.json()) as { success: boolean; data?: { data: KlingTask }; error?: string }
-      if (!json.success) { stopPolling(); return }
-      const t = json.data?.data
-      if (!t) return
-      setTask(t)
-      if (t.task_status === 'succeed' || t.task_status === 'failed') stopPolling()
-    } catch {
-      stopPolling()
+    // Filter by type
+    if (activeType !== 'all') {
+      assets = assets.filter((asset) => asset.type === activeType)
     }
-  }, [stopPolling])
 
-  useEffect(() => () => stopPolling(), [stopPolling])
+    // Filter by search
+    if (search) {
+      const searchLower = search.toLowerCase()
+      assets = assets.filter(
+        (asset) =>
+          asset.name.toLowerCase().includes(searchLower) ||
+          asset.tags.some((tag) => tag.toLowerCase().includes(searchLower))
+      )
+    }
 
-  async function generate() {
-    if (!prompt.trim()) return
-    stopPolling()
-    setLoading(true)
-    setError(null)
-    setTask(null)
-    try {
-      const res = await fetch('/api/media/kling', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ prompt, negative_prompt: negativePrompt, aspect_ratio: aspectRatio, duration, mode }),
-      })
-      const json = (await res.json()) as {
-        success: boolean
-        error?: string
-        data?: { data: { task_id: string; task_status: string } }
-      }
-      if (!json.success) throw new Error(json.error ?? 'Failed to create task')
-      const taskId = json.data?.data?.task_id
-      if (!taskId) throw new Error('No task ID returned')
-      setTask({ task_id: taskId, task_status: 'submitted' })
-      setPolling(true)
-      pollRef.current = setInterval(() => void pollTask(taskId), 5000)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error')
-    } finally {
-      setLoading(false)
+    // Sort
+    const sorted = [...assets]
+    switch (sortBy) {
+      case 'newest':
+        sorted.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        break
+      case 'oldest':
+        sorted.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        break
+      case 'name':
+        sorted.sort((a, b) => a.name.localeCompare(b.name))
+        break
+      case 'size':
+        sorted.sort(
+          (a, b) =>
+            parseFloat(b.size.split(' ')[0]) - parseFloat(a.size.split(' ')[0])
+        )
+        break
+    }
+
+    return sorted
+  }, [activeType, search, sortBy])
+
+  // Group assets by category
+  const groupedAssets = useMemo(() => {
+    if (activeType !== 'all') return []
+
+    const groups: Record<string, MediaAsset[]> = {
+      brand: [],
+      social: [],
+      client: [],
+      template: [],
+      ai: [],
+    }
+
+    filteredAssets.forEach((asset) => {
+      groups[asset.category].push(asset)
+    })
+
+    return Object.entries(groups).filter(([, assets]) => assets.length > 0)
+  }, [filteredAssets, activeType])
+
+  // Count statistics
+  const stats = {
+    images: MOCK_ASSETS.filter((a) => a.type === 'image').length,
+    videos: MOCK_ASSETS.filter((a) => a.type === 'video').length,
+    documents: MOCK_ASSETS.filter((a) => a.type === 'document').length,
+    aiGenerated: MOCK_ASSETS.filter((a) => a.type === 'ai-generated').length,
+  }
+
+  const getTypeIcon = (type: MediaAsset['type']) => {
+    switch (type) {
+      case 'image':
+        return <ImageIcon className="h-3 w-3" />
+      case 'video':
+        return <Video className="h-3 w-3" />
+      case 'document':
+        return <FileText className="h-3 w-3" />
+      case 'template':
+        return <Layers className="h-3 w-3" />
+      case 'ai-generated':
+        return <Sparkles className="h-3 w-3" />
     }
   }
 
-  const statusColor: Record<string, string> = {
-    submitted: 'text-zinc-400',
-    processing: 'text-amber-400',
-    succeed: 'text-emerald-400',
-    failed: 'text-red-400',
+  const getTypeLabel = (type: MediaAsset['type']) => {
+    switch (type) {
+      case 'image':
+        return 'IMAGE'
+      case 'video':
+        return 'VIDEO'
+      case 'document':
+        return 'PDF'
+      case 'template':
+        return 'TMPL'
+      case 'ai-generated':
+        return 'AI'
+    }
   }
-  const StatusIcon = task?.task_status === 'succeed' ? CheckCircle2
-    : task?.task_status === 'failed' ? AlertCircle
-    : task?.task_status === 'processing' ? Loader2
-    : Clock
+
+  const getCategoryLabel = (category: MediaAsset['category']) => {
+    switch (category) {
+      case 'brand':
+        return 'Brand Assets'
+      case 'social':
+        return 'Social Media'
+      case 'client':
+        return 'Client Work'
+      case 'template':
+        return 'Templates'
+      case 'ai':
+        return 'AI-Generated'
+    }
+  }
+
+  const handleCopyLink = (assetId: string) => {
+    setCopiedId(assetId)
+    setTimeout(() => setCopiedId(null), 2000)
+  }
+
+  const handleDelete = () => {
+    setSelectedAsset(null)
+  }
 
   return (
-    <div className="space-y-4">
-      <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-3">
-        <div className="flex items-center gap-2 text-emerald-400">
-          <Film className="h-4 w-4" />
-          <span className="text-sm font-semibold">Kling AI Video Generator</span>
-          <span className="ml-auto text-[10px] text-emerald-500/70 bg-emerald-500/10 rounded-full px-2 py-0.5">Text → Video</span>
-        </div>
-
-        <textarea
-          value={prompt}
-          onChange={e => setPrompt(e.target.value)}
-          placeholder="Describe the video you want to generate…"
-          rows={3}
-          className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-emerald-500/50 resize-none"
-        />
-        <input
-          type="text"
-          value={negativePrompt}
-          onChange={e => setNegativePrompt(e.target.value)}
-          placeholder="Negative prompt (optional) — what to avoid"
-          className="w-full rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-2 text-sm text-zinc-400 placeholder-zinc-600 outline-none focus:border-emerald-500/50"
-        />
-
-        <div className="flex items-center gap-3 flex-wrap">
-          <div>
-            <label className="text-xs text-zinc-500 block mb-1">Aspect ratio</label>
-            <select
-              value={aspectRatio}
-              onChange={e => setAspectRatio(e.target.value)}
-              className="rounded-lg border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-xs text-zinc-300 outline-none"
-            >
-              <option value="16:9">16:9 Landscape</option>
-              <option value="9:16">9:16 Portrait</option>
-              <option value="1:1">1:1 Square</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-zinc-500 block mb-1">Duration</label>
-            <select
-              value={duration}
-              onChange={e => setDuration(e.target.value)}
-              className="rounded-lg border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-xs text-zinc-300 outline-none"
-            >
-              <option value="5">5 seconds</option>
-              <option value="10">10 seconds</option>
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-zinc-500 block mb-1">Mode</label>
-            <div className="flex rounded-lg border border-zinc-800 bg-zinc-900 overflow-hidden">
-              {(['std', 'pro'] as const).map(m => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setMode(m)}
-                  className={`px-3 py-1.5 text-xs font-medium uppercase transition-colors ${mode === m ? 'bg-emerald-500/20 text-emerald-400' : 'text-zinc-500 hover:text-zinc-300'}`}
-                >
-                  {m}
-                </button>
-              ))}
+    <div className="min-h-screen bg-[#0a0a0f]">
+      {/* Header */}
+      <div className="border-b border-zinc-800 bg-zinc-900/30">
+        <div className="mx-auto max-w-7xl px-6 py-8">
+          <div className="mb-8 flex items-start justify-between">
+            <div>
+              <div className="mb-2 flex items-center gap-3">
+                <div className="rounded-lg bg-indigo-900/30 p-2">
+                  <Library className="h-6 w-6 text-indigo-400" />
+                </div>
+                <h1 className="text-3xl font-semibold text-white">Media Library</h1>
+              </div>
+              <p className="text-sm text-zinc-400">
+                Brand assets, social media files & templates
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowUpload(!showUpload)}
+                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+              >
+                <Upload className="h-4 w-4" />
+                Upload Assets
+              </button>
+              <a
+                href="/social-hub/create"
+                className="inline-flex items-center gap-2 rounded-lg border border-zinc-700 bg-zinc-900/50 px-4 py-2.5 text-sm font-medium text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
+              >
+                <Sparkles className="h-4 w-4" />
+                Generate with AI
+              </a>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => void generate()}
-            disabled={loading || polling || !prompt.trim()}
-            className="mt-4 rounded-lg bg-emerald-600 px-5 py-1.5 text-sm font-medium text-white hover:bg-emerald-700 disabled:opacity-50 transition-colors flex items-center gap-2"
-          >
-            {loading ? <><Loader2 className="h-4 w-4 animate-spin" /> Submitting…</> : <><Video className="h-4 w-4" /> Generate</>}
-          </button>
+
+          {/* Stats Row */}
+          <div className="flex flex-wrap gap-3">
+            <div className="flex items-center gap-2 rounded-lg bg-zinc-900/50 px-3 py-1.5">
+              <ImageIcon className="h-3.5 w-3.5 text-zinc-400" />
+              <span className="text-xs text-zinc-300">
+                <span className="font-semibold text-white">{stats.images}</span> images
+              </span>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg bg-zinc-900/50 px-3 py-1.5">
+              <Video className="h-3.5 w-3.5 text-zinc-400" />
+              <span className="text-xs text-zinc-300">
+                <span className="font-semibold text-white">{stats.videos}</span> videos
+              </span>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg bg-zinc-900/50 px-3 py-1.5">
+              <FileText className="h-3.5 w-3.5 text-zinc-400" />
+              <span className="text-xs text-zinc-300">
+                <span className="font-semibold text-white">{stats.documents}</span> documents
+              </span>
+            </div>
+            <div className="flex items-center gap-2 rounded-lg bg-zinc-900/50 px-3 py-1.5">
+              <Sparkles className="h-3.5 w-3.5 text-zinc-400" />
+              <span className="text-xs text-zinc-300">
+                <span className="font-semibold text-white">{stats.aiGenerated}</span>{' '}
+                AI-generated
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      {error && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-400 flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 flex-shrink-0" /> {error}
-        </div>
-      )}
+      {/* Main Content */}
+      <div className="mx-auto max-w-7xl px-6 py-8">
+        {/* Upload Zone */}
+        {showUpload && (
+          <div className="mb-8">
+            <div className="rounded-2xl border-2 border-dashed border-zinc-700 bg-zinc-900/30 p-8">
+              <div className="flex flex-col items-center gap-4">
+                <div className="rounded-lg bg-indigo-900/20 p-4">
+                  <Upload className="h-8 w-8 text-indigo-400" />
+                </div>
+                <div className="text-center">
+                  <p className="text-base font-medium text-white">Drag & drop files here</p>
+                  <p className="mt-1 text-sm text-zinc-400">or</p>
+                </div>
+                <button className="rounded-lg bg-indigo-600/10 px-4 py-2 text-sm font-medium text-indigo-400 transition-colors hover:bg-indigo-600/20">
+                  Browse
+                </button>
+                <p className="text-xs text-zinc-500">
+                  Supports JPG, PNG, MP4, GIF, PDF, SVG • Max 50MB per file
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
-      {task && (
-        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-4 space-y-3">
-          <div className="flex items-center gap-2">
-            <StatusIcon className={`h-4 w-4 ${statusColor[task.task_status]} ${task.task_status === 'processing' ? 'animate-spin' : ''}`} />
-            <span className={`text-sm font-medium capitalize ${statusColor[task.task_status]}`}>
-              {task.task_status === 'submitted' ? 'In queue…'
-                : task.task_status === 'processing' ? 'Rendering video…'
-                : task.task_status === 'succeed' ? 'Video ready!'
-                : `Failed: ${task.task_status_msg ?? 'Unknown error'}`}
-            </span>
-            {polling && (
-              <span className="ml-auto text-[10px] text-zinc-600 flex items-center gap-1">
-                <RefreshCw className="h-3 w-3 animate-spin" /> Polling every 5s
-              </span>
+        {/* Filter & Search Bar */}
+        <div className="mb-8 space-y-4">
+          {/* Search and View Toggle */}
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500" />
+              <input
+                type="text"
+                placeholder="Search assets by name or tag..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full rounded-xl border border-zinc-800 bg-zinc-900 py-2.5 pl-10 pr-4 text-sm text-white placeholder-zinc-500 transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/20"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`rounded-lg p-2 transition-colors ${
+                  viewMode === 'grid'
+                    ? 'bg-indigo-600/20 text-indigo-400'
+                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300'
+                }`}
+              >
+                <GridIcon className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`rounded-lg p-2 transition-colors ${
+                  viewMode === 'list'
+                    ? 'bg-indigo-600/20 text-indigo-400'
+                    : 'text-zinc-400 hover:bg-zinc-800 hover:text-zinc-300'
+                }`}
+              >
+                <ListIcon className="h-5 w-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Type Filter Tabs */}
+          <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-4">
+            {(['all', 'image', 'video', 'document', 'template', 'ai-generated'] as FilterType[]).map((type) => (
+              <button
+                key={type}
+                onClick={() => setActiveType(type)}
+                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  activeType === type
+                    ? 'bg-indigo-600/20 text-indigo-400'
+                    : 'text-zinc-400 hover:text-zinc-300'
+                }`}
+              >
+                {type === 'all' && 'All'}
+                {type === 'image' && 'Images'}
+                {type === 'video' && 'Videos'}
+                {type === 'document' && 'Documents'}
+                {type === 'template' && 'Templates'}
+                {type === 'ai-generated' && 'AI-Generated'}
+              </button>
+            ))}
+          </div>
+
+          {/* Sort Dropdown */}
+          <div className="flex items-center justify-end gap-2">
+            <span className="text-xs text-zinc-400">Sort by:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as SortOption)}
+              className="rounded-lg border border-zinc-800 bg-zinc-900 px-3 py-1.5 text-xs text-white transition-colors focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500/20"
+            >
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="name">Name</option>
+              <option value="size">Size</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Assets Display */}
+        {filteredAssets.length === 0 ? (
+          // Empty State
+          <div className="flex flex-col items-center justify-center py-16">
+            <FolderOpen className="mb-4 h-12 w-12 text-zinc-600" />
+            <h3 className="mb-2 text-lg font-medium text-white">No assets found</h3>
+            <p className="mb-6 text-sm text-zinc-400">
+              {search
+                ? 'Try adjusting your search terms'
+                : 'Upload your first asset to get started'}
+            </p>
+            <button
+              onClick={() => setShowUpload(true)}
+              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
+            >
+              <Upload className="h-4 w-4" />
+              Upload Assets
+            </button>
+          </div>
+        ) : activeType === 'all' && groupedAssets.length > 0 ? (
+          // Grouped View by Category
+          <div className="space-y-8">
+            {groupedAssets.map(([category, assets]) => (
+              <div key={category}>
+                <h2 className="mb-4 text-sm font-semibold text-zinc-300">
+                  {getCategoryLabel(category as MediaAsset['category'])}
+                </h2>
+                <div
+                  className={
+                    viewMode === 'grid'
+                      ? 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+                      : 'space-y-2'
+                  }
+                >
+                  {assets.map((asset) => (
+                    <AssetCard
+                      key={asset.id}
+                      asset={asset}
+                      viewMode={viewMode}
+                      isSelected={selectedAsset?.id === asset.id}
+                      onSelect={setSelectedAsset}
+                      getTypeIcon={getTypeIcon}
+                      getTypeLabel={getTypeLabel}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          // Flat Grid/List View
+          <div
+            className={
+              viewMode === 'grid'
+                ? 'grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+                : 'space-y-2'
+            }
+          >
+            {filteredAssets.map((asset) => (
+              <AssetCard
+                key={asset.id}
+                asset={asset}
+                viewMode={viewMode}
+                isSelected={selectedAsset?.id === asset.id}
+                onSelect={setSelectedAsset}
+                getTypeIcon={getTypeIcon}
+                getTypeLabel={getTypeLabel}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Asset Detail Panel */}
+      {selectedAsset && (
+        <AssetDetailPanel
+          asset={selectedAsset}
+          onClose={() => setSelectedAsset(null)}
+          onCopyLink={() => handleCopyLink(selectedAsset.id)}
+          onDelete={handleDelete}
+          isCopied={copiedId === selectedAsset.id}
+          getTypeIcon={getTypeIcon}
+          getTypeLabel={getTypeLabel}
+        />
+      )}
+    </div>
+  )
+}
+
+interface AssetCardProps {
+  asset: MediaAsset
+  viewMode: 'grid' | 'list'
+  isSelected: boolean
+  onSelect: (asset: MediaAsset) => void
+  getTypeIcon: (type: MediaAsset['type']) => React.ReactNode
+  getTypeLabel: (type: MediaAsset['type']) => string
+}
+
+function AssetCard({
+  asset,
+  viewMode,
+  isSelected,
+  onSelect,
+  getTypeIcon,
+  getTypeLabel,
+}: AssetCardProps) {
+  if (viewMode === 'list') {
+    return (
+      <button
+        onClick={() => onSelect(asset)}
+        className={`flex w-full items-center gap-4 rounded-xl border border-zinc-800 bg-zinc-900/50 p-3 text-left transition-all hover:border-zinc-700 hover:bg-zinc-900 ${
+          isSelected ? 'border-indigo-500 bg-indigo-900/20' : ''
+        }`}
+      >
+        {/* Thumbnail */}
+        <div
+          className={`h-16 w-16 flex-shrink-0 rounded-lg bg-gradient-to-br ${asset.gradient}`}
+        />
+        {/* Info */}
+        <div className="flex-1 min-w-0">
+          <p className="truncate text-sm font-medium text-white">{asset.name}</p>
+          <p className="text-xs text-zinc-500">{asset.size}</p>
+        </div>
+        {/* Type Badge */}
+        <div className="flex-shrink-0">
+          <span className="inline-flex items-center gap-1 rounded-md bg-zinc-800 px-2 py-1 text-xs text-zinc-300">
+            {getTypeIcon(asset.type)}
+            {getTypeLabel(asset.type)}
+          </span>
+        </div>
+      </button>
+    )
+  }
+
+  return (
+    <button
+      onClick={() => onSelect(asset)}
+      className={`group rounded-xl border border-zinc-800 bg-zinc-900/50 transition-all hover:border-zinc-700 hover:bg-zinc-900 ${
+        isSelected ? 'border-indigo-500 bg-indigo-900/20' : ''
+      }`}
+    >
+      {/* Thumbnail */}
+      <div className={`relative aspect-square overflow-hidden rounded-t-xl bg-gradient-to-br ${asset.gradient}`}>
+        {/* Type Badge */}
+        <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-black/40 px-2 py-1 backdrop-blur-sm">
+          {getTypeIcon(asset.type)}
+          <span className="text-xs font-semibold text-white">{getTypeLabel(asset.type)}</span>
+        </div>
+
+        {/* Hover Overlay */}
+        <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/40 opacity-0 transition-opacity group-hover:opacity-100 backdrop-blur-sm">
+          <button className="rounded-lg bg-white/10 p-2 text-white backdrop-blur transition-colors hover:bg-white/20">
+            <Eye className="h-4 w-4" />
+          </button>
+          <button className="rounded-lg bg-white/10 p-2 text-white backdrop-blur transition-colors hover:bg-white/20">
+            <DownloadCloud className="h-4 w-4" />
+          </button>
+          <button className="rounded-lg bg-white/10 p-2 text-white backdrop-blur transition-colors hover:bg-white/20">
+            <Layers className="h-4 w-4" />
+          </button>
+        </div>
+
+        {/* Platform Tag */}
+        {asset.platform && (
+          <div className="absolute bottom-2 right-2 rounded-md bg-indigo-600/80 px-2 py-1 text-xs font-medium text-white backdrop-blur-sm">
+            {asset.platform}
+          </div>
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="space-y-2 p-3">
+        <p className="truncate text-sm font-medium text-white">{asset.name}</p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-zinc-500">{asset.size}</p>
+          <p className="text-xs text-zinc-500">
+            {new Date(asset.date).toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+            })}
+          </p>
+        </div>
+      </div>
+    </button>
+  )
+}
+
+interface AssetDetailPanelProps {
+  asset: MediaAsset
+  onClose: () => void
+  onCopyLink: () => void
+  onDelete: () => void
+  isCopied: boolean
+  getTypeIcon: (type: MediaAsset['type']) => React.ReactNode
+  getTypeLabel: (type: MediaAsset['type']) => string
+}
+
+function AssetDetailPanel({
+  asset,
+  onClose,
+  onCopyLink,
+  onDelete,
+  isCopied,
+  getTypeIcon,
+  getTypeLabel,
+}: AssetDetailPanelProps) {
+  return (
+    <>
+      {/* Backdrop */}
+      <div
+        className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+
+      {/* Panel */}
+      <div className="fixed right-0 top-0 z-50 h-screen w-full overflow-y-auto border-l border-zinc-800 bg-zinc-900/95 backdrop-blur sm:w-96">
+        <div className="sticky top-0 flex items-center justify-between border-b border-zinc-800 bg-zinc-900/95 px-6 py-4 backdrop-blur">
+          <h2 className="text-lg font-semibold text-white">Asset Details</h2>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-1 text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="space-y-6 p-6">
+          {/* Preview */}
+          <div
+            className={`aspect-square rounded-xl bg-gradient-to-br ${asset.gradient}`}
+          />
+
+          {/* Details */}
+          <div className="space-y-4">
+            <div>
+              <label className="text-xs font-medium uppercase text-zinc-500">Name</label>
+              <p className="mt-1 text-sm text-white">{asset.name}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-medium uppercase text-zinc-500">Type</label>
+                <div className="mt-1 flex items-center gap-2">
+                  {getTypeIcon(asset.type)}
+                  <span className="text-sm text-white">{getTypeLabel(asset.type)}</span>
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-medium uppercase text-zinc-500">Size</label>
+                <p className="mt-1 text-sm text-white">{asset.size}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-xs font-medium uppercase text-zinc-500">
+                  Uploaded
+                </label>
+                <p className="mt-1 text-sm text-white">
+                  {new Date(asset.date).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
+                </p>
+              </div>
+              <div>
+                <label className="text-xs font-medium uppercase text-zinc-500">
+                  Usage Count
+                </label>
+                <p className="mt-1 text-sm text-white">{asset.usageCount} uses</p>
+              </div>
+            </div>
+
+            {asset.platform && (
+              <div>
+                <label className="text-xs font-medium uppercase text-zinc-500">
+                  Platform
+                </label>
+                <p className="mt-1 text-sm text-white">{asset.platform}</p>
+              </div>
+            )}
+
+            {asset.tags.length > 0 && (
+              <div>
+                <label className="text-xs font-medium uppercase text-zinc-500">Tags</label>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {asset.tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex rounded-md bg-indigo-600/20 px-2.5 py-1 text-xs text-indigo-300"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {asset.usageCount > 0 && (
+              <div className="rounded-lg border border-zinc-800 bg-zinc-900/50 p-3">
+                <p className="text-xs font-medium text-white">
+                  Used in {asset.usageCount} post{asset.usageCount !== 1 ? 's' : ''}
+                </p>
+                <button className="mt-2 flex items-center gap-1 text-xs text-indigo-400 transition-colors hover:text-indigo-300">
+                  View usage
+                  <ArrowRight className="h-3 w-3" />
+                </button>
+              </div>
             )}
           </div>
 
-          <p className="text-[10px] text-zinc-600 font-mono">Task ID: {task.task_id}</p>
-
-          {task.task_status === 'succeed' && task.task_result?.videos?.map((v, i) => (
-            <div key={i} className="rounded-lg overflow-hidden border border-zinc-800">
-              {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-              <video controls className="w-full max-h-64 bg-black" src={v.url}>
-                Your browser does not support video.
-              </video>
-              <div className="flex items-center justify-between px-3 py-2 border-t border-zinc-800">
-                <span className="text-xs text-zinc-500">{v.duration}s</span>
-                <a
-                  href={v.url}
-                  download
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 rounded-lg bg-emerald-600/20 border border-emerald-600/30 px-3 py-1.5 text-xs text-emerald-400 hover:bg-emerald-600/30 transition-colors"
-                >
-                  <Download className="h-3.5 w-3.5" /> Download
-                </a>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {!task && !loading && (
-        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 py-16 text-center">
-          <Video className="h-8 w-8 text-zinc-700 mx-auto mb-3" />
-          <p className="text-sm text-zinc-500">Generate AI videos from text using Kling</p>
-          <p className="text-xs text-zinc-600 mt-1">Generation typically takes 2–5 minutes</p>
-        </div>
-      )}
-    </div>
-  )
-}
-
-// ── Envato ────────────────────────────────────────────────────────────────────
-
-function EnvatoSearch() {
-  const [query, setQuery] = useState('')
-  const [site, setSite] = useState<EnvatoSite>('videohive.net')
-  const [page, setPage] = useState(1)
-  const [results, setResults] = useState<EnvatoItem[]>([])
-  const [total, setTotal] = useState(0)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  const search = useCallback(async (p = 1) => {
-    if (!query.trim()) return
-    setLoading(true)
-    setError(null)
-    try {
-      const params = new URLSearchParams({ q: query, site, page: String(p) })
-      const res = await fetch(`/api/media/envato?${params.toString()}`)
-      const json = (await res.json()) as {
-        success: boolean
-        error?: string
-        data?: { matches: EnvatoItem[]; total_hits: number }
-      }
-      if (!json.success) throw new Error(json.error ?? 'Failed')
-      setResults(json.data?.matches ?? [])
-      setTotal(json.data?.total_hits ?? 0)
-      setPage(p)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error')
-    } finally {
-      setLoading(false)
-    }
-  }, [query, site])
-
-  const SITE_LABELS: Record<EnvatoSite, { label: string; icon: React.ElementType }> = {
-    'videohive.net':   { label: 'VideoHive',    icon: Film },
-    'audiojungle.net': { label: 'AudioJungle',  icon: Music2 },
-    'graphicriver.net':{ label: 'GraphicRiver', icon: Layers },
-    'photodune.net':   { label: 'PhotoDune',    icon: ImageIcon },
-  }
-
-  const totalPages = Math.ceil(total / 20)
-
-  return (
-    <div className="space-y-4">
-      <div className="flex gap-2 flex-wrap">
-        <div className="flex-1 min-w-48 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-zinc-500" />
-          <input
-            type="text"
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && void search(1)}
-            placeholder="Search Envato stock…"
-            className="w-full rounded-lg border border-zinc-800 bg-zinc-900 pl-9 pr-3 py-2 text-sm text-zinc-200 placeholder-zinc-600 outline-none focus:border-amber-500/50"
-          />
-        </div>
-        <div className="flex rounded-lg border border-zinc-800 bg-zinc-900 overflow-hidden">
-          {(Object.entries(SITE_LABELS) as [EnvatoSite, { label: string; icon: React.ElementType }][]).map(([s, { label }]) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setSite(s)}
-              className={`px-3 py-2 text-xs font-medium transition-colors ${site === s ? 'bg-amber-500/20 text-amber-400' : 'text-zinc-500 hover:text-zinc-300'}`}
-            >
-              {label}
+          {/* Actions */}
+          <div className="space-y-2 border-t border-zinc-800 pt-6">
+            <button className="flex w-full items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2.5 text-sm text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white">
+              <DownloadCloud className="h-4 w-4" />
+              Download
             </button>
-          ))}
-        </div>
-        <button
-          type="button"
-          onClick={() => void search(1)}
-          disabled={loading || !query.trim()}
-          className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50 transition-colors"
-        >
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Search'}
-        </button>
-      </div>
-
-      {error && (
-        <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-4 py-3 text-sm text-red-400 flex items-center gap-2">
-          <AlertCircle className="h-4 w-4 flex-shrink-0" /> {error}
-        </div>
-      )}
-
-      {results.length > 0 && (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {results.map(item => {
-              const thumb = item.previews?.landscape_preview?.landscape_url
-                ?? item.previews?.icon_with_landscape_preview?.landscape_url
-                ?? ''
-              return (
-                <div key={item.id} className="group relative rounded-xl overflow-hidden border border-zinc-800/60 bg-zinc-900/40">
-                  {thumb ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={thumb} alt={item.item} className="w-full aspect-video object-cover" />
-                  ) : (
-                    <div className="w-full aspect-video bg-zinc-800 flex items-center justify-center">
-                      <Film className="h-8 w-8 text-zinc-700" />
-                    </div>
-                  )}
-                  {site === 'videohive.net' && (
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <div className="rounded-full bg-white/20 backdrop-blur-sm p-3">
-                        <Play className="h-5 w-5 text-white fill-white" />
-                      </div>
-                    </div>
-                  )}
-                  <div className="p-3 space-y-1.5">
-                    <p className="text-xs font-medium text-zinc-200 truncate">{item.item}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-amber-400 font-semibold">${item.cost}</span>
-                      <span className="text-[10px] text-zinc-500">★ {item.rating?.rating?.toFixed(1) ?? '—'}</span>
-                    </div>
-                    <a
-                      href={item.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-1.5 w-full rounded-lg border border-amber-500/30 bg-amber-500/10 py-1.5 text-xs text-amber-400 hover:bg-amber-500/20 transition-colors"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" /> View on Envato
-                    </a>
-                  </div>
-                </div>
-              )
-            })}
+            <button
+              onClick={() => {
+                onCopyLink()
+              }}
+              className="flex w-full items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2.5 text-sm text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
+            >
+              {isCopied ? (
+                <>
+                  <Check className="h-4 w-4 text-emerald-400" />
+                  <span className="text-emerald-400">Copied!</span>
+                </>
+              ) : (
+                <>
+                  <Copy className="h-4 w-4" />
+                  Copy Link
+                </>
+              )}
+            </button>
+            <button
+              onClick={() => {
+                onDelete()
+              }}
+              className="flex w-full items-center gap-3 rounded-lg border border-red-900/50 bg-red-900/10 px-4 py-2.5 text-sm text-red-400 transition-colors hover:bg-red-900/20"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete
+            </button>
           </div>
-
-          {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => void search(page - 1)}
-                disabled={page <= 1 || loading}
-                className="rounded-lg border border-zinc-800 p-2 text-zinc-400 hover:text-zinc-200 disabled:opacity-40 transition-colors"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
-              <span className="text-xs text-zinc-500">Page {page} of {totalPages}</span>
-              <button
-                type="button"
-                onClick={() => void search(page + 1)}
-                disabled={page >= totalPages || loading}
-                className="rounded-lg border border-zinc-800 p-2 text-zinc-400 hover:text-zinc-200 disabled:opacity-40 transition-colors"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-            </div>
-          )}
-        </>
-      )}
-
-      {results.length === 0 && !loading && !error && (
-        <div className="rounded-xl border border-zinc-800/60 bg-zinc-900/30 py-16 text-center">
-          <Film className="h-8 w-8 text-zinc-700 mx-auto mb-3" />
-          <p className="text-sm text-zinc-500">Search VideoHive, AudioJungle, GraphicRiver & PhotoDune</p>
         </div>
-      )}
-    </div>
-  )
-}
-
-// ── Main page ─────────────────────────────────────────────────────────────────
-
-const TABS: { id: Tab; label: string; icon: React.ElementType; color: string }[] = [
-  { id: 'kling',  label: 'Kling AI Video', icon: Film,   color: 'text-emerald-400' },
-  { id: 'envato', label: 'Envato Stock',   icon: Layers, color: 'text-amber-400' },
-]
-
-export default function MediaLibraryPage() {
-  const [tab, setTab] = useState<Tab>('kling')
-
-  return (
-    <div className="space-y-6 max-w-7xl mx-auto">
-      <div>
-        <h1 className="text-xl font-semibold text-zinc-100 flex items-center gap-2">
-          <ImageIcon className="h-5 w-5 text-[#818cf8]" />
-          Media Library
-        </h1>
-        <p className="text-sm text-zinc-500 mt-0.5">
-          Generate AI videos with Kling and browse stock assets from Envato
-        </p>
       </div>
-
-      <div className="flex gap-1 rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-1 w-fit">
-        {TABS.map(t => {
-          const Icon = t.icon
-          return (
-            <button
-              key={t.id}
-              type="button"
-              onClick={() => setTab(t.id)}
-              className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all ${
-                tab === t.id ? 'bg-zinc-800 text-zinc-100 shadow-sm' : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              <Icon className={`h-3.5 w-3.5 ${tab === t.id ? t.color : ''}`} />
-              {t.label}
-            </button>
-          )
-        })}
-      </div>
-
-      <div>
-        {tab === 'kling'  && <KlingGenerator />}
-        {tab === 'envato' && <EnvatoSearch />}
-      </div>
-    </div>
+    </>
   )
 }

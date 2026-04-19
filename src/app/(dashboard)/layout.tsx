@@ -38,6 +38,8 @@ import {
   Library,
   Cpu,
   Webhook,
+  Globe,
+  UserPlus,
 } from 'lucide-react'
 interface NavItem {
   href: string
@@ -101,11 +103,13 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
     {
       label: 'Social',
       items: [
-        { href: '/social-hub',          label: 'Social Hub',      icon: Share2,      exact: true },
-        { href: '/social-hub/create',   label: 'Content Studio',  icon: Zap },
-        { href: '/social-hub/calendar', label: 'Social Calendar', icon: CalendarDays },
-        { href: '/social-hub/analytics',label: 'Analytics',       icon: BarChart3 },
-        { href: '/media',               label: 'Media Library',   icon: Library },
+        { href: '/social-hub',                  label: 'Social Hub',      icon: Share2,      exact: true },
+        { href: '/social-hub/create',           label: 'Content Studio',  icon: Zap },
+        { href: '/social-hub/calendar',         label: 'Social Calendar', icon: CalendarDays },
+        { href: '/social-hub/analytics',        label: 'Analytics',       icon: BarChart3 },
+        { href: '/social-hub/search-console',   label: 'Search Console',  icon: Globe },
+        { href: '/social-hub/leads',            label: 'Lead Collection', icon: UserPlus },
+        { href: '/media',                       label: 'Media Library',   icon: Library },
       ],
     },
     {
