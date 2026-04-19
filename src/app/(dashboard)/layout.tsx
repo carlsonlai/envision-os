@@ -269,6 +269,17 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
     PERSONAL_GROUP,
   ],
 
+  MULTIMEDIA_DESIGNER: [
+    {
+      items: [
+        { href: '/designer', label: 'My Queue',      icon: ListTodo },
+        { href: '/media',    label: 'Media Library', icon: Library },
+        { href: '/kpi',      label: 'My KPI',        icon: BarChart3 },
+      ],
+    },
+    PERSONAL_GROUP,
+  ],
+
   // âââ AI SALES AGENT âââââââââââââââââââââââââââââââââââââââââââââââââââââââ
   AI_SALES_AGENT: [
     {
@@ -326,6 +337,7 @@ const ROLE_LABELS: Record<string, string> = {
   JUNIOR_DESIGNER: 'Junior Designer',
   DESIGNER_3D: '3D Designer',
   DIGITAL_MARKETING: 'Digital Marketing',
+  MULTIMEDIA_DESIGNER: 'Multimedia Designer',
   CLIENT: 'Client',
   AI_SALES_AGENT: 'AI Sales Agent',
   AI_CS_AGENT: 'AI CS Agent',
@@ -342,6 +354,7 @@ const ROLE_DEFAULT_ROUTES: Record<string, string> = {
   JUNIOR_DESIGNER: '/designer',
   DESIGNER_3D: '/designer',
   DIGITAL_MARKETING: '/designer',
+  MULTIMEDIA_DESIGNER: '/designer',
   CLIENT: '/portal',
   AI_SALES_AGENT: '/ai-sales',
   AI_CS_AGENT: '/ai-cs',

@@ -3,12 +3,13 @@ import { prisma } from '@/lib/db'
 
 export const dynamic = 'force-dynamic'
 
-// Auto-migrate: create table on first request if it doesn't exist
+// Auto-migrate: create table on first request if it doesn't exist.
+// Uses platform_id as PRIMARY KEY — no pgcrypto / gen_random_uuid() needed.
 async function ensureTable() {
+  // Create table with platform_id as PK (no extension dependency)
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS social_platform_stats (
-      id              TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-      platform_id     TEXT UNIQUE NOT NULL,
+      platform_id     TEXT PRIMARY KEY,
       platform_name   TEXT NOT NULL,
       followers       INT  DEFAULT 0,
       follower_growth FLOAT DEFAULT 0,
@@ -23,6 +24,22 @@ async function ensureTable() {
       updated_at      TIMESTAMPTZ DEFAULT NOW(),
       updated_by      TEXT DEFAULT 'manual'
     )
+  `)
+
+  // Migration guard: if table was created with the old schema (id column +
+  // platform_id UNIQUE), silently drop the redundant id column.
+  await prisma.$executeRawUnsafe(`
+    DO $$
+    BEGIN
+      IF EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_name = 'social_platform_stats' AND column_name = 'id'
+      ) THEN
+        ALTER TABLE social_platform_stats DROP COLUMN IF EXISTS id;
+      END IF;
+    EXCEPTION WHEN OTHERS THEN
+      NULL;
+    END $$;
   `)
 }
 
@@ -57,7 +74,13 @@ export async function GET(): Promise<NextResponse> {
       best_time: string
       updated_at: Date
       updated_by: string
-    }>>(`SELECT * FROM social_platform_stats ORDER BY platform_id`)
+    }>>(`
+      SELECT platform_id, platform_name, followers, follower_growth,
+             reach, engagement, leads, posts, likes, comments,
+             score, best_time, updated_at, updated_by
+      FROM social_platform_stats
+      ORDER BY platform_id
+    `)
 
     if (rows.length === 0) {
       return NextResponse.json({ platforms: [], hasData: false })

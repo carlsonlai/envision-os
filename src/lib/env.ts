@@ -34,6 +34,11 @@ const ENV_VARS: EnvVar[] = [
   // WhatsApp
   { key: 'WHATSAPP_TOKEN',          required: false, description: 'WhatsApp Cloud API token' },
   { key: 'WHATSAPP_PHONE_ID',       required: false, description: 'WhatsApp sender phone ID' },
+  // Inngest (autonomous agents)
+  { key: 'INNGEST_SIGNING_KEY',     required: false, description: 'Inngest signing key (agents run on schedule)' },
+  { key: 'INNGEST_EVENT_KEY',       required: false, description: 'Inngest event key (agents triggered by events)' },
+  // Cron protection
+  { key: 'CRON_SECRET',             required: false, description: 'Bearer token protecting /api/cron/* routes' },
 ]
 
 export function validateEnv(): void {
