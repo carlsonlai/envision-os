@@ -242,5 +242,150 @@ export async function ensureSchemaUpToDate(): Promise<string[]> {
     `CREATE INDEX IF NOT EXISTS "assets_createdAt_idx" ON "assets" ("createdAt")`
   )
 
+  // ── Agent control plane (enums + 4 tables) ───────────────────────────────
+  await step(
+    'enum AgentKind',
+    `DO $$ BEGIN
+       CREATE TYPE "AgentKind" AS ENUM (
+         'DEMAND_INTEL','CONTENT_GENERATOR','DISTRIBUTION_ENGINE','PERFORMANCE_OPTIMIZER',
+         'LEAD_ENGINE','SALES_AGENT','PAYMENT_AGENT','ONBOARDING_AGENT',
+         'PM_AI','QA_AGENT','DELIVERY_AGENT','REVENUE_EXPANSION'
+       );
+     EXCEPTION WHEN duplicate_object THEN NULL; END $$`
+  )
+  await step(
+    'enum AgentDecisionStatus',
+    `DO $$ BEGIN
+       CREATE TYPE "AgentDecisionStatus" AS ENUM (
+         'AUTO_EXECUTED','PENDING_APPROVAL','APPROVED','REJECTED',
+         'OVERRIDDEN','FAILED','SKIPPED'
+       );
+     EXCEPTION WHEN duplicate_object THEN NULL; END $$`
+  )
+  await step(
+    'enum AgentRunStatus',
+    `DO $$ BEGIN
+       CREATE TYPE "AgentRunStatus" AS ENUM ('STARTED','COMPLETED','FAILED');
+     EXCEPTION WHEN duplicate_object THEN NULL; END $$`
+  )
+  await step(
+    'enum FailsafeSeverity',
+    `DO $$ BEGIN
+       CREATE TYPE "FailsafeSeverity" AS ENUM ('LOW','MEDIUM','HIGH','CRITICAL');
+     EXCEPTION WHEN duplicate_object THEN NULL; END $$`
+  )
+
+  await step(
+    'table agent_configs',
+    `CREATE TABLE IF NOT EXISTS "agent_configs" (
+       "id"                  TEXT        NOT NULL PRIMARY KEY,
+       "agent"               "AgentKind" NOT NULL UNIQUE,
+       "enabled"             BOOLEAN     NOT NULL DEFAULT TRUE,
+       "autonomyEnabled"     BOOLEAN     NOT NULL DEFAULT TRUE,
+       "confidenceThreshold" DOUBLE PRECISION NOT NULL DEFAULT 0.75,
+       "valueCapCents"       INTEGER,
+       "rateCapPerHour"      INTEGER,
+       "pausedReason"        TEXT,
+       "pausedAt"            TIMESTAMPTZ,
+       "pausedByUserId"      TEXT,
+       "updatedAt"           TIMESTAMPTZ NOT NULL DEFAULT NOW()
+     )`
+  )
+
+  await step(
+    'table agent_runs',
+    `CREATE TABLE IF NOT EXISTS "agent_runs" (
+       "id"          TEXT              NOT NULL PRIMARY KEY,
+       "agent"       "AgentKind"       NOT NULL,
+       "triggerKind" TEXT              NOT NULL,
+       "triggerRef"  TEXT,
+       "status"      "AgentRunStatus"  NOT NULL DEFAULT 'STARTED',
+       "startedAt"   TIMESTAMPTZ       NOT NULL DEFAULT NOW(),
+       "finishedAt"  TIMESTAMPTZ,
+       "durationMs"  INTEGER,
+       "tokensUsed"  INTEGER,
+       "costCents"   INTEGER,
+       "error"       TEXT,
+       "summary"     TEXT
+     )`
+  )
+  await step(
+    'idx agent_runs(agent, startedAt)',
+    `CREATE INDEX IF NOT EXISTS "agent_runs_agent_startedAt_idx" ON "agent_runs" ("agent","startedAt")`
+  )
+  await step(
+    'idx agent_runs(status)',
+    `CREATE INDEX IF NOT EXISTS "agent_runs_status_idx" ON "agent_runs" ("status")`
+  )
+
+  await step(
+    'table agent_decisions',
+    `CREATE TABLE IF NOT EXISTS "agent_decisions" (
+       "id"               TEXT                   NOT NULL PRIMARY KEY,
+       "runId"            TEXT,
+       "agent"            "AgentKind"            NOT NULL,
+       "status"           "AgentDecisionStatus"  NOT NULL DEFAULT 'AUTO_EXECUTED',
+       "confidence"       DOUBLE PRECISION       NOT NULL,
+       "action"           TEXT                   NOT NULL,
+       "rationale"        TEXT                   NOT NULL,
+       "entityType"       TEXT,
+       "entityId"         TEXT,
+       "inputSnapshot"    JSONB,
+       "proposedChange"   JSONB,
+       "result"           JSONB,
+       "valueCents"       INTEGER,
+       "requiresReview"   BOOLEAN                NOT NULL DEFAULT FALSE,
+       "reviewedByUserId" TEXT,
+       "reviewedAt"       TIMESTAMPTZ,
+       "reviewNote"       TEXT,
+       "createdAt"        TIMESTAMPTZ            NOT NULL DEFAULT NOW(),
+       CONSTRAINT "agent_decisions_runId_fkey"
+         FOREIGN KEY ("runId") REFERENCES "agent_runs"("id") ON DELETE SET NULL
+     )`
+  )
+  await step(
+    'idx agent_decisions(agent, createdAt)',
+    `CREATE INDEX IF NOT EXISTS "agent_decisions_agent_createdAt_idx" ON "agent_decisions" ("agent","createdAt")`
+  )
+  await step(
+    'idx agent_decisions(status)',
+    `CREATE INDEX IF NOT EXISTS "agent_decisions_status_idx" ON "agent_decisions" ("status")`
+  )
+  await step(
+    'idx agent_decisions(entityType, entityId)',
+    `CREATE INDEX IF NOT EXISTS "agent_decisions_entityType_entityId_idx" ON "agent_decisions" ("entityType","entityId")`
+  )
+
+  await step(
+    'table failsafe_incidents',
+    `CREATE TABLE IF NOT EXISTS "failsafe_incidents" (
+       "id"             TEXT               NOT NULL PRIMARY KEY,
+       "agent"          "AgentKind"        NOT NULL,
+       "severity"       "FailsafeSeverity" NOT NULL DEFAULT 'MEDIUM',
+       "rule"           TEXT               NOT NULL,
+       "description"    TEXT               NOT NULL,
+       "triggerValue"   TEXT,
+       "thresholdValue" TEXT,
+       "agentRunId"     TEXT,
+       "decisionId"     TEXT,
+       "resolvedAt"     TIMESTAMPTZ,
+       "resolvedBy"     TEXT,
+       "resolvedNote"   TEXT,
+       "createdAt"      TIMESTAMPTZ        NOT NULL DEFAULT NOW()
+     )`
+  )
+  await step(
+    'idx failsafe_incidents(agent, createdAt)',
+    `CREATE INDEX IF NOT EXISTS "failsafe_incidents_agent_createdAt_idx" ON "failsafe_incidents" ("agent","createdAt")`
+  )
+  await step(
+    'idx failsafe_incidents(severity)',
+    `CREATE INDEX IF NOT EXISTS "failsafe_incidents_severity_idx" ON "failsafe_incidents" ("severity")`
+  )
+  await step(
+    'idx failsafe_incidents(resolvedAt)',
+    `CREATE INDEX IF NOT EXISTS "failsafe_incidents_resolvedAt_idx" ON "failsafe_incidents" ("resolvedAt")`
+  )
+
   return log
 }
