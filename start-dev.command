@@ -1,4 +1,8 @@
 #!/bin/bash
+# Launcher for envision-os local dev server
 cd "$(dirname "$0")"
-echo "Starting Envicion OS dev server..."
+clear
+echo "Starting envision-os dev server..."
+echo "Open http://localhost:3000 in your browser when you see 'Ready'"
+echo ""
 npm run dev

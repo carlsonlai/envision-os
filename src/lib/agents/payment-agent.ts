@@ -2,6 +2,10 @@ import { inngest } from '@/lib/inngest'
 import { prisma } from '@/lib/db'
 import { startRun } from './run'
 import { recordDecision, markDecisionResult, markDecisionFailed } from './decision-log'
+import { notify } from '@/services/lark'
+import { logger, getErrorMessage } from '@/lib/logger'
+
+const APP_BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 
 /**
  * PAYMENT AGENT — Agent #7
@@ -13,13 +17,18 @@ import { recordDecision, markDecisionResult, markDecisionFailed } from './decisi
  * Actions:
  *  1. Flag invoices past due date (PENDING + dueAt < now)
  *  2. Escalate invoices overdue > 14 days
+ *
+ * IMPORTANT (CLAUDE.md business rule):
+ *  Lark notifications MUST NOT mention invoice / quotation / pricing /
+ *  payment / billing / RM amounts. Direct staff to Bukku for any financials.
+ *  The Lark service silently drops blocked content, so any leak just disappears.
  */
 
 export async function runPaymentAgent(
   opts: { triggerKind: 'cron' | 'event' | 'manual'; triggerRef?: string } = { triggerKind: 'manual' },
-): Promise<{ runId: string; flagged: number; escalated: number }> {
+): Promise<{ runId: string; flagged: number; escalated: number; notified: number }> {
   const run = await startRun({ agent: 'PAYMENT_AGENT', triggerKind: opts.triggerKind, triggerRef: opts.triggerRef })
-  if (run.skipped) return { runId: run.id, flagged: 0, escalated: 0 }
+  if (run.skipped) return { runId: run.id, flagged: 0, escalated: 0, notified: 0 }
 
   try {
     const now = new Date()
@@ -34,7 +43,11 @@ export async function runPaymentAgent(
 
     let flagged = 0
     let escalated = 0
+    let notified = 0
     const fourteenDaysAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000)
+    // Track project codes already notified this run so we don't spam MANAGEMENT
+    // when a single project has multiple overdue items.
+    const notifiedProjects = new Set<string>()
 
     for (const inv of overdueInvoices) {
       const daysPastDue = Math.round((now.getTime() - (inv.dueAt?.getTime() ?? now.getTime())) / 86400000)
@@ -62,17 +75,39 @@ export async function runPaymentAgent(
             where: { id: inv.id },
             data: { notifiedAt: now },
           })
-          await markDecisionResult(decision.id, { notified: true })
+          await markDecisionResult(decision.id, { notified: true, escalation: isEscalation })
           if (isEscalation) escalated++
           else flagged++
+
+          // Lark MANAGEMENT alert for escalations only — keep it sparse and
+          // POLICY-SAFE: no invoice / RM / payment / billing / quotation / price
+          // language. Staff are directed to Bukku for the actual financials.
+          const projectCode = inv.project?.code
+          if (isEscalation && projectCode && !notifiedProjects.has(projectCode)) {
+            try {
+              await notify('MANAGEMENT', {
+                title: `Client account attention required — ${projectCode}`,
+                body:
+                  `A client account on project **${projectCode}** has been flagged for management review. ` +
+                  `Please review the latest status in **Bukku** and coordinate next steps with CS.`,
+                projectCode,
+                actionLabel: 'Open Project',
+                actionUrl: `${APP_BASE_URL}/admin/projects`,
+              })
+              notifiedProjects.add(projectCode)
+              notified++
+            } catch (error: unknown) {
+              logger.warn(`[payment-agent] Lark notify failed for ${projectCode}: ${getErrorMessage(error)}`)
+            }
+          }
         } catch (error: unknown) {
           await markDecisionFailed(decision.id, error)
         }
       }
     }
 
-    await run.finish(`Flagged ${flagged} overdue, escalated ${escalated} (>14d)`)
-    return { runId: run.id, flagged, escalated }
+    await run.finish(`Flagged ${flagged}, escalated ${escalated} (>14d), notified ${notified}`)
+    return { runId: run.id, flagged, escalated, notified }
   } catch (error: unknown) {
     await run.fail(error)
     throw error

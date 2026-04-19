@@ -2,7 +2,16 @@ import { inngest } from '@/lib/inngest'
 import { prisma } from '@/lib/db'
 import { startRun } from './run'
 import { recordDecision, markDecisionResult, markDecisionFailed } from './decision-log'
+import { notify } from '@/services/lark'
+import { logger, getErrorMessage } from '@/lib/logger'
 import Anthropic from '@anthropic-ai/sdk'
+
+const APP_BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
+
+function daysSince(date: Date | null | undefined): number {
+  if (!date) return 0
+  return Math.max(0, Math.round((Date.now() - date.getTime()) / 86_400_000))
+}
 
 /**
  * SALES AGENT — Agent #6
@@ -36,9 +45,9 @@ async function draftProposalTitle(leadName: string, company: string): Promise<st
 
 export async function runSalesAgent(
   opts: { triggerKind: 'cron' | 'event' | 'manual'; triggerRef?: string } = { triggerKind: 'manual' },
-): Promise<{ runId: string; drafted: number; flagged: number }> {
+): Promise<{ runId: string; drafted: number; flagged: number; notified: number }> {
   const run = await startRun({ agent: 'SALES_AGENT', triggerKind: opts.triggerKind, triggerRef: opts.triggerRef })
-  if (run.skipped) return { runId: run.id, drafted: 0, flagged: 0 }
+  if (run.skipped) return { runId: run.id, drafted: 0, flagged: 0, notified: 0 }
 
   try {
     // ── Step 1: Draft proposals for qualified leads with none ─────────────
@@ -83,25 +92,43 @@ export async function runSalesAgent(
     })
 
     let flagged = 0
+    let notified = 0
     for (const p of stale) {
+      const ageDays = daysSince(p.sentAt)
       const decision = await recordDecision({
         runId: run.id,
         agent: 'SALES_AGENT',
         action: 'flag_stale_proposal',
-        rationale: `Proposal "${p.title}" sent ${Math.round((Date.now() - (p.sentAt?.getTime() ?? 0)) / 86400000)}d ago, unopened`,
+        rationale: `Proposal "${p.title}" sent ${ageDays}d ago, unopened`,
         confidence: 0.85,
         entityType: 'Proposal',
         entityId: p.id,
         proposedChange: { needsFollowUp: true },
       })
       if (decision.status === 'AUTO_EXECUTED') {
-        await markDecisionResult(decision.id, { flagged: true })
+        // Lark SALES notify — nudge the team to follow up.
+        // Policy-safe: no invoice/quotation/pricing/RM/amount language.
+        const leadLabel = p.lead?.company || p.lead?.name || 'Client lead'
+        try {
+          await notify('SALES', {
+            title: `Proposal needs follow-up — ${leadLabel}`,
+            body:
+              `Proposal **"${p.title}"** has been sent for **${ageDays} days** without being opened by the client. ` +
+              `Consider a warm follow-up call or email to re-engage the lead.`,
+            actionLabel: 'Open Sales Pipeline',
+            actionUrl: `${APP_BASE_URL}/admin/leads`,
+          })
+          notified++
+        } catch (error: unknown) {
+          logger.warn(`[sales-agent] Lark notify failed for proposal ${p.id}: ${getErrorMessage(error)}`)
+        }
+        await markDecisionResult(decision.id, { flagged: true, ageDays, notified: true })
         flagged++
       }
     }
 
-    await run.finish(`Drafted ${drafted} proposals, flagged ${flagged} stale`)
-    return { runId: run.id, drafted, flagged }
+    await run.finish(`Drafted ${drafted} proposals, flagged ${flagged} stale, notified ${notified}`)
+    return { runId: run.id, drafted, flagged, notified }
   } catch (error: unknown) {
     await run.fail(error)
     throw error
