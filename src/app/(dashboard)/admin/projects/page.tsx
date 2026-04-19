@@ -29,6 +29,7 @@ import {
 } from 'lucide-react'
 import { formatCurrency, formatDeadline } from '@/lib/utils'
 import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
+import { ProjectStatsBar } from '@/components/project/ProjectStatsBar'
 
 type ProjectStatus = 'PROJECTED' | 'ONGOING' | 'COMPLETED' | 'BILLED' | 'PAID'
 
@@ -389,6 +390,18 @@ export default function AdminProjectsPage() {
     PAID: projects.filter(p => p.status === 'PAID').length,
   }
 
+  // Derived metrics for stats bar.
+  // "Needs attention": completed-but-not-billed + overdue ongoing.
+  const now = Date.now()
+  const needsAttention = projects.filter(p => {
+    if (p.status === 'COMPLETED') return true
+    if (p.status === 'ONGOING' && p.deadline && new Date(p.deadline).getTime() < now) return true
+    return false
+  }).length
+  const pipelineValue = projects
+    .filter(p => p.status !== 'PAID')
+    .reduce((sum, p) => sum + (Number.isFinite(p.quotedAmount) ? p.quotedAmount : 0), 0)
+
   const selectedClient = clients.find(c => c.id === formClientId)
 
   return (
@@ -443,6 +456,15 @@ export default function AdminProjectsPage() {
             </button>
           </div>
         </div>
+
+        {/* Stats Bar */}
+        <ProjectStatsBar
+          totalProjects={projects.length}
+          activeProjects={counts.ONGOING}
+          needsAttention={needsAttention}
+          pipelineValue={pipelineValue}
+          loading={loading}
+        />
 
         {/* Lark Sync Results Panel */}
         {showLarkPanel && larkResult && (
@@ -959,13 +981,15 @@ export default function AdminProjectsPage() {
                   <div key={project.id} className="group relative rounded-2xl border border-zinc-800/60 bg-zinc-900/40 p-5 hover:border-zinc-700 transition-colors space-y-3">
                     {/* Header */}
                     <div className="flex items-start justify-between gap-2">
-                      <div>
+                      <div className="min-w-0">
                         <span className="font-mono text-xs font-semibold text-indigo-400">{project.code}</span>
                         {isLark && <span className="ml-2 text-[10px] text-zinc-500">Lark</span>}
                         <p className="mt-0.5 text-sm font-medium text-zinc-100 leading-snug line-clamp-2">
                           {project.client?.companyName ?? '—'}
                         </p>
-                        <p className="text-xs text-zinc-500 mt-0.5">{project.client?.companyName ?? ''}</p>
+                        {project.client?.contactPerson && !isLark && (
+                          <p className="text-xs text-zinc-500 mt-0.5 truncate">{project.client.contactPerson}</p>
+                        )}
                       </div>
                       <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium ${getStatusBadgeClass(project.status)}`}>
                         {STATUS_LABELS[project.status]}
