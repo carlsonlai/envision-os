@@ -104,9 +104,87 @@ function getWeeklySchedule(): { platform: string; day: string; time: string; sch
   })
 }
 
+// ─── Template content (fallback when API credits are low) ────────────────────
+
+type PostTemplate = {
+  platform: string
+  caption: string
+  hashtags: string[]
+  imagePrompt: string
+  bestTime: string
+  estimatedReach: string
+  goal: string
+}
+
+const TEMPLATE_POSTS: PostTemplate[] = [
+  {
+    platform: 'instagram',
+    caption: "Great branding doesn't happen by accident — it's built with intention. ✨\n\nAt Envicion Studios, every pixel, colour choice, and typography decision tells your brand story. We help Malaysian businesses transform from forgettable to unforgettable.\n\nReady to stand out? Link in bio.",
+    hashtags: ['BrandingMalaysia', 'CreativeAgencyKL', 'EnvicionStudios', 'BrandDesign', 'VisualIdentity'],
+    imagePrompt: 'Clean flat-lay of branding materials: business cards, brand guidelines booklet, color swatches, all in a dark sophisticated palette with gold accents, professional photography',
+    bestTime: 'Tue 8:30 AM',
+    estimatedReach: '3,200–5,100',
+    goal: 'brand_awareness',
+  },
+  {
+    platform: 'facebook',
+    caption: "🎯 Your brand is your first impression — and you only get one chance.\n\nEnvicion Studios has helped 50+ Malaysian businesses build brands that convert. From startups to established companies, we craft identities that resonate with your target audience.\n\nDM us today for a free brand audit.",
+    hashtags: ['MalaysiaBusiness', 'BrandingAgency', 'BusinessGrowthMY', 'MarketingMalaysia'],
+    imagePrompt: 'Before and after brand transformation split screen, showing a business going from generic to professional brand identity, Malaysian corporate setting',
+    bestTime: 'Mon 1:00 PM',
+    estimatedReach: '2,800–4,500',
+    goal: 'lead_generation',
+  },
+  {
+    platform: 'linkedin',
+    caption: "The #1 mistake Malaysian SMEs make with their brand:\n\nTrying to appeal to everyone — and resonating with no one.\n\nA strong brand REPELS the wrong clients and ATTRACTS the right ones. This selectivity is what drives premium pricing and client loyalty.\n\nAt Envicion Studios, we build brands with clear positioning so you attract your ideal clients consistently.\n\nWhat's your brand's unique positioning? Share below 👇",
+    hashtags: ['BrandStrategy', 'MalaysianEntrepreneurs', 'B2BMalaysia', 'BrandingTips', 'SMEMalaysia'],
+    imagePrompt: 'Professional infographic showing brand positioning matrix, clean corporate design with indigo and white color scheme, data visualization style',
+    bestTime: 'Tue 7:30 AM',
+    estimatedReach: '1,800–3,200',
+    goal: 'thought_leadership',
+  },
+  {
+    platform: 'instagram',
+    caption: "Behind every great campaign is a great creative process 🎨\n\nSwipe to see how we build brand identities from scratch — from moodboard to final delivery.\n\nOur process: Discovery → Strategy → Design → Refine → Launch 🚀\n\nEvery project starts with understanding YOUR business, YOUR customers, YOUR goals.",
+    hashtags: ['BrandingProcess', 'CreativeProcess', 'DesignStudio', 'BrandingKL', 'EnvicionStudios'],
+    imagePrompt: 'Creative studio process carousel: mood board with color palettes, sketch concepts, digital mockups, final brand presentation on MacBook, warm studio lighting',
+    bestTime: 'Thu 12:00 PM',
+    estimatedReach: '4,100–6,200',
+    goal: 'engagement',
+  },
+  {
+    platform: 'facebook',
+    caption: "📣 Case Study: How we helped a KL-based F&B brand increase their customer retention by 40%\n\nThe challenge: Great food, but no brand recognition.\nThe solution: Complete visual identity overhaul + social media strategy.\nThe result: 40% retention increase, 3x social following in 6 months.\n\nYour brand can achieve the same. Let's talk.",
+    hashtags: ['CaseStudy', 'BrandingResults', 'MalaysiaFnB', 'BusinessGrowth'],
+    imagePrompt: 'Restaurant branding showcase: menu design, packaging, social media mockups, brand colors applied across touchpoints, warm inviting photography',
+    bestTime: 'Wed 3:00 PM',
+    estimatedReach: '3,500–5,800',
+    goal: 'social_proof',
+  },
+  {
+    platform: 'linkedin',
+    caption: "3 signs your brand is hurting your sales:\n\n1️⃣ Clients ask for discounts constantly → your brand doesn't justify premium pricing\n2️⃣ High-value clients don't take you seriously → your visual identity screams 'small business'\n3️⃣ Your team can't explain what makes you different → no clear brand strategy\n\nAny of these sound familiar?\n\nEnvicion Studios specialises in fixing exactly these problems for Malaysian businesses.\n\nBook a brand strategy call — link in bio.",
+    hashtags: ['BrandStrategy', 'BusinessDevelopment', 'MalaysiaMarketing', 'B2BMarketing', 'LeadGeneration'],
+    imagePrompt: 'Professional LinkedIn-style infographic with 3 points, clean typography, Envicion brand colors indigo and deep purple, corporate minimalist design',
+    bestTime: 'Thu 11:00 AM',
+    estimatedReach: '2,200–4,000',
+    goal: 'lead_generation',
+  },
+  {
+    platform: 'instagram',
+    caption: "Our team. Our passion. Our obsession with excellence. 🏆\n\nBehind Envicion Studios is a team of strategists, designers, and storytellers who genuinely care about your business growth.\n\nWe don't just design logos — we build brand ecosystems that work 24/7 for your business.\n\nReady to meet your brand's potential? DM us.",
+    hashtags: ['TeamEnvicion', 'CreativeAgency', 'BehindTheScenes', 'MalaysiaCreatives', 'BrandingStudio'],
+    imagePrompt: 'Creative team working in a modern design studio, diverse Malaysian team collaborating over brand presentations, natural light, authentic candid photography',
+    bestTime: 'Sat 10:00 AM',
+    estimatedReach: '2,900–4,600',
+    goal: 'brand_humanisation',
+  },
+]
+
 // ─── Task: Generate weekly content ───────────────────────────────────────────
 
-async function taskGenerate(perf: Awaited<ReturnType<typeof fetchCurrentPerformance>>) {
+async function taskGenerateWithAI(perf: Awaited<ReturnType<typeof fetchCurrentPerformance>>): Promise<PostTemplate[]> {
   const prompt = `You are an autonomous social media AI for Envicion Studios, a premium branding & creative agency in Malaysia.
 
 CURRENT PERFORMANCE:
@@ -137,7 +215,7 @@ Respond ONLY in valid JSON:
 }`
 
   const msg = await getClient().messages.create({
-    model: 'claude-opus-4-6',
+    model: 'claude-sonnet-4-6',
     max_tokens: 8192,
     messages: [{ role: 'user', content: prompt }],
   })
@@ -145,9 +223,23 @@ Respond ONLY in valid JSON:
   const raw = msg.content[0].type === 'text' ? msg.content[0].text : ''
   const jsonMatch = raw.match(/\{[\s\S]*\}/)
   if (!jsonMatch) throw new Error('AI returned unparseable response')
-  const parsed = JSON.parse(jsonMatch[0]) as { posts: Array<{ platform: string; caption: string; hashtags: string[]; imagePrompt: string; bestTime: string; estimatedReach: string; goal: string }> }
+  const parsed = JSON.parse(jsonMatch[0]) as { posts: PostTemplate[] }
 
   return parsed.posts
+}
+
+async function taskGenerate(perf: Awaited<ReturnType<typeof fetchCurrentPerformance>>): Promise<{ posts: PostTemplate[]; usedFallback: boolean }> {
+  try {
+    const posts = await taskGenerateWithAI(perf)
+    return { posts, usedFallback: false }
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    const isCreditError = msg.includes('credit balance') || msg.includes('insufficient_quota') || msg.includes('rate_limit')
+    if (isCreditError || !process.env.ANTHROPIC_API_KEY) {
+      return { posts: TEMPLATE_POSTS, usedFallback: true }
+    }
+    throw err
+  }
 }
 
 // ─── Task: Auto-optimise hashtags ────────────────────────────────────────────
@@ -383,9 +475,9 @@ export async function POST(req: NextRequest) {
     if (task === 'generate' || task === 'run_all') {
       log.push('🔍 Analysing current performance data...')
       log.push(`📊 Top platform: ${perf.topPlatform} | Avg engagement: ${perf.avgEngagement}%`)
-      log.push('✍️ Generating 7-post weekly content plan with Claude AI...')
+      log.push('✍️ Generating 7-post weekly content plan...')
 
-      const posts = await taskGenerate(perf)
+      const { posts, usedFallback } = await taskGenerate(perf)
       const schedule = getWeeklySchedule()
 
       for (let i = 0; i < posts.length; i++) {
@@ -402,7 +494,11 @@ export async function POST(req: NextRequest) {
           slot.scheduledAt.toISOString()
         )
       }
-      log.push(`✅ Generated ${posts.length} posts — pending your approval in the Content Factory`)
+      log.push(
+        usedFallback
+          ? `✅ Generated ${posts.length} posts using pre-built templates — top up Anthropic API credits at console.anthropic.com for AI-customised content`
+          : `✅ Generated ${posts.length} posts — pending your approval in the Content Factory`
+      )
     }
 
     // ── TASK: schedule ────────────────────────────────────────────────────────
