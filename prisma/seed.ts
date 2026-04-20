@@ -72,6 +72,20 @@ async function main() {
   })
   console.log(`Created sales user: ${salesUser.email}`)
 
+  // Create test client user (portal login)
+  await prisma.user.upsert({
+    where: { email: 'client@acmecorp.com' },
+    update: {},
+    create: {
+      name: 'John Smith',
+      email: 'client@acmecorp.com',
+      password: hashPassword('Envicion@2026!'),
+      role: Role.CLIENT,
+      active: true,
+    },
+  })
+  console.log('Created client user: client@acmecorp.com')
+
   // Create test client
   const client = await prisma.client.upsert({
     where: { email: 'contact@acmecorp.com' },
