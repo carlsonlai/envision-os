@@ -22,6 +22,9 @@ import { createProjectFromInvoice, createProjectFromQuotation } from '@/services
 import { syncLarkStaffToUsers } from '@/lib/lark-sync'
 import { getLarkProjectFolders } from '@/services/lark'
 
+// Vercel: allow up to 30s for syncs that hit external APIs
+export const maxDuration = 30
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 type SyncResult = {
   success: boolean
@@ -30,6 +33,13 @@ type SyncResult = {
   details?: Record<string, unknown>
   error?: string
   duration: number
+}
+
+// ─── Fetch with 5-second timeout — prevents hanging on slow/expired tokens ────
+function fetchWithTimeout(url: string, options?: RequestInit, timeoutMs = 5000): Promise<Response> {
+  const controller = new AbortController()
+  const id = setTimeout(() => controller.abort(), timeoutMs)
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(id))
 }
 
 // ─── Social analytics fetch helpers (called directly, no HTTP) ────────────────
@@ -46,12 +56,12 @@ async function fetchInstagramStats(): Promise<PlatformResult> {
   const accountId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID
   if (!token || !accountId) return { id: 'instagram', name: 'Instagram', connected: false, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null }
   try {
-    const res = await fetch(`https://graph.facebook.com/v25.0/${accountId}?fields=followers_count,media_count&access_token=${token}`)
+    const res = await fetchWithTimeout(`https://graph.facebook.com/v25.0/${accountId}?fields=followers_count,media_count&access_token=${token}`)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json() as { followers_count?: number; media_count?: number }
     return { id: 'instagram', name: 'Instagram', connected: true, followers: data.followers_count ?? null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: data.media_count ?? null }
   } catch (err) {
-    return { id: 'instagram', name: 'Instagram', connected: true, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null, error: err instanceof Error ? err.message : 'Unknown' }
+    return { id: 'instagram', name: 'Instagram', connected: true, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null, error: err instanceof Error ? err.message : 'Timeout or network error' }
   }
 }
 
@@ -60,12 +70,12 @@ async function fetchFacebookStats(): Promise<PlatformResult> {
   const pageId = process.env.FACEBOOK_PAGE_ID
   if (!token || !pageId) return { id: 'facebook', name: 'Facebook', connected: false, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null }
   try {
-    const res = await fetch(`https://graph.facebook.com/v25.0/${pageId}?fields=fan_count,followers_count&access_token=${token}`)
+    const res = await fetchWithTimeout(`https://graph.facebook.com/v25.0/${pageId}?fields=fan_count,followers_count&access_token=${token}`)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json() as { followers_count?: number; fan_count?: number }
     return { id: 'facebook', name: 'Facebook', connected: true, followers: data.followers_count ?? data.fan_count ?? null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null }
   } catch (err) {
-    return { id: 'facebook', name: 'Facebook', connected: true, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null, error: err instanceof Error ? err.message : 'Unknown' }
+    return { id: 'facebook', name: 'Facebook', connected: true, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null, error: err instanceof Error ? err.message : 'Timeout or network error' }
   }
 }
 
@@ -74,13 +84,13 @@ async function fetchYouTubeStats(): Promise<PlatformResult> {
   const channelId = process.env.YOUTUBE_CHANNEL_ID
   if (!apiKey || !channelId) return { id: 'youtube', name: 'YouTube', connected: false, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null }
   try {
-    const res = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}&key=${apiKey}`)
+    const res = await fetchWithTimeout(`https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}&key=${apiKey}`)
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json() as { items?: Array<{ statistics?: { subscriberCount?: string; viewCount?: string; videoCount?: string } }> }
     const stats = data.items?.[0]?.statistics
     return { id: 'youtube', name: 'YouTube', connected: true, followers: stats?.subscriberCount ? parseInt(stats.subscriberCount) : null, followerGrowth: null, reach: stats?.viewCount ? parseInt(stats.viewCount) : null, engagement: null, leads: null, posts: stats?.videoCount ? parseInt(stats.videoCount) : null }
   } catch (err) {
-    return { id: 'youtube', name: 'YouTube', connected: true, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null, error: err instanceof Error ? err.message : 'Unknown' }
+    return { id: 'youtube', name: 'YouTube', connected: true, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null, error: err instanceof Error ? err.message : 'Timeout or network error' }
   }
 }
 
@@ -89,12 +99,12 @@ async function fetchLinkedInStats(): Promise<PlatformResult> {
   const orgId = process.env.LINKEDIN_ORGANIZATION_ID
   if (!token || !orgId) return { id: 'linkedin', name: 'LinkedIn', connected: false, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null }
   try {
-    const res = await fetch(`https://api.linkedin.com/v2/networkSizes/urn:li:organization:${orgId}?edgeType=CompanyFollowedByMember`, { headers: { Authorization: `Bearer ${token}`, 'X-Restli-Protocol-Version': '2.0.0' } })
+    const res = await fetchWithTimeout(`https://api.linkedin.com/v2/networkSizes/urn:li:organization:${orgId}?edgeType=CompanyFollowedByMember`, { headers: { Authorization: `Bearer ${token}`, 'X-Restli-Protocol-Version': '2.0.0' } })
     if (!res.ok) throw new Error(`HTTP ${res.status}`)
     const data = await res.json() as { firstDegreeSize?: number }
     return { id: 'linkedin', name: 'LinkedIn', connected: true, followers: data.firstDegreeSize ?? null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null }
   } catch (err) {
-    return { id: 'linkedin', name: 'LinkedIn', connected: true, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null, error: err instanceof Error ? err.message : 'Unknown' }
+    return { id: 'linkedin', name: 'LinkedIn', connected: true, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null, error: err instanceof Error ? err.message : 'Timeout or network error' }
   }
 }
 
