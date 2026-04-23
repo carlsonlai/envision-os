@@ -73,3 +73,25 @@ export async function PATCH(
     return NextResponse.json({ error: 'Failed to update lead' }, { status: 500 })
   }
 }
+
+export async function DELETE(
+  _req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const session = await getServerSession(authOptions)
+  if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const allowedRoles = ['ADMIN', 'SALES', 'CLIENT_SERVICING']
+  if (!allowedRoles.includes(session.user.role)) {
+    return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+  }
+
+  const { id } = await params
+  try {
+    await prisma.lead.delete({ where: { id } })
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    logger.error('DELETE /api/crm/leads/[id] error:', { error: getErrorMessage(error) })
+    return NextResponse.json({ error: 'Failed to delete lead' }, { status: 500 })
+  }
+}

@@ -14,6 +14,20 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/db'
+
+/** Read a boolean flag from SocialConfig — returns false if table/key missing */
+async function getSocialFlag(key: string): Promise<boolean> {
+  try {
+    const rows = await prisma.$queryRawUnsafe<Array<{ value: { connected?: boolean } }>>(
+      `SELECT value FROM "SocialConfig" WHERE key = $1`,
+      key,
+    )
+    return rows[0]?.value?.connected === true
+  } catch {
+    return false
+  }
+}
 
 const APP_ID     = process.env.FACEBOOK_APP_ID
 const APP_SECRET = process.env.FACEBOOK_APP_SECRET
@@ -137,16 +151,24 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // ── Connection status ─────────────────────────────────────────────────────
+  // ── Connection status — checks both env vars AND DB tokens ────────────────
   if (action === 'status') {
+    // Read DB flags in parallel (non-blocking — falls back to false on error)
+    const [metaDb, linkedinDb, tiktokDb, googleDb] = await Promise.all([
+      getSocialFlag('meta_connected'),
+      getSocialFlag('linkedin_connected'),
+      getSocialFlag('tiktok_connected'),
+      getSocialFlag('google_connected'),
+    ])
+
     const checks: Record<string, boolean> = {
       facebook_app:   !!(APP_ID && APP_SECRET),
-      facebook_page:  !!process.env.FACEBOOK_PAGE_ACCESS_TOKEN,
-      instagram:      !!process.env.INSTAGRAM_ACCESS_TOKEN,
-      linkedin:       !!process.env.LINKEDIN_ACCESS_TOKEN,
-      tiktok:         !!process.env.TIKTOK_ACCESS_TOKEN,
-      youtube:        !!process.env.YOUTUBE_API_KEY,
-      whatsapp:       !!process.env.WHATSAPP_360DIALOG_API_KEY,
+      facebook_page:  !!(process.env.FACEBOOK_PAGE_ACCESS_TOKEN) || metaDb,
+      instagram:      !!(process.env.INSTAGRAM_ACCESS_TOKEN) || metaDb,
+      linkedin:       !!(process.env.LINKEDIN_ACCESS_TOKEN) || linkedinDb,
+      tiktok:         !!(process.env.TIKTOK_ACCESS_TOKEN) || tiktokDb,
+      youtube:        !!(process.env.YOUTUBE_API_KEY) || googleDb,
+      whatsapp:       !!(process.env.WHATSAPP_360DIALOG_API_KEY),
     }
     return NextResponse.json({ status: checks })
   }

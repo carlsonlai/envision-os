@@ -1,9 +1,48 @@
 /**
  * OAuth callback — Meta redirects here after user grants permissions.
- * Immediately exchanges the code and renders a result page.
+ * Exchanges the code, saves tokens to DB, and renders a result page.
  */
 
 import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/db'
+
+type MetaPage = {
+  id: string
+  name: string
+  access_token: string
+  instagram_business_account?: { id: string }
+}
+
+async function saveMetaTokensToDB(pages: MetaPage[]): Promise<void> {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "SocialConfig" (
+      key TEXT PRIMARY KEY,
+      value JSONB NOT NULL,
+      "updatedAt" TIMESTAMPTZ DEFAULT NOW()
+    )
+  `)
+  const tokenPayload = JSON.stringify({
+    pages: pages.map(p => ({
+      id: p.id,
+      name: p.name,
+      pageAccessToken: p.access_token,
+      instagramBusinessAccountId: p.instagram_business_account?.id ?? null,
+    })),
+    savedAt: new Date().toISOString(),
+  })
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "SocialConfig" (key, value, "updatedAt") VALUES ($1, $2::jsonb, NOW())
+     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, "updatedAt" = NOW()`,
+    'meta_tokens',
+    tokenPayload,
+  )
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "SocialConfig" (key, value, "updatedAt") VALUES ($1, $2::jsonb, NOW())
+     ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, "updatedAt" = NOW()`,
+    'meta_connected',
+    JSON.stringify({ connected: true, savedAt: new Date().toISOString() }),
+  )
+}
 
 const APP_ID     = process.env.FACEBOOK_APP_ID
 const APP_SECRET = process.env.FACEBOOK_APP_SECRET
@@ -58,7 +97,16 @@ export async function GET(req: NextRequest) {
       }>
     }
 
-    return new NextResponse(renderPage('success', pagesData.data, null), {
+    // Auto-save tokens to DB — non-blocking (still renders even if DB fails)
+    let dbSaved = false
+    try {
+      await saveMetaTokensToDB(pagesData.data)
+      dbSaved = true
+    } catch {
+      // DB save failed — tokens still shown on page for manual fallback
+    }
+
+    return new NextResponse(renderPage('success', pagesData.data, null, dbSaved), {
       headers: { 'Content-Type': 'text/html; charset=utf-8' },
     })
   } catch (err) {
@@ -74,7 +122,8 @@ export async function GET(req: NextRequest) {
 function renderPage(
   status: 'success' | 'error',
   pages: Array<{ id: string; name: string; access_token: string; instagram_business_account?: { id: string } }> | null,
-  errorMsg: string | null
+  errorMsg: string | null,
+  dbSaved = false,
 ): string {
   if (status === 'error') {
     return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Connection Failed</title>
@@ -122,15 +171,14 @@ ${igId ? `INSTAGRAM_BUSINESS_ACCOUNT_ID=${igId}\nINSTAGRAM_ACCESS_TOKEN=${page.a
 </style></head>
 <body>
 <div class="container">
-  <h1>🔗 Social Media Connected</h1>
-  <p class="sub">Copy the values below into your <code>.env.local</code> file, then restart your dev server.</p>
-  <div class="success-badge">✅ OAuth Successful</div>
+  <h1>🔗 Facebook & Instagram Connected</h1>
+  <p class="sub">${dbSaved ? 'Tokens saved to Envicion OS — connection is live immediately.' : 'OAuth successful. Copy the tokens below into Vercel environment variables.'}</p>
+  <div class="success-badge">${dbSaved ? '✅ Saved to database — no manual copy needed' : '✅ OAuth Successful'}</div>
   <div class="instructions">
-    <strong>Next steps:</strong><br>
-    1. Open <code>Jobs/envision-os/.env.local</code><br>
-    2. Paste the green env block for your page into the file<br>
-    3. Run <code>npm run dev</code> to restart — autopilot will start posting immediately<br><br>
-    <strong>Note:</strong> These page tokens never expire as long as your Meta App stays active and the user doesn't revoke access. No refresh needed.
+    ${dbSaved
+      ? '<strong>You\'re connected!</strong><br>Tokens are saved in the Envicion OS database. The Social Hub will reflect the connection within 30 seconds.<br><br>You can now close this window and return to the app.'
+      : '<strong>Next steps:</strong><br>1. Copy the green env block below into your Vercel environment variables<br>2. Redeploy the app<br><br><strong>Note:</strong> These page tokens never expire as long as your Meta App stays active.'
+    }
   </div>
   ${rows || '<p style="color:#71717a;">No Facebook pages found. Make sure your Meta account manages at least one page.</p>'}
   <a href="/admin/social-connect">← Back to Social Connect</a>
