@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState, useEffect } from 'react'
+import { useMemo, useState, useEffect, useCallback } from 'react'
 import {
   ResponsiveContainer,
   AreaChart,
@@ -23,6 +23,8 @@ import {
   UserPlus,
   AlertCircle,
   Loader2,
+  RefreshCw,
+  CheckCircle2,
 } from 'lucide-react'
 
 interface ApiPlatform {
@@ -214,23 +216,35 @@ export default function AnalyticsPage() {
   const [liveData, setLiveData] = useState<ApiPlatform[]>([])
   const [liveLoading, setLiveLoading] = useState(true)
   const [connectedCount, setConnectedCount] = useState(0)
+  const [syncing, setSyncing] = useState(false)
+  const [syncResult, setSyncResult] = useState<{ ok: boolean; msg: string } | null>(null)
 
-  useEffect(() => {
+  const loadLiveData = useCallback(() => {
+    setLiveLoading(true)
     fetch('/api/social/analytics')
-      .then((r) =>
-        r.ok
-          ? (r.json() as Promise<AnalyticsResponse>)
-          : Promise.reject()
-      )
-      .then((data) => {
-        setLiveData(data.platforms)
-        setConnectedCount(data.connectedCount)
-      })
-      .catch(() => {
-        // silently fallback to mock
-      })
+      .then((r) => r.ok ? (r.json() as Promise<AnalyticsResponse>) : Promise.reject())
+      .then((data) => { setLiveData(data.platforms); setConnectedCount(data.connectedCount) })
+      .catch(() => { /* fallback to zeros */ })
       .finally(() => setLiveLoading(false))
   }, [])
+
+  useEffect(() => { loadLiveData() }, [loadLiveData])
+
+  async function handleSync() {
+    setSyncing(true)
+    setSyncResult(null)
+    try {
+      const res = await fetch('/api/admin/sync-centre?module=social-analytics', { method: 'POST' })
+      const data = await res.json() as { success: boolean; summary: string }
+      setSyncResult({ ok: data.success, msg: data.summary })
+      if (data.success) loadLiveData()
+    } catch {
+      setSyncResult({ ok: false, msg: 'Sync failed — check connections' })
+    } finally {
+      setSyncing(false)
+      setTimeout(() => setSyncResult(null), 4000)
+    }
+  }
 
   const reachData = useMemo(() => generateReachData(), [])
 
@@ -278,6 +292,25 @@ export default function AnalyticsPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* Sync Now button */}
+            <div className="flex items-center gap-2">
+              {syncResult && (
+                <span className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-lg border ${syncResult.ok ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/30' : 'text-red-400 bg-red-500/10 border-red-500/30'}`}>
+                  {syncResult.ok ? <CheckCircle2 className="h-3 w-3" /> : null}
+                  {syncResult.msg}
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => void handleSync()}
+                disabled={syncing}
+                className="flex items-center gap-1.5 rounded-lg border border-[#6366f1]/40 bg-[#6366f1]/10 px-3 py-1.5 text-xs font-medium text-[#818cf8] hover:bg-[#6366f1]/20 transition-colors disabled:opacity-60"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
+                {syncing ? 'Syncing…' : 'Sync Now'}
+              </button>
+            </div>
+
             <div className="flex gap-2">
               {(['7d', '30d', '90d'] as const).map((range) => (
                 <button

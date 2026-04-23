@@ -40,6 +40,7 @@ import {
   Webhook,
   Globe,
   UserPlus,
+  RefreshCw,
 } from 'lucide-react'
 interface NavItem {
   href: string
@@ -140,6 +141,7 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
     {
       label: 'Integrations',
       items: [
+        { href: '/admin/sync',           label: 'Sync Centre',          icon: RefreshCw },
         { href: '/admin/integrations',   label: 'Service Integrations', icon: Webhook },
         { href: '/admin/lark-import',    label: 'Lark Import',          icon: Link2 },
         { href: '/admin/social-connect', label: 'Social Connect',       icon: Link2 },

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import {
@@ -27,6 +27,7 @@ import {
   ChevronDown,
   ChevronUp,
   Target,
+  RefreshCw,
 } from 'lucide-react'
 
 interface RevenueOverview {
@@ -158,6 +159,8 @@ export default function CommandPage() {
   const [briefExpanded, setBriefExpanded] = useState(false)
   const [loadingBrief, setLoadingBrief] = useState(false)
   const [loading, setLoading] = useState(true)
+  const [syncing, setSyncing] = useState(false)
+  const [syncMsg, setSyncMsg] = useState<string | null>(null)
 
   // Monthly revenue trend data (static for now — real data from API in production)
   const revenueTrend = [
@@ -211,13 +214,43 @@ export default function CommandPage() {
           { event: 'Hari Raya Aidiladha', daysAway: 45, expectedDemandMultiplier: 2.0, recommendation: 'Prepare team roster — 2x demand expected' },
           { event: 'Malaysia Day', daysAway: 55, expectedDemandMultiplier: 2.0, recommendation: 'Monitor capacity — demand spike in 55 days' },
         ])
-      } catch (error) {
-        console.error('Command centre load error:', error)
+      } catch {
+        // non-critical — dashboard still renders with empty states
       } finally {
         setLoading(false)
       }
     }
-    load()
+    void load()
+  }, [])
+
+  const handleBukkuSync = useCallback(async () => {
+    setSyncing(true)
+    setSyncMsg(null)
+    try {
+      // Sync finance + payments in parallel, then refresh KPIs
+      const [finRes, payRes] = await Promise.all([
+        fetch('/api/admin/sync-centre?module=bukku-finance', { method: 'POST' }),
+        fetch('/api/admin/sync-centre?module=bukku-payments', { method: 'POST' }),
+      ])
+      const [finData, payData] = await Promise.all([
+        finRes.json() as Promise<{ success: boolean; summary: string }>,
+        payRes.json() as Promise<{ success: boolean; summary: string }>,
+      ])
+      const ok = finData.success && payData.success
+      setSyncMsg(ok ? `Synced — ${finData.summary}` : 'Partial sync — check integrations')
+
+      // Refresh revenue numbers
+      const revenueRes = await fetch('/api/kpi/revenue?period=MONTH')
+      if (revenueRes.ok) {
+        const data = (await revenueRes.json()) as { data: RevenueOverview }
+        setRevenue(data.data)
+      }
+    } catch {
+      setSyncMsg('Sync failed — check Bukku credentials')
+    } finally {
+      setSyncing(false)
+      setTimeout(() => setSyncMsg(null), 5000)
+    }
   }, [])
 
   async function loadWeeklyBrief() {
@@ -255,12 +288,28 @@ export default function CommandPage() {
   return (
     <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
-      <div>
-        <h1 className="text-xl font-semibold text-zinc-100">Command Centre</h1>
-        <p className="text-sm text-zinc-500 mt-0.5">
-          {new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening'},{' '}
-          {session?.user?.name?.split(' ')[0]}.
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-xl font-semibold text-zinc-100">Command Centre</h1>
+          <p className="text-sm text-zinc-500 mt-0.5">
+            {new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 18 ? 'Good afternoon' : 'Good evening'},{' '}
+            {session?.user?.name?.split(' ')[0]}.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {syncMsg && (
+            <span className="text-xs text-zinc-400 max-w-48 text-right leading-tight">{syncMsg}</span>
+          )}
+          <button
+            type="button"
+            onClick={() => void handleBukkuSync()}
+            disabled={syncing}
+            className="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-1.5 text-xs font-medium text-emerald-400 hover:bg-emerald-500/20 transition-colors disabled:opacity-60"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${syncing ? 'animate-spin' : ''}`} />
+            {syncing ? 'Syncing Bukku…' : 'Sync Bukku'}
+          </button>
+        </div>
       </div>
 
       {/* Row 1 — Revenue Cards */}
