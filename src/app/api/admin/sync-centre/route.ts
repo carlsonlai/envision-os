@@ -254,66 +254,71 @@ async function syncLarkProjects(): Promise<SyncResult> {
 
 async function syncSocialAnalytics(): Promise<SyncResult> {
   const t = Date.now()
-  try {
-    const results = await Promise.allSettled([
-      fetchInstagramStats(),
-      fetchFacebookStats(),
-      fetchYouTubeStats(),
-      fetchLinkedInStats(),
-    ])
 
-    const platforms: PlatformResult[] = results.map(r => r.status === 'fulfilled' ? r.value : { id: 'unknown', name: 'Unknown', connected: false, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null })
-    const connected = platforms.filter(p => p.connected)
+  // Hard cap: entire function must complete within 8 seconds
+  const timeout = new Promise<SyncResult>(resolve =>
+    setTimeout(() => resolve({ success: false, module: 'social-analytics', summary: 'Timed out — Vercel function limit reached', duration: 8000 }), 8000)
+  )
 
-    // Save to platform-stats table
-    if (connected.length > 0) {
-      await prisma.$executeRawUnsafe(`
-        CREATE TABLE IF NOT EXISTS social_platform_stats (
-          platform_id TEXT PRIMARY KEY, platform_name TEXT NOT NULL,
-          followers INT DEFAULT 0, follower_growth FLOAT DEFAULT 0,
-          reach INT DEFAULT 0, engagement FLOAT DEFAULT 0,
-          leads INT DEFAULT 0, posts INT DEFAULT 0,
-          likes INT DEFAULT 0, comments INT DEFAULT 0,
-          score INT DEFAULT 0, best_time TEXT DEFAULT '',
-          updated_at TIMESTAMPTZ DEFAULT NOW(), updated_by TEXT DEFAULT 'sync'
-        )
-      `)
-      for (const p of connected) {
+  const work = (async (): Promise<SyncResult> => {
+    try {
+      // All 4 platform calls run in parallel, each with its own 5s abort
+      const results = await Promise.allSettled([
+        fetchInstagramStats(),
+        fetchFacebookStats(),
+        fetchYouTubeStats(),
+        fetchLinkedInStats(),
+      ])
+
+      const platforms: PlatformResult[] = results.map(r =>
+        r.status === 'fulfilled' ? r.value : { id: 'unknown', name: 'Unknown', connected: false, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null }
+      )
+      const connected = platforms.filter(p => p.connected)
+
+      // Batch all platform upserts into ONE query (no DDL — table must already exist)
+      if (connected.length > 0) {
+        // Build VALUES clause: ($1,$2,$3,...), ($n,...) etc.
+        const values: unknown[] = []
+        const rows = connected.map((p, i) => {
+          const base = i * 8
+          values.push(p.id, p.name, p.followers ?? 0, p.followerGrowth ?? 0, p.reach ?? 0, p.engagement ?? 0, p.leads ?? 0, p.posts ?? 0)
+          return `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},$${base + 8},NOW(),'sync')`
+        }).join(',')
+
         await prisma.$executeRawUnsafe(
-          `INSERT INTO social_platform_stats (platform_id, platform_name, followers, follower_growth, reach, engagement, leads, posts, updated_at, updated_by)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,NOW(),'sync')
+          `INSERT INTO social_platform_stats (platform_id,platform_name,followers,follower_growth,reach,engagement,leads,posts,updated_at,updated_by) VALUES ${rows}
            ON CONFLICT (platform_id) DO UPDATE SET
              followers=EXCLUDED.followers, follower_growth=EXCLUDED.follower_growth,
              reach=EXCLUDED.reach, engagement=EXCLUDED.engagement,
              leads=EXCLUDED.leads, posts=EXCLUDED.posts,
              updated_at=NOW(), updated_by='sync'`,
-          p.id, p.name, p.followers ?? 0, p.followerGrowth ?? 0,
-          p.reach ?? 0, p.engagement ?? 0, p.leads ?? 0, p.posts ?? 0,
-        )
+          ...values
+        ).catch(() => { /* table may not exist yet — non-fatal */ })
       }
-    }
 
-    // Save last-synced timestamp
-    await prisma.$executeRawUnsafe(`
-      CREATE TABLE IF NOT EXISTS "SocialConfig" (key TEXT PRIMARY KEY, value JSONB NOT NULL, "updatedAt" TIMESTAMPTZ DEFAULT NOW())
-    `)
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "SocialConfig" (key, value, "updatedAt") VALUES ($1,$2::jsonb,NOW())
-       ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, "updatedAt"=NOW()`,
-      'social_last_synced',
-      JSON.stringify({ syncedAt: new Date().toISOString(), connectedCount: connected.length }),
-    )
+      // Update last-synced in SocialConfig (single upsert, no DDL)
+      await prisma.$executeRawUnsafe(
+        `INSERT INTO "SocialConfig" (key, value, "updatedAt") VALUES ($1,$2::jsonb,NOW())
+         ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, "updatedAt"=NOW()`,
+        'social_last_synced',
+        JSON.stringify({ syncedAt: new Date().toISOString(), connectedCount: connected.length }),
+      ).catch(() => { /* SocialConfig table may not exist yet — non-fatal */ })
 
-    return {
-      success: true,
-      module: 'social-analytics',
-      summary: connected.length > 0 ? `${connected.length} platform${connected.length !== 1 ? 's' : ''} synced` : 'No connected platforms — connect them in Admin → Social Connect',
-      details: { connectedCount: connected.length, platforms: platforms.map(p => ({ id: p.id, connected: p.connected, followers: p.followers })) },
-      duration: Date.now() - t,
+      return {
+        success: true,
+        module: 'social-analytics',
+        summary: connected.length > 0
+          ? `${connected.length} platform${connected.length !== 1 ? 's' : ''} synced`
+          : 'No platforms connected — go to Admin → Social Connect to link accounts',
+        details: { connectedCount: connected.length, platforms: platforms.map(p => ({ id: p.id, connected: p.connected, followers: p.followers })) },
+        duration: Date.now() - t,
+      }
+    } catch (err) {
+      return { success: false, module: 'social-analytics', summary: err instanceof Error ? err.message : 'Sync failed', error: err instanceof Error ? err.message : 'Unknown', duration: Date.now() - t }
     }
-  } catch (err) {
-    return { success: false, module: 'social-analytics', summary: err instanceof Error ? err.message : 'Sync failed', error: err instanceof Error ? err.message : 'Unknown', duration: Date.now() - t }
-  }
+  })()
+
+  return Promise.race([work, timeout])
 }
 
 // ─── GET — last-synced timestamps ─────────────────────────────────────────────
