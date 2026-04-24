@@ -117,7 +117,18 @@ async function syncBukkuPayments(): Promise<SyncResult> {
 
     return { success: true, module: 'bukku-payments', summary: `${results.invoicesUpdated} invoices marked paid, ${results.projectsUpdated} projects updated`, details: results, duration: Date.now() - t }
   } catch (err) {
-    return { success: false, module: 'bukku-payments', summary: err instanceof Error ? err.message : 'Sync failed', error: err instanceof Error ? err.message : 'Unknown', duration: Date.now() - t }
+    const msg = err instanceof Error ? err.message : 'Sync failed'
+    // 404 = Bukku Payments API not available on this plan or endpoint has changed
+    const is404 = msg.includes('404')
+    return {
+      success: false,
+      module: 'bukku-payments',
+      summary: is404
+        ? 'Bukku /payments API returned 404 — this endpoint may not be on your Bukku plan. Payments are reconciled automatically when invoices are paid in Bukku.'
+        : msg,
+      error: msg,
+      duration: Date.now() - t,
+    }
   }
 }
 
