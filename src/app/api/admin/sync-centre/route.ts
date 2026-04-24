@@ -36,6 +36,14 @@ type SyncResult = {
 }
 
 
+// ─── 9-second hard cap — wraps any module to prevent Vercel timeout hanging ───
+function withTimeout<T extends SyncResult>(fn: () => Promise<T>, module: string): Promise<T> {
+  const cap = new Promise<T>(resolve =>
+    setTimeout(() => resolve({ success: false, module, summary: 'Timed out (9s) — API is slow. This data source may require more time. Try again shortly.', duration: 9000 } as T), 9000)
+  )
+  return Promise.race([fn(), cap])
+}
+
 // ─── Module sync functions (direct service calls, no HTTP) ────────────────────
 
 async function syncBukkuFinance(): Promise<SyncResult> {
@@ -262,16 +270,20 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let result: SyncResult | { success: boolean; summary: string; results: SyncResult[] }
 
   switch (module) {
-    case 'bukku-finance':    result = await syncBukkuFinance();    break
-    case 'bukku-payments':   result = await syncBukkuPayments();   break
-    case 'bukku-jobtrack':   result = await syncBukkuJobTrack();   break
-    case 'lark-staff':       result = await syncLarkStaff();       break
-    case 'lark-projects':    result = await syncLarkProjects();    break
-    case 'social-analytics': result = await syncSocialAnalytics(); break
+    case 'bukku-finance':    result = await withTimeout(() => syncBukkuFinance(),    'bukku-finance');    break
+    case 'bukku-payments':   result = await withTimeout(() => syncBukkuPayments(),   'bukku-payments');   break
+    case 'bukku-jobtrack':   result = await withTimeout(() => syncBukkuJobTrack(),   'bukku-jobtrack');   break
+    case 'lark-staff':       result = await withTimeout(() => syncLarkStaff(),       'lark-staff');       break
+    case 'lark-projects':    result = await withTimeout(() => syncLarkProjects(),    'lark-projects');    break
+    case 'social-analytics': result = await withTimeout(() => syncSocialAnalytics(), 'social-analytics'); break
     case 'all': {
       const all = await Promise.allSettled([
-        syncBukkuFinance(), syncBukkuPayments(), syncBukkuJobTrack(),
-        syncLarkStaff(), syncLarkProjects(), syncSocialAnalytics(),
+        withTimeout(() => syncBukkuFinance(),    'bukku-finance'),
+        withTimeout(() => syncBukkuPayments(),   'bukku-payments'),
+        withTimeout(() => syncBukkuJobTrack(),   'bukku-jobtrack'),
+        withTimeout(() => syncLarkStaff(),       'lark-staff'),
+        withTimeout(() => syncLarkProjects(),    'lark-projects'),
+        withTimeout(() => syncSocialAnalytics(), 'social-analytics'),
       ])
       const results = all.map(r => r.status === 'fulfilled' ? r.value : { success: false, module: 'unknown', summary: 'Failed', duration: 0 })
       const failed = results.filter(r => !r.success).length

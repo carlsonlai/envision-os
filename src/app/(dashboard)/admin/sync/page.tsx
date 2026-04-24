@@ -177,7 +177,11 @@ export default function SyncCentrePage() {
     setModuleStates(prev => ({ ...prev, [moduleId]: { ...prev[moduleId], status: 'running', summary: 'Syncing…' } }))
     const t = Date.now()
     try {
-      const res = await fetch(`/api/admin/sync-centre?module=${apiParam}`, { method: 'POST' })
+      // 25-second client timeout — prevents UI hanging if Vercel kills the function
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 25000)
+      const res = await fetch(`/api/admin/sync-centre?module=${apiParam}`, { method: 'POST', signal: controller.signal })
+      clearTimeout(timeoutId)
       const data = await res.json() as { success: boolean; summary: string }
       setModuleStates(prev => ({
         ...prev,
@@ -189,12 +193,15 @@ export default function SyncCentrePage() {
         },
       }))
     } catch (err) {
+      const isTimeout = err instanceof Error && err.name === 'AbortError'
       setModuleStates(prev => ({
         ...prev,
         [moduleId]: {
           ...prev[moduleId],
           status: 'error',
-          summary: err instanceof Error ? err.message : 'Network error',
+          summary: isTimeout
+            ? 'Timed out — Bukku/Lark APIs are slow. Try again in 30s or check your integration credentials.'
+            : err instanceof Error ? err.message : 'Network error',
           duration: Date.now() - t,
         },
       }))
