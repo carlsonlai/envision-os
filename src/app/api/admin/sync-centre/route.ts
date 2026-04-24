@@ -35,78 +35,6 @@ type SyncResult = {
   duration: number
 }
 
-// ─── Fetch with 5-second timeout — prevents hanging on slow/expired tokens ────
-function fetchWithTimeout(url: string, options?: RequestInit, timeoutMs = 5000): Promise<Response> {
-  const controller = new AbortController()
-  const id = setTimeout(() => controller.abort(), timeoutMs)
-  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(id))
-}
-
-// ─── Social analytics fetch helpers (called directly, no HTTP) ────────────────
-interface PlatformResult {
-  id: string; name: string; connected: boolean
-  followers: number | null; followerGrowth: number | null
-  reach: number | null; engagement: number | null
-  leads: number | null; posts: number | null
-  error?: string
-}
-
-async function fetchInstagramStats(): Promise<PlatformResult> {
-  const token = process.env.INSTAGRAM_ACCESS_TOKEN
-  const accountId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID
-  if (!token || !accountId) return { id: 'instagram', name: 'Instagram', connected: false, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null }
-  try {
-    const res = await fetchWithTimeout(`https://graph.facebook.com/v25.0/${accountId}?fields=followers_count,media_count&access_token=${token}`)
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const data = await res.json() as { followers_count?: number; media_count?: number }
-    return { id: 'instagram', name: 'Instagram', connected: true, followers: data.followers_count ?? null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: data.media_count ?? null }
-  } catch (err) {
-    return { id: 'instagram', name: 'Instagram', connected: true, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null, error: err instanceof Error ? err.message : 'Timeout or network error' }
-  }
-}
-
-async function fetchFacebookStats(): Promise<PlatformResult> {
-  const token = process.env.FACEBOOK_PAGE_ACCESS_TOKEN
-  const pageId = process.env.FACEBOOK_PAGE_ID
-  if (!token || !pageId) return { id: 'facebook', name: 'Facebook', connected: false, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null }
-  try {
-    const res = await fetchWithTimeout(`https://graph.facebook.com/v25.0/${pageId}?fields=fan_count,followers_count&access_token=${token}`)
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const data = await res.json() as { followers_count?: number; fan_count?: number }
-    return { id: 'facebook', name: 'Facebook', connected: true, followers: data.followers_count ?? data.fan_count ?? null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null }
-  } catch (err) {
-    return { id: 'facebook', name: 'Facebook', connected: true, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null, error: err instanceof Error ? err.message : 'Timeout or network error' }
-  }
-}
-
-async function fetchYouTubeStats(): Promise<PlatformResult> {
-  const apiKey = process.env.YOUTUBE_API_KEY
-  const channelId = process.env.YOUTUBE_CHANNEL_ID
-  if (!apiKey || !channelId) return { id: 'youtube', name: 'YouTube', connected: false, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null }
-  try {
-    const res = await fetchWithTimeout(`https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}&key=${apiKey}`)
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const data = await res.json() as { items?: Array<{ statistics?: { subscriberCount?: string; viewCount?: string; videoCount?: string } }> }
-    const stats = data.items?.[0]?.statistics
-    return { id: 'youtube', name: 'YouTube', connected: true, followers: stats?.subscriberCount ? parseInt(stats.subscriberCount) : null, followerGrowth: null, reach: stats?.viewCount ? parseInt(stats.viewCount) : null, engagement: null, leads: null, posts: stats?.videoCount ? parseInt(stats.videoCount) : null }
-  } catch (err) {
-    return { id: 'youtube', name: 'YouTube', connected: true, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null, error: err instanceof Error ? err.message : 'Timeout or network error' }
-  }
-}
-
-async function fetchLinkedInStats(): Promise<PlatformResult> {
-  const token = process.env.LINKEDIN_ACCESS_TOKEN
-  const orgId = process.env.LINKEDIN_ORGANIZATION_ID
-  if (!token || !orgId) return { id: 'linkedin', name: 'LinkedIn', connected: false, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null }
-  try {
-    const res = await fetchWithTimeout(`https://api.linkedin.com/v2/networkSizes/urn:li:organization:${orgId}?edgeType=CompanyFollowedByMember`, { headers: { Authorization: `Bearer ${token}`, 'X-Restli-Protocol-Version': '2.0.0' } })
-    if (!res.ok) throw new Error(`HTTP ${res.status}`)
-    const data = await res.json() as { firstDegreeSize?: number }
-    return { id: 'linkedin', name: 'LinkedIn', connected: true, followers: data.firstDegreeSize ?? null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null }
-  } catch (err) {
-    return { id: 'linkedin', name: 'LinkedIn', connected: true, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null, error: err instanceof Error ? err.message : 'Timeout or network error' }
-  }
-}
 
 // ─── Module sync functions (direct service calls, no HTTP) ────────────────────
 
@@ -254,71 +182,45 @@ async function syncLarkProjects(): Promise<SyncResult> {
 
 async function syncSocialAnalytics(): Promise<SyncResult> {
   const t = Date.now()
+  try {
+    // Check which platforms have tokens configured — no external API calls
+    // (live stats are fetched on-demand when visiting the Analytics page)
+    const platformTokens: Array<{ id: string; name: string }> = []
+    if (process.env.INSTAGRAM_ACCESS_TOKEN && process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID) platformTokens.push({ id: 'instagram', name: 'Instagram' })
+    if (process.env.FACEBOOK_PAGE_ACCESS_TOKEN && process.env.FACEBOOK_PAGE_ID) platformTokens.push({ id: 'facebook', name: 'Facebook' })
+    if (process.env.YOUTUBE_API_KEY && process.env.YOUTUBE_CHANNEL_ID) platformTokens.push({ id: 'youtube', name: 'YouTube' })
+    if (process.env.LINKEDIN_ACCESS_TOKEN && process.env.LINKEDIN_ORGANIZATION_ID) platformTokens.push({ id: 'linkedin', name: 'LinkedIn' })
+    if (process.env.TIKTOK_ACCESS_TOKEN) platformTokens.push({ id: 'tiktok', name: 'TikTok' })
+    if (process.env.MAILCHIMP_API_KEY) platformTokens.push({ id: 'mailchimp', name: 'Mailchimp' })
 
-  // Hard cap: entire function must complete within 8 seconds
-  const timeout = new Promise<SyncResult>(resolve =>
-    setTimeout(() => resolve({ success: false, module: 'social-analytics', summary: 'Timed out — Vercel function limit reached', duration: 8000 }), 8000)
-  )
+    // Also check DB-saved tokens from OAuth flow
+    const dbTokens = await prisma.$queryRawUnsafe<Array<{ key: string }>>(
+      `SELECT key FROM "SocialConfig" WHERE key IN ('meta_connected','linkedin_connected','tiktok_connected','google_connected') AND (value->>'connected')::boolean = true`
+    ).catch(() => [] as Array<{ key: string }>)
 
-  const work = (async (): Promise<SyncResult> => {
-    try {
-      // All 4 platform calls run in parallel, each with its own 5s abort
-      const results = await Promise.allSettled([
-        fetchInstagramStats(),
-        fetchFacebookStats(),
-        fetchYouTubeStats(),
-        fetchLinkedInStats(),
-      ])
+    const dbConnected = (dbTokens as Array<{ key: string }>).map(r => r.key.replace('_connected', ''))
+    const allConnected = Array.from(new Set([...platformTokens.map(p => p.id), ...dbConnected]))
 
-      const platforms: PlatformResult[] = results.map(r =>
-        r.status === 'fulfilled' ? r.value : { id: 'unknown', name: 'Unknown', connected: false, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null }
-      )
-      const connected = platforms.filter(p => p.connected)
+    // Record sync timestamp
+    await prisma.$executeRawUnsafe(
+      `INSERT INTO "SocialConfig" (key, value, "updatedAt") VALUES ($1,$2::jsonb,NOW())
+       ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, "updatedAt"=NOW()`,
+      'social_last_synced',
+      JSON.stringify({ syncedAt: new Date().toISOString(), connectedCount: allConnected.length }),
+    ).catch(() => { /* non-fatal */ })
 
-      // Batch all platform upserts into ONE query (no DDL — table must already exist)
-      if (connected.length > 0) {
-        // Build VALUES clause: ($1,$2,$3,...), ($n,...) etc.
-        const values: unknown[] = []
-        const rows = connected.map((p, i) => {
-          const base = i * 8
-          values.push(p.id, p.name, p.followers ?? 0, p.followerGrowth ?? 0, p.reach ?? 0, p.engagement ?? 0, p.leads ?? 0, p.posts ?? 0)
-          return `($${base + 1},$${base + 2},$${base + 3},$${base + 4},$${base + 5},$${base + 6},$${base + 7},$${base + 8},NOW(),'sync')`
-        }).join(',')
-
-        await prisma.$executeRawUnsafe(
-          `INSERT INTO social_platform_stats (platform_id,platform_name,followers,follower_growth,reach,engagement,leads,posts,updated_at,updated_by) VALUES ${rows}
-           ON CONFLICT (platform_id) DO UPDATE SET
-             followers=EXCLUDED.followers, follower_growth=EXCLUDED.follower_growth,
-             reach=EXCLUDED.reach, engagement=EXCLUDED.engagement,
-             leads=EXCLUDED.leads, posts=EXCLUDED.posts,
-             updated_at=NOW(), updated_by='sync'`,
-          ...values
-        ).catch(() => { /* table may not exist yet — non-fatal */ })
-      }
-
-      // Update last-synced in SocialConfig (single upsert, no DDL)
-      await prisma.$executeRawUnsafe(
-        `INSERT INTO "SocialConfig" (key, value, "updatedAt") VALUES ($1,$2::jsonb,NOW())
-         ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, "updatedAt"=NOW()`,
-        'social_last_synced',
-        JSON.stringify({ syncedAt: new Date().toISOString(), connectedCount: connected.length }),
-      ).catch(() => { /* SocialConfig table may not exist yet — non-fatal */ })
-
-      return {
-        success: true,
-        module: 'social-analytics',
-        summary: connected.length > 0
-          ? `${connected.length} platform${connected.length !== 1 ? 's' : ''} synced`
-          : 'No platforms connected — go to Admin → Social Connect to link accounts',
-        details: { connectedCount: connected.length, platforms: platforms.map(p => ({ id: p.id, connected: p.connected, followers: p.followers })) },
-        duration: Date.now() - t,
-      }
-    } catch (err) {
-      return { success: false, module: 'social-analytics', summary: err instanceof Error ? err.message : 'Sync failed', error: err instanceof Error ? err.message : 'Unknown', duration: Date.now() - t }
+    return {
+      success: true,
+      module: 'social-analytics',
+      summary: allConnected.length > 0
+        ? `${allConnected.length} platform${allConnected.length !== 1 ? 's' : ''} connected — visit Analytics to load live stats`
+        : 'No platforms connected — go to Admin → Social Connect to link accounts',
+      details: { connectedCount: allConnected.length, platforms: allConnected },
+      duration: Date.now() - t,
     }
-  })()
-
-  return Promise.race([work, timeout])
+  } catch (err) {
+    return { success: false, module: 'social-analytics', summary: err instanceof Error ? err.message : 'Sync failed', error: err instanceof Error ? err.message : 'Unknown', duration: Date.now() - t }
+  }
 }
 
 // ─── GET — last-synced timestamps ─────────────────────────────────────────────
