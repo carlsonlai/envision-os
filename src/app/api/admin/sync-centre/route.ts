@@ -190,44 +190,23 @@ async function syncLarkProjects(): Promise<SyncResult> {
 
 async function syncSocialAnalytics(): Promise<SyncResult> {
   const t = Date.now()
-  try {
-    // Check which platforms have tokens configured — no external API calls
-    // (live stats are fetched on-demand when visiting the Analytics page)
-    const platformTokens: Array<{ id: string; name: string }> = []
-    if (process.env.INSTAGRAM_ACCESS_TOKEN && process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID) platformTokens.push({ id: 'instagram', name: 'Instagram' })
-    if (process.env.FACEBOOK_PAGE_ACCESS_TOKEN && process.env.FACEBOOK_PAGE_ID) platformTokens.push({ id: 'facebook', name: 'Facebook' })
-    if (process.env.YOUTUBE_API_KEY && process.env.YOUTUBE_CHANNEL_ID) platformTokens.push({ id: 'youtube', name: 'YouTube' })
-    if (process.env.LINKEDIN_ACCESS_TOKEN && process.env.LINKEDIN_ORGANIZATION_ID) platformTokens.push({ id: 'linkedin', name: 'LinkedIn' })
-    if (process.env.TIKTOK_ACCESS_TOKEN) platformTokens.push({ id: 'tiktok', name: 'TikTok' })
-    if (process.env.MAILCHIMP_API_KEY) platformTokens.push({ id: 'mailchimp', name: 'Mailchimp' })
+  // Pure env-var check — zero DB calls, zero external API calls, returns instantly
+  const connected: string[] = []
+  if (process.env.INSTAGRAM_ACCESS_TOKEN && process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID) connected.push('Instagram')
+  if (process.env.FACEBOOK_PAGE_ACCESS_TOKEN && process.env.FACEBOOK_PAGE_ID) connected.push('Facebook')
+  if (process.env.YOUTUBE_API_KEY && process.env.YOUTUBE_CHANNEL_ID) connected.push('YouTube')
+  if (process.env.LINKEDIN_ACCESS_TOKEN && process.env.LINKEDIN_ORGANIZATION_ID) connected.push('LinkedIn')
+  if (process.env.TIKTOK_ACCESS_TOKEN) connected.push('TikTok')
+  if (process.env.MAILCHIMP_API_KEY) connected.push('Mailchimp')
 
-    // Also check DB-saved tokens from OAuth flow
-    const dbTokens = await prisma.$queryRawUnsafe<Array<{ key: string }>>(
-      `SELECT key FROM "SocialConfig" WHERE key IN ('meta_connected','linkedin_connected','tiktok_connected','google_connected') AND (value->>'connected')::boolean = true`
-    ).catch(() => [] as Array<{ key: string }>)
-
-    const dbConnected = (dbTokens as Array<{ key: string }>).map(r => r.key.replace('_connected', ''))
-    const allConnected = Array.from(new Set([...platformTokens.map(p => p.id), ...dbConnected]))
-
-    // Record sync timestamp
-    await prisma.$executeRawUnsafe(
-      `INSERT INTO "SocialConfig" (key, value, "updatedAt") VALUES ($1,$2::jsonb,NOW())
-       ON CONFLICT (key) DO UPDATE SET value=EXCLUDED.value, "updatedAt"=NOW()`,
-      'social_last_synced',
-      JSON.stringify({ syncedAt: new Date().toISOString(), connectedCount: allConnected.length }),
-    ).catch(() => { /* non-fatal */ })
-
-    return {
-      success: true,
-      module: 'social-analytics',
-      summary: allConnected.length > 0
-        ? `${allConnected.length} platform${allConnected.length !== 1 ? 's' : ''} connected — visit Analytics to load live stats`
-        : 'No platforms connected — go to Admin → Social Connect to link accounts',
-      details: { connectedCount: allConnected.length, platforms: allConnected },
-      duration: Date.now() - t,
-    }
-  } catch (err) {
-    return { success: false, module: 'social-analytics', summary: err instanceof Error ? err.message : 'Sync failed', error: err instanceof Error ? err.message : 'Unknown', duration: Date.now() - t }
+  return {
+    success: true,
+    module: 'social-analytics',
+    summary: connected.length > 0
+      ? `${connected.length} platform${connected.length !== 1 ? 's' : ''} configured (${connected.join(', ')}) — visit Analytics page to load live stats`
+      : 'No platforms configured — go to Admin → Social Connect to link accounts',
+    details: { connectedCount: connected.length, platforms: connected },
+    duration: Date.now() - t,
   }
 }
 
