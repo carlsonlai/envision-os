@@ -48,9 +48,6 @@ export async function GET(): Promise<NextResponse> {
             },
           },
         },
-        invoices: {
-          select: { amount: true, status: true },
-        },
         deliverableItems: {
           select: {
             id: true,
@@ -74,25 +71,14 @@ export async function GET(): Promise<NextResponse> {
       orderBy: { updatedAt: 'desc' },
     })
 
-    const data = projects.map((p) => {
-      // Compute live from Invoice records — more reliable than cached project fields
-      const invoiceBilled = p.invoices.reduce((s, i) => s + i.amount, 0)
-      const invoicePaid = p.invoices
-        .filter((i) => i.status === 'PAID')
-        .reduce((s, i) => s + i.amount, 0)
-
-      // Prefer live invoice totals; fall back to cached project fields if no invoices linked yet
-      const billedAmount = invoiceBilled > 0 ? invoiceBilled : p.billedAmount
-      const paidAmount = invoicePaid > 0 ? invoicePaid : p.paidAmount
-
-      return ({
+    const data = projects.map((p) => ({
       id: p.id,
       code: p.code,
       status: p.status,
       clientName: p.client?.companyName ?? 'Unknown',
       quotedAmount: p.quotedAmount,
-      billedAmount,
-      paidAmount,
+      billedAmount: p.billedAmount,
+      paidAmount: p.paidAmount,
       deadline: p.deadline?.toISOString() ?? null,
       updatedAt: p.updatedAt.toISOString(),
       claimedBy: p.csAssignments.map((a) => ({
@@ -112,7 +98,7 @@ export async function GET(): Promise<NextResponse> {
         latestFileVersion: di.fileVersions[0]?.filename ?? null,
         latestFileUrl: di.fileVersions[0]?.url ?? null,
       })),
-    })})
+    }))
 
     return NextResponse.json({ data, currentUserId: userId })
   } catch (error) {

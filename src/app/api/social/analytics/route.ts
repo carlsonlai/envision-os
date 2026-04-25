@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/db'
 
 /**
  * Social Analytics API
  *
  * Fetches real-time stats from each connected platform using stored access tokens.
- * Falls back to placeholder data when credentials are not configured.
+ * Token resolution order: environment variable → SocialConfig DB (saved by OAuth callback).
+ * Falls back to placeholder data when credentials are not configured in either source.
  *
  * Supported platforms:
- *  - Instagram / Facebook (Graph API v19)
+ *  - Instagram / Facebook (Graph API v25)
  *  - TikTok (Business API v2)
  *  - YouTube (Data API v3)
  *  - LinkedIn (Marketing API v2)
@@ -40,11 +42,49 @@ interface PlatformResult {
   error?: string
 }
 
+// ─── DB token helpers ─────────────────────────────────────────────────────────
+
+interface MetaPageToken {
+  id: string
+  name: string
+  pageAccessToken: string
+  instagramBusinessAccountId: string | null
+}
+
+interface MetaTokensDB {
+  pages: MetaPageToken[]
+}
+
+/** Read Meta page tokens saved by the OAuth callback — returns null on any error */
+async function getMetaTokensFromDB(): Promise<MetaTokensDB | null> {
+  try {
+    const rows = await prisma.$queryRawUnsafe<Array<{ value: MetaTokensDB }>>(
+      `SELECT value FROM "SocialConfig" WHERE key = 'meta_tokens'`,
+    )
+    return rows[0]?.value ?? null
+  } catch {
+    return null
+  }
+}
+
 // ─── Instagram / Facebook Graph API ──────────────────────────────────────────
 
-async function fetchInstagramStats(): Promise<PlatformResult> {
-  const token = process.env.INSTAGRAM_ACCESS_TOKEN
-  const accountId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID
+/**
+ * Accepts pre-fetched DB tokens so the route handler can resolve them once
+ * and share the result between Instagram + Facebook fetchers.
+ */
+async function fetchInstagramStats(dbTokens: MetaTokensDB | null): Promise<PlatformResult> {
+  // Prefer env vars; fall back to tokens saved by the OAuth callback in SocialConfig
+  let token = process.env.INSTAGRAM_ACCESS_TOKEN
+  let accountId = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID
+
+  if (!token || !accountId) {
+    const page = dbTokens?.pages?.find((p) => p.instagramBusinessAccountId)
+    if (page) {
+      token = page.pageAccessToken
+      accountId = page.instagramBusinessAccountId ?? undefined
+    }
+  }
 
   if (!token || !accountId) {
     return { id: 'instagram', name: 'Instagram', connected: false, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null }
@@ -80,9 +120,18 @@ async function fetchInstagramStats(): Promise<PlatformResult> {
 
 // ─── Facebook Page ─────────────────────────────────────────────────────────
 
-async function fetchFacebookStats(): Promise<PlatformResult> {
-  const token = process.env.FACEBOOK_PAGE_ACCESS_TOKEN
-  const pageId = process.env.FACEBOOK_PAGE_ID
+async function fetchFacebookStats(dbTokens: MetaTokensDB | null): Promise<PlatformResult> {
+  // Prefer env vars; fall back to tokens saved by the OAuth callback in SocialConfig
+  let token = process.env.FACEBOOK_PAGE_ACCESS_TOKEN
+  let pageId = process.env.FACEBOOK_PAGE_ID
+
+  if (!token || !pageId) {
+    const page = dbTokens?.pages?.[0]
+    if (page) {
+      token = page.pageAccessToken
+      pageId = page.id
+    }
+  }
 
   if (!token || !pageId) {
     return { id: 'facebook', name: 'Facebook', connected: false, followers: null, followerGrowth: null, reach: null, engagement: null, leads: null, posts: null }
@@ -292,10 +341,14 @@ export async function GET(_req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  // Fetch DB-stored Meta tokens once — shared by Instagram + Facebook fetchers
+  // to avoid two identical DB round-trips in the parallel Promise.allSettled below.
+  const metaDbTokens = await getMetaTokensFromDB()
+
   // Run all platform fetches in parallel
   const results = await Promise.allSettled([
-    fetchInstagramStats(),
-    fetchFacebookStats(),
+    fetchInstagramStats(metaDbTokens),
+    fetchFacebookStats(metaDbTokens),
     fetchYouTubeStats(),
     fetchLinkedInStats(),
     fetchTikTokStats(),

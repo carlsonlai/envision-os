@@ -237,11 +237,6 @@ function DesignerCard({ designer }: { designer: DesignerWorkload }) {
   const [expanded, setExpanded] = useState(false)
   const pct = Math.min(designer.utilizationToday, 100)
 
-  // Unique projects this designer is working on
-  const projects = Array.from(
-    new Map(designer.tasks.map(t => [t.projectCode, t.clientName])).entries()
-  )
-
   return (
     <div
       className={`rounded-xl border transition-colors ${
@@ -316,22 +311,6 @@ function DesignerCard({ designer }: { designer: DesignerWorkload }) {
             </span>
           )}
         </div>
-
-        {/* Project assignment — always visible */}
-        {projects.length > 0 && (
-          <div className="mt-2.5 flex flex-wrap gap-1">
-            {projects.map(([code, client]) => (
-              <span
-                key={code}
-                className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700/50"
-                title={client ?? code}
-              >
-                <span className="font-mono text-[#818cf8]">{code}</span>
-                {client && <span className="text-zinc-500 max-w-[80px] truncate">· {client}</span>}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Expand toggle */}
@@ -357,18 +336,13 @@ function DesignerCard({ designer }: { designer: DesignerWorkload }) {
                     <p className="text-xs text-zinc-300 truncate">
                       {task.description ?? task.itemType}
                     </p>
-                    <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                      <span className="text-[10px] font-mono font-medium text-[#818cf8]">
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] font-medium text-zinc-600">
                         {task.projectCode}
                       </span>
-                      {task.clientName && (
-                        <span className="text-[10px] text-zinc-500 truncate">
-                          · {task.clientName}
-                        </span>
-                      )}
                       {task.deadline && (
                         <span className="text-[10px] text-zinc-600">
-                          · {formatDeadline(task.deadline)}
+                          {formatDeadline(task.deadline)}
                         </span>
                       )}
                     </div>
