@@ -45,7 +45,8 @@ interface DashboardProject {
   items: DashboardItem[]
 }
 
-type PaymentLabel = 'Unpaid' | 'Partial' | 'Fully Paid'
+type PaymentLabel = 'Unpaid' | 'Partially Paid' | 'Fully Paid'
+type BillingLabel = 'Not Billed' | 'Partially Billed' | 'Fully Billed'
 
 function getPaymentStatus(proj: DashboardProject): { label: PaymentLabel; cls: string } {
   const billed = proj.billedAmount ?? 0
@@ -55,7 +56,16 @@ function getPaymentStatus(proj: DashboardProject): { label: PaymentLabel; cls: s
     return { label: 'Unpaid', cls: 'bg-zinc-700/60 text-zinc-400 border-zinc-600/40' }
   if (paid >= reference && reference > 0)
     return { label: 'Fully Paid', cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' }
-  return { label: 'Partial', cls: 'bg-amber-500/15 text-amber-400 border-amber-500/25' }
+  return { label: 'Partially Paid', cls: 'bg-amber-500/15 text-amber-400 border-amber-500/25' }
+}
+
+function getBillingStatus(proj: DashboardProject): { label: BillingLabel; cls: string } | null {
+  const billed = proj.billedAmount ?? 0
+  const quoted = proj.quotedAmount ?? 0
+  if (billed <= 0) return null  // not billed yet — don't show badge
+  if (billed >= quoted && quoted > 0)
+    return { label: 'Fully Billed', cls: 'bg-violet-500/15 text-violet-400 border-violet-500/25' }
+  return { label: 'Partially Billed', cls: 'bg-sky-500/15 text-sky-400 border-sky-500/25' }
 }
 
 interface ActivityItem {
@@ -396,8 +406,20 @@ export default function CSDashboardPage() {
                           <p className="text-sm text-zinc-300 mt-0.5 group-hover:text-zinc-100 transition-colors">{proj.clientName}</p>
                         </Link>
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          <div className="text-right">
+                          <div className="text-right space-y-0.5">
                             <p className="text-xs font-semibold text-zinc-300">{fmt(proj.quotedAmount)}</p>
+                            {/* Billing status — how much has been invoiced */}
+                            {(() => {
+                              const billing = getBillingStatus(proj)
+                              if (!billing) return null
+                              const billedFmt = proj.billedAmount > 0 ? ` (${fmt(proj.billedAmount)})` : ''
+                              return (
+                                <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold border ${billing.cls}`}>
+                                  {billing.label}{billedFmt}
+                                </span>
+                              )
+                            })()}
+                            {/* Payment status — how much has been received */}
                             {(() => {
                               const pay = getPaymentStatus(proj)
                               const paidFmt = proj.paidAmount > 0 ? ` (${fmt(proj.paidAmount)})` : ''
@@ -408,7 +430,7 @@ export default function CSDashboardPage() {
                               )
                             })()}
                             {proj.deadline && (
-                              <p className={`text-[10px] mt-0.5 ${isOverdue(proj.deadline) ? 'text-rose-400' : 'text-zinc-500'}`}>
+                              <p className={`text-[10px] ${isOverdue(proj.deadline) ? 'text-rose-400' : 'text-zinc-500'}`}>
                                 Due {new Date(proj.deadline).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })}
                               </p>
                             )}

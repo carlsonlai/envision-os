@@ -988,7 +988,12 @@ export interface LarkGroupChat {
   description?: string
 }
 
-/** Fixed internal group name keywords — add here to permanently exclude a group pattern */
+/**
+ * Fixed internal group name keywords — EXACT matches only (full name prefix).
+ * Keep this list narrow: only groups that are clearly Envicion-internal infrastructure.
+ * Do NOT add client project lifecycle keywords (approval, confirmed, upgrade, etc.)
+ * because clients can have those words in their group names.
+ */
 const INTERNAL_GROUP_KEYWORDS = [
   'envicion crm',
   'tasks assistant',
@@ -996,21 +1001,19 @@ const INTERNAL_GROUP_KEYWORDS = [
   'envicion marketing',
   'all staff',
   'leads report',
-  'confirmed job',
-  'pitching job',
-  'approval',
-  'upgrade',
   'bot test',
-  'system',
 ]
 
-/** Matches "january 2024", "april 2025", "dec 2026", etc. */
-const MONTH_YEAR_RE = /\b(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)\s+20\d{2}\b/i
+/**
+ * Matches standalone "system" or "system " at the very start of a group name.
+ * Avoids excluding groups like "System Branding - Client XYZ".
+ */
+const SYSTEM_PREFIX_RE = /^system(\s|$)/i
 
 function isInternalGroup(name: string): boolean {
-  const lower = name.toLowerCase()
+  const lower = name.toLowerCase().trim()
   if (INTERNAL_GROUP_KEYWORDS.some(kw => lower.includes(kw))) return true
-  if (MONTH_YEAR_RE.test(lower)) return true
+  if (SYSTEM_PREFIX_RE.test(lower)) return true
   return false
 }
 

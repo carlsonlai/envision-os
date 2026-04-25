@@ -79,6 +79,16 @@ interface CapacityInfo {
   utilizationPercent: number
 }
 
+interface IncomingProject {
+  id: string
+  code: string
+  clientName: string
+  status: string
+  deadline: string | null
+  updatedAt: string
+  larkFolderId: string
+}
+
 const ITEM_TYPE_LABELS: Record<ItemType, string> = {
   BANNER: 'Banner',
   BROCHURE: 'Brochure',
@@ -340,6 +350,7 @@ export default function DesignerPage() {
   const router = useRouter()
   const [projects, setProjects] = useState<Project[]>([])
   const [capacity, setCapacity] = useState<CapacityInfo | null>(null)
+  const [incomingProjects, setIncomingProjects] = useState<IncomingProject[]>([])
   const [loading, setLoading] = useState(true)
   const [pendingByItem, setPendingByItem] = useState<Record<string, 'start' | 'upload'>>({})
   const [toast, setToast] = useState<Toast | null>(null)
@@ -347,15 +358,18 @@ export default function DesignerPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [projectsRes, workloadRes] = await Promise.all([
+        const [projectsRes, workloadRes, incomingRes] = await Promise.all([
           fetch('/api/projects'),
           fetch('/api/workload'),
+          fetch('/api/projects/incoming'),
         ])
 
         const projectsData = await projectsRes.json()
         const workloadData = await workloadRes.json()
+        const incomingData = await incomingRes.json()
 
         setProjects(projectsData.data ?? [])
+        setIncomingProjects(incomingData.data ?? [])
 
         const myWorkload = (workloadData.data ?? []).find(
           (w: { user: { id: string } }) => w.user?.id === session?.user?.id
@@ -661,6 +675,49 @@ export default function DesignerPage() {
           )}
         </div>
       </div>
+
+      {/* Incoming Projects — Lark-synced projects awaiting task setup by CS */}
+      {incomingProjects.length > 0 && (
+        <div className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <FileText className="h-4 w-4 text-indigo-400" />
+            <h2 className="text-sm font-semibold text-zinc-200">Incoming Projects</h2>
+            <span className="rounded-full bg-indigo-500/15 border border-indigo-500/25 px-1.5 py-0.5 text-[10px] font-medium text-indigo-400">
+              {incomingProjects.length} pending setup
+            </span>
+          </div>
+          <p className="text-xs text-zinc-600">
+            These projects are synced from Lark groups and are awaiting task assignment by CS.
+          </p>
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {incomingProjects.map((proj) => {
+              const daysAgo = Math.floor((Date.now() - new Date(proj.updatedAt).getTime()) / (1000 * 60 * 60 * 24))
+              return (
+                <div
+                  key={proj.id}
+                  className="rounded-lg border border-zinc-800/60 bg-zinc-900/60 p-3 space-y-1"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-mono font-semibold text-[#818cf8]">{proj.code}</span>
+                    <span className="text-[10px] text-zinc-600">
+                      {daysAgo === 0 ? 'today' : `${daysAgo}d ago`}
+                    </span>
+                  </div>
+                  <p className="text-xs font-medium text-zinc-300 truncate">{proj.clientName}</p>
+                  {proj.deadline && (
+                    <p className="text-[10px] text-zinc-600">
+                      Deadline: {new Date(proj.deadline).toLocaleDateString('en-MY', { day: '2-digit', month: 'short' })}
+                    </p>
+                  )}
+                  <span className="inline-flex items-center text-[10px] text-indigo-400 font-medium">
+                    <Clock className="mr-1 h-2.5 w-2.5" /> Awaiting tasks
+                  </span>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

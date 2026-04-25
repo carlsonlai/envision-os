@@ -354,8 +354,19 @@ function DesignerCard({ designer }: { designer: DesignerWorkload }) {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
+interface IncomingProject {
+  id: string
+  code: string
+  clientName: string
+  status: string
+  deadline: string | null
+  updatedAt: string
+  larkFolderId: string
+}
+
 export default function CSWorkloadPage() {
   const [timeline, setTimeline] = useState<CompanyTimeline | null>(null)
+  const [incomingProjects, setIncomingProjects] = useState<IncomingProject[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [refreshing, setRefreshing] = useState(false)
@@ -366,10 +377,17 @@ export default function CSWorkloadPage() {
     setError(null)
 
     try {
-      const res = await fetch('/api/admin/workload')
-      if (!res.ok) throw new Error('Failed to load workload data')
-      const { data }: { data: CompanyTimeline } = await res.json()
+      const [workloadRes, incomingRes] = await Promise.all([
+        fetch('/api/admin/workload'),
+        fetch('/api/projects/incoming'),
+      ])
+      if (!workloadRes.ok) throw new Error('Failed to load workload data')
+      const { data }: { data: CompanyTimeline } = await workloadRes.json()
       setTimeline(data)
+      if (incomingRes.ok) {
+        const incomingData = await incomingRes.json()
+        setIncomingProjects(incomingData.data ?? [])
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
     } finally {
@@ -609,6 +627,53 @@ export default function CSWorkloadPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* Lark projects awaiting task setup */}
+      {incomingProjects.length > 0 && (
+        <div>
+          <h2 className="text-sm font-semibold text-zinc-300 mb-3 flex items-center gap-2">
+            <FolderOpen className="h-4 w-4 text-indigo-400" />
+            Needs Setup
+            <span className="rounded-full bg-indigo-500/15 border border-indigo-500/25 px-1.5 py-0.5 text-[10px] font-medium text-indigo-400">
+              {incomingProjects.length} from Lark
+            </span>
+          </h2>
+          <p className="text-xs text-zinc-600 mb-3">
+            These projects were synced from Lark group chats but have no deliverable items yet. Add tasks to assign work to designers.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {incomingProjects.map((proj) => {
+              const daysAgo = Math.floor((Date.now() - new Date(proj.updatedAt).getTime()) / (1000 * 60 * 60 * 24))
+              return (
+                <div
+                  key={proj.id}
+                  className="rounded-xl border border-indigo-500/20 bg-indigo-500/5 p-3 space-y-1.5"
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-mono font-semibold text-[#818cf8]">{proj.code}</span>
+                    <span className="text-[10px] text-zinc-600">
+                      {daysAgo === 0 ? 'synced today' : `${daysAgo}d ago`}
+                    </span>
+                  </div>
+                  <p className="text-sm font-medium text-zinc-200 truncate">{proj.clientName}</p>
+                  {proj.deadline && (
+                    <p className="text-[10px] text-zinc-600">
+                      Deadline: {new Date(proj.deadline).toLocaleDateString('en-MY', { day: '2-digit', month: 'short', year: 'numeric' })}
+                    </p>
+                  )}
+                  <a
+                    href={`/cs/projects/${proj.id}`}
+                    className="inline-flex items-center gap-1 rounded-md bg-indigo-500/15 border border-indigo-500/25 px-2 py-1 text-[11px] font-medium text-indigo-300 hover:bg-indigo-500/25 transition-colors"
+                  >
+                    <ArrowUpRight className="h-3 w-3" />
+                    Set up project
+                  </a>
+                </div>
+              )
+            })}
           </div>
         </div>
       )}

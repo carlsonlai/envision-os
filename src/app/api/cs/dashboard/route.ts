@@ -22,10 +22,10 @@ export async function GET(): Promise<NextResponse> {
   const userId = session.user.id
 
   try {
-    // Show ALL active projects — CS staff pick which ones they handle
+    // Show all active projects — exclude COMPLETED (handed-over, no longer needs CS action)
     const projects = await prisma.project.findMany({
       where: {
-        status: { in: ['PROJECTED', 'ONGOING', 'COMPLETED', 'BILLED', 'PAID'] },
+        status: { in: ['PROJECTED', 'ONGOING', 'BILLED', 'PAID'] },
       },
       select: {
         id: true,
