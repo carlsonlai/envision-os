@@ -18,6 +18,14 @@ import { authOptions } from '@/lib/auth'
  */
 
 export const dynamic = 'force-dynamic'
+export const maxDuration = 15
+
+// 6-second timeout per platform — prevents one slow API from blocking the response
+function fetchWithTimeout(url: string, options: RequestInit = {}, ms = 6000): Promise<Response> {
+  const controller = new AbortController()
+  const id = setTimeout(() => controller.abort(), ms)
+  return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(id))
+}
 
 interface PlatformResult {
   id: string
@@ -45,7 +53,7 @@ async function fetchInstagramStats(): Promise<PlatformResult> {
   try {
     const fields = 'followers_count,media_count,username,name'
 
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `https://graph.facebook.com/v25.0/${accountId}?fields=${fields}&access_token=${token}`,
       { next: { revalidate: 3600 } }
     )
@@ -83,11 +91,11 @@ async function fetchFacebookStats(): Promise<PlatformResult> {
   try {
     // Parallelize page info + insights fetch
     const [res, insightRes] = await Promise.all([
-      fetch(
+      fetchWithTimeout(
         `https://graph.facebook.com/v25.0/${pageId}?fields=fan_count,followers_count&access_token=${token}`,
         { next: { revalidate: 3600 } }
       ),
-      fetch(
+      fetchWithTimeout(
         `https://graph.facebook.com/v25.0/${pageId}/insights/page_impressions_unique/week?access_token=${token}`,
         { next: { revalidate: 3600 } }
       ),
@@ -126,7 +134,7 @@ async function fetchYouTubeStats(): Promise<PlatformResult> {
   }
 
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${channelId}&key=${apiKey}`,
       { next: { revalidate: 3600 } }
     )
@@ -162,7 +170,7 @@ async function fetchLinkedInStats(): Promise<PlatformResult> {
   }
 
   try {
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `https://api.linkedin.com/v2/networkSizes/urn:li:organization:${orgId}?edgeType=CompanyFollowedByMember`,
       {
         headers: { Authorization: `Bearer ${token}`, 'X-Restli-Protocol-Version': '2.0.0' },
@@ -202,7 +210,7 @@ async function fetchTikTokStats(): Promise<PlatformResult> {
   try {
     // TikTok Business API — account info
     const params = new URLSearchParams({ advertiser_id: advertiserId ?? '', fields: JSON.stringify(['follower_count']) })
-    const res = await fetch(
+    const res = await fetchWithTimeout(
       `https://business-api.tiktok.com/open_api/v1.3/bc/auth/info/?${params}`,
       {
         headers: { 'Access-Token': token },

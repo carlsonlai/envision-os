@@ -36,11 +36,26 @@ interface DashboardProject {
   status: string
   clientName: string
   quotedAmount: number
+  billedAmount: number
+  paidAmount: number
   deadline: string | null
   updatedAt: string
   claimedBy: ClaimInfo[]
   isMyClaim: boolean
   items: DashboardItem[]
+}
+
+type PaymentLabel = 'Unpaid' | 'Partial' | 'Fully Paid'
+
+function getPaymentStatus(proj: DashboardProject): { label: PaymentLabel; cls: string } {
+  const billed = proj.billedAmount ?? 0
+  const paid = proj.paidAmount ?? 0
+  const reference = billed > 0 ? billed : proj.quotedAmount
+  if (paid <= 0)
+    return { label: 'Unpaid', cls: 'bg-zinc-700/60 text-zinc-400 border-zinc-600/40' }
+  if (paid >= reference && reference > 0)
+    return { label: 'Fully Paid', cls: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/25' }
+  return { label: 'Partial', cls: 'bg-amber-500/15 text-amber-400 border-amber-500/25' }
 }
 
 interface ActivityItem {
@@ -383,8 +398,17 @@ export default function CSDashboardPage() {
                         <div className="flex items-center gap-2 flex-shrink-0">
                           <div className="text-right">
                             <p className="text-xs font-semibold text-zinc-300">{fmt(proj.quotedAmount)}</p>
+                            {(() => {
+                              const pay = getPaymentStatus(proj)
+                              const paidFmt = proj.paidAmount > 0 ? ` (${fmt(proj.paidAmount)})` : ''
+                              return (
+                                <span className={`inline-flex rounded px-1.5 py-0.5 text-[10px] font-semibold border ${pay.cls}`}>
+                                  {pay.label}{paidFmt}
+                                </span>
+                              )
+                            })()}
                             {proj.deadline && (
-                              <p className={`text-[10px] ${isOverdue(proj.deadline) ? 'text-rose-400' : 'text-zinc-500'}`}>
+                              <p className={`text-[10px] mt-0.5 ${isOverdue(proj.deadline) ? 'text-rose-400' : 'text-zinc-500'}`}>
                                 Due {new Date(proj.deadline).toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })}
                               </p>
                             )}

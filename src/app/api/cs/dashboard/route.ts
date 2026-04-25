@@ -32,6 +32,8 @@ export async function GET(): Promise<NextResponse> {
         code: true,
         status: true,
         quotedAmount: true,
+        billedAmount: true,
+        paidAmount: true,
         deadline: true,
         updatedAt: true,
         client: {
@@ -75,6 +77,8 @@ export async function GET(): Promise<NextResponse> {
       status: p.status,
       clientName: p.client?.companyName ?? 'Unknown',
       quotedAmount: p.quotedAmount,
+      billedAmount: p.billedAmount,
+      paidAmount: p.paidAmount,
       deadline: p.deadline?.toISOString() ?? null,
       updatedAt: p.updatedAt.toISOString(),
       claimedBy: p.csAssignments.map((a) => ({

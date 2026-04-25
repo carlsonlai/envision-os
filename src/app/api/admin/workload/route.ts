@@ -4,6 +4,9 @@ import { authOptions } from '@/lib/auth'
 import { getCompanyTimeline, getDesignerWorkload } from '@/services/workload'
 import { Role } from '@prisma/client'
 
+// Allow up to 30s — workload makes multiple DB queries; Neon cold-start can be slow
+export const maxDuration = 30
+
 const ALLOWED_ROLES: Role[] = [
   Role.ADMIN,
   Role.CREATIVE_DIRECTOR,

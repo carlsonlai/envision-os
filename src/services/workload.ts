@@ -428,32 +428,53 @@ export async function getCompanyTimeline(): Promise<CompanyTimeline> {
   const now = new Date()
   const threeDaysFromNow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
 
-  // 1. Fetch all active/projected projects with deliverables
-  const activeProjects = await prisma.project.findMany({
-    where: {
-      status: { in: ['PROJECTED', 'ONGOING'] },
-    },
-    include: {
-      client: { select: { companyName: true } },
-      deliverableItems: {
-        include: {
-          assignedDesigner: { select: { name: true, role: true } },
+  // Run project + designer + task fetches in parallel to avoid sequential cold-start delays
+  const designerRoles: Role[] = [
+    Role.JUNIOR_ART_DIRECTOR,
+    Role.GRAPHIC_DESIGNER,
+    Role.JUNIOR_DESIGNER,
+    Role.DESIGNER_3D,
+    Role.MULTIMEDIA_DESIGNER,
+    Role.DIGITAL_MARKETING,
+    Role.SENIOR_ART_DIRECTOR,
+    Role.CREATIVE_DIRECTOR,
+  ]
+
+  const [activeProjects, designers, allAssignedTasks] = await Promise.all([
+    // Include PROJECTED, ONGOING, and COMPLETED so projects with open deliverables still show
+    prisma.project.findMany({
+      where: {
+        status: { in: ['PROJECTED', 'ONGOING', 'COMPLETED', 'BILLED'] },
+      },
+      include: {
+        client: { select: { companyName: true } },
+        deliverableItems: {
+          include: {
+            assignedDesigner: { select: { name: true, role: true } },
+          },
         },
       },
-    },
-    orderBy: { deadline: 'asc' },
-  })
-
-  // Supplementary: fetch paymentStatus for all deliverable items (raw column not in Prisma model)
-  const allItemIds = activeProjects.flatMap(p => p.deliverableItems.map(i => i.id))
-  const paymentMap = new Map<string, string | null>()
-  if (allItemIds.length > 0) {
-    const payRows = await prisma.$queryRawUnsafe<{ id: string; paymentStatus: string | null }[]>(
-      `SELECT id, "paymentStatus" FROM "deliverable_items" WHERE id IN (${allItemIds.map((_, i) => `$${i + 1}`).join(', ')})`,
-      ...allItemIds
-    ).catch(() => [] as { id: string; paymentStatus: string | null }[])
-    for (const row of payRows) paymentMap.set(row.id, row.paymentStatus)
-  }
+      orderBy: { deadline: 'asc' },
+    }),
+    // Fetch all active designers regardless of task count
+    prisma.user.findMany({
+      where: { role: { in: designerRoles } },  // removed active:true filter — show all designers
+      select: { id: true, name: true, email: true, role: true },
+    }),
+    // Fetch all open tasks assigned to any designer
+    prisma.deliverableItem.findMany({
+      where: {
+        assignedDesignerId: { not: null },
+        status: { in: ['PENDING', 'IN_PROGRESS', 'WIP_UPLOADED', 'QC_REVIEW'] },
+      },
+      include: {
+        project: {
+          include: { client: { select: { companyName: true } } },
+        },
+        assignedDesigner: { select: { name: true, role: true } },
+      },
+    }),
+  ])
 
   const projectTimelines: ProjectTimeline[] = activeProjects.map((project) => {
     const deliverables: DeliverableWithProject[] = project.deliverableItems.map((item) => ({
@@ -467,7 +488,7 @@ export async function getCompanyTimeline(): Promise<CompanyTimeline> {
       clientName: project.client?.companyName ?? 'Unknown',
       assignedDesignerName: item.assignedDesigner?.name ?? null,
       assignedDesignerRole: item.assignedDesigner?.role ?? null,
-      paymentStatus: paymentMap.get(item.id) ?? null,
+      paymentStatus: null,
     }))
 
     const total = deliverables.length
@@ -491,48 +512,6 @@ export async function getCompanyTimeline(): Promise<CompanyTimeline> {
     }
   })
 
-  // 2. Fetch all designer workload details
-  const designerRoles: Role[] = [
-    Role.JUNIOR_ART_DIRECTOR,
-    Role.GRAPHIC_DESIGNER,
-    Role.JUNIOR_DESIGNER,
-    Role.DESIGNER_3D,
-    Role.MULTIMEDIA_DESIGNER,
-    Role.DIGITAL_MARKETING,
-    Role.SENIOR_ART_DIRECTOR,
-    Role.CREATIVE_DIRECTOR,
-  ]
-
-  const designers = await prisma.user.findMany({
-    where: { active: true, role: { in: designerRoles } },
-    select: { id: true, name: true, email: true, role: true },
-  })
-
-  // Fetch all pending/in-progress tasks assigned to designers
-  const allAssignedTasks = await prisma.deliverableItem.findMany({
-    where: {
-      assignedDesignerId: { not: null },
-      status: { in: ['PENDING', 'IN_PROGRESS', 'WIP_UPLOADED', 'QC_REVIEW'] },
-    },
-    include: {
-      project: {
-        include: { client: { select: { companyName: true } } },
-      },
-      assignedDesigner: { select: { name: true, role: true } },
-    },
-  })
-
-  // Fetch paymentStatus for assigned tasks
-  const assignedItemIds = allAssignedTasks.map(t => t.id)
-  const assignedPayMap = new Map<string, string | null>()
-  if (assignedItemIds.length > 0) {
-    const payRows2 = await prisma.$queryRawUnsafe<{ id: string; paymentStatus: string | null }[]>(
-      `SELECT id, "paymentStatus" FROM "deliverable_items" WHERE id IN (${assignedItemIds.map((_, i) => `$${i + 1}`).join(', ')})`,
-      ...assignedItemIds
-    ).catch(() => [] as { id: string; paymentStatus: string | null }[])
-    for (const row of payRows2) assignedPayMap.set(row.id, row.paymentStatus)
-  }
-
   // Batch-load today's workload slots for ALL designers in ONE query
   const todayOnly = new Date(now.toISOString().split('T')[0])
   const designerIds = designers.map((d) => d.id)
@@ -555,7 +534,7 @@ export async function getCompanyTimeline(): Promise<CompanyTimeline> {
         clientName: t.project.client?.companyName ?? 'Unknown',
         assignedDesignerName: designer.name,
         assignedDesignerRole: designer.role,
-        paymentStatus: assignedPayMap.get(t.id) ?? null,
+        paymentStatus: null,
       }))
 
     const totalEstimatedMinutes = tasks.reduce(
