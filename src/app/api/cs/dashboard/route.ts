@@ -74,16 +74,44 @@ export async function GET(): Promise<NextResponse> {
       orderBy: { updatedAt: 'desc' },
     })
 
+    // ── Aggregate item-level billing/payment data (columns not in Prisma schema) ──
+    // Uses same HALF_PAID=50% logic as the Job Track page
+    const projectIds = projects.map((p) => p.id)
+    interface ItemAgg { projectId: string; itemBilled: number; itemPaid: number }
+    const itemAggs: ItemAgg[] = projectIds.length > 0
+      ? await prisma.$queryRawUnsafe<ItemAgg[]>(
+          `SELECT
+             "projectId",
+             COALESCE(SUM(CASE WHEN "qteAmount" > 0 THEN "qteAmount" ELSE 0 END), 0)::float AS "itemBilled",
+             COALESCE(SUM(CASE
+               WHEN "paymentStatus" IN ('FULL_PAID','PAID') THEN "qteAmount"
+               WHEN "paymentStatus" = 'HALF_PAID'           THEN "qteAmount" * 0.5
+               ELSE 0
+             END), 0)::float AS "itemPaid"
+           FROM "deliverable_items"
+           WHERE "projectId" IN (${projectIds.map((_, i) => `$${i + 1}`).join(', ')})
+           GROUP BY "projectId"`,
+          ...projectIds
+        ).catch(() => [] as ItemAgg[])
+      : []
+
+    const itemAggMap = new Map<string, ItemAgg>()
+    for (const agg of itemAggs) itemAggMap.set(agg.projectId, agg)
+
     const data = projects.map((p) => {
-      // Compute live from Invoice records — more reliable than cached project fields
+      const agg = itemAggMap.get(p.id)
+
+      // ── Secondary: live Invoice records ──
       const invoiceBilled = p.invoices.reduce((s, i) => s + i.amount, 0)
       const invoicePaid = p.invoices
         .filter((i) => i.status === 'PAID')
         .reduce((s, i) => s + i.amount, 0)
 
-      // Prefer live invoice totals; fall back to cached project fields if no invoices linked yet
-      const billedAmount = invoiceBilled > 0 ? invoiceBilled : p.billedAmount
-      const paidAmount = invoicePaid > 0 ? invoicePaid : p.paidAmount
+      // Priority: item-level > invoice-level > project cached fields
+      const itemBilled = agg?.itemBilled ?? 0
+      const itemPaid   = agg?.itemPaid   ?? 0
+      const billedAmount = itemBilled > 0 ? itemBilled : invoiceBilled > 0 ? invoiceBilled : p.billedAmount
+      const paidAmount   = itemBilled > 0 ? itemPaid   : invoicePaid   > 0 ? invoicePaid   : p.paidAmount
 
       return ({
       id: p.id,
