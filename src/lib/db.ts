@@ -58,6 +58,12 @@ export async function getProjectForRole(
       assignedCS: {
         select: { id: true, name: true, email: true },
       },
+      assignedCD: {
+        select: { id: true, name: true, role: true },
+      },
+      assignedAD: {
+        select: { id: true, name: true, role: true },
+      },
       brief: true,
       deliverableItems: {
         orderBy: { createdAt: 'asc' },
@@ -107,6 +113,12 @@ export async function getProjectsForRole(userRole: string, userId?: string) {
       assignedCS: {
         select: { id: true, name: true, email: true },
       },
+      assignedCD: {
+        select: { id: true, name: true, role: true },
+      },
+      assignedAD: {
+        select: { id: true, name: true, role: true },
+      },
       deliverableItems: {
         where: isRegularDesigner ? { assignedDesignerId: userId } : undefined,
         select: {
@@ -151,6 +163,12 @@ export async function getProjectsForRole(userRole: string, userId?: string) {
           priority: true,
           qualityGatePassed: true,
           completedByCSAt: true,
+          briefStage: true,
+          sentToCDAt: true,
+          cdReceivedAt: true,
+          sentToADAt: true,
+          adReceivedAt: true,
+          designerAssignedAt: true,
         },
       },
       invoices: isDesignerRole(userRole) ? false : {

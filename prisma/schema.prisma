@@ -220,6 +220,8 @@ model User {
   assignedSalesClients  Client[]             @relation("SalesToClient")
   assignedSalesLeads    Lead[]               @relation("SalesToLead")
   assignedCSProjects    Project[]            @relation("CSToProject")
+  assignedCDProjects    Project[]            @relation("CDToProject")
+  assignedADProjects    Project[]            @relation("ADToProject")
   assignedDeliverables  DeliverableItem[]    @relation("DesignerToDeliverable")
   uploadedFiles         FileVersion[]        @relation("UploaderToFile")
   requestedRevisions    Revision[]           @relation("RequesterToRevision")
@@ -328,6 +330,8 @@ model Project {
   briefId         String?       @unique
   status          ProjectStatus @default(PROJECTED)
   assignedCSId    String?
+  assignedCDId    String?       // Creative Director responsible for this project
+  assignedADId    String?       // Art Director responsible for this project
   quotedAmount    Float         @default(0)
   billedAmount    Float         @default(0)
   paidAmount      Float         @default(0)
@@ -345,6 +349,8 @@ model Project {
   // Relations
   client           Client?           @relation(fields: [clientId], references: [id])
   assignedCS       User?             @relation("CSToProject", fields: [assignedCSId], references: [id])
+  assignedCD       User?             @relation("CDToProject", fields: [assignedCDId], references: [id])
+  assignedAD       User?             @relation("ADToProject", fields: [assignedADId], references: [id])
   brief            ProjectBrief?
   deliverableItems DeliverableItem[]
   fileVersions     FileVersion[]
@@ -358,6 +364,8 @@ model Project {
 
   @@index([clientId])
   @@index([assignedCSId])
+  @@index([assignedCDId])
+  @@index([assignedADId])
   @@index([status])
   @@index([status, clientId])
   @@index([deadline])
@@ -379,22 +387,38 @@ model ProjectCSAssignment {
   @@map("project_cs_assignments")
 }
 
+/// Brief chain stages: CS drafts → CS sends to CD → CD directs AD → AD assigns Designer → done
+enum BriefStage {
+  CS_DRAFTING       // CS is writing the brief
+  CD_REVIEW         // CS sent brief to CD; CD is reviewing / setting creative direction
+  AD_DIRECTING      // CD passed direction to AD; AD is art-directing and assigning designers
+  DESIGNER_ASSIGNED // AD assigned deliverables to designer(s); production underway
+  DONE              // All deliverables approved / FA signed
+}
+
 model ProjectBrief {
-  id                  String    @id @default(cuid())
-  projectId           String    @unique
+  id                  String     @id @default(cuid())
+  projectId           String     @unique
   packageType         String?
   specialInstructions String?
   styleNotes          String?
-  priority            Priority  @default(NORMAL)
+  priority            Priority   @default(NORMAL)
   qualityGateScore    Int?
   qualityGatePassed   Boolean?
-  completedByCSAt     DateTime?
+  // Brief chain tracking
+  briefStage          BriefStage @default(CS_DRAFTING)
+  completedByCSAt     DateTime?  // CS marked brief complete
   completedByCSId     String?
-  createdAt           DateTime  @default(now())
+  sentToCDAt          DateTime?  // CS sent brief to CD
+  cdReceivedAt        DateTime?  // CD acknowledged receipt
+  sentToADAt          DateTime?  // CD sent direction to AD
+  adReceivedAt        DateTime?  // AD acknowledged receipt
+  designerAssignedAt  DateTime?  // AD assigned designer(s)
+  createdAt           DateTime   @default(now())
 
   // Relations
-  project     Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  completedByCS User? @relation("CSToProjectBrief", fields: [completedByCSId], references: [id])
+  project       Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  completedByCS User?   @relation("CSToProjectBrief", fields: [completedByCSId], references: [id])
 
   @@map("project_briefs")
 }

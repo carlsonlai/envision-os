@@ -191,13 +191,14 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
   CREATIVE_DIRECTOR: [
     {
       items: [
-        { href: '/admin/workload', label: 'Team Workload',       icon: Activity, exact: true },
-        { href: '/admin/projects', label: 'All Projects',        icon: Briefcase },
-        { href: '/designer',       label: 'All Designer Tasks',  icon: ListTodo },
-        { href: '/cs/job-track',   label: 'Job Track',           icon: ListTodo},
-        { href: '/command/freelancers', label: 'Freelancers',    icon: Users },
-        { href: '/calendar',       label: 'Calendar',            icon: CalendarDays},
-        { href: '/kpi',            label: 'Team KPI',            icon: BarChart3 },
+        { href: '/cd',             label: 'CD Dashboard',         icon: LayoutDashboard, exact: true },
+        { href: '/admin/workload', label: 'Team Workload',        icon: Activity, exact: true },
+        { href: '/admin/projects', label: 'All Projects',         icon: Briefcase },
+        { href: '/designer',       label: 'All Designer Tasks',   icon: ListTodo },
+        { href: '/cs/job-track',   label: 'Job Track',            icon: ListTodo },
+        { href: '/command/freelancers', label: 'Freelancers',     icon: Users },
+        { href: '/calendar',       label: 'Calendar',             icon: CalendarDays },
+        { href: '/kpi',            label: 'Team KPI',             icon: BarChart3 },
       ],
     },
     PERSONAL_GROUP,
@@ -207,12 +208,13 @@ const NAV_BY_ROLE: Record<string, NavGroup[]> = {
   SENIOR_ART_DIRECTOR: [
     {
       items: [
-        { href: '/admin/workload', label: 'Team Workload',       icon: Activity, exact: true },
-        { href: '/admin/projects', label: 'All Projects',        icon: Briefcase },
-        { href: '/designer',       label: 'All Designer Tasks',  icon: ListTodo },
-        { href: '/cs/job-track',   label: 'Job Track',           icon: ListTodo},
-        { href: '/calendar',       label: 'Calendar',            icon: CalendarDays},
-        { href: '/kpi',            label: 'Team KPI',            icon: BarChart3 },
+        { href: '/ad',             label: 'AD Dashboard',         icon: Palette, exact: true },
+        { href: '/admin/workload', label: 'Team Workload',        icon: Activity, exact: true },
+        { href: '/admin/projects', label: 'All Projects',         icon: Briefcase },
+        { href: '/designer',       label: 'All Designer Tasks',   icon: ListTodo },
+        { href: '/cs/job-track',   label: 'Job Track',            icon: ListTodo },
+        { href: '/calendar',       label: 'Calendar',             icon: CalendarDays },
+        { href: '/kpi',            label: 'Team KPI',             icon: BarChart3 },
       ],
     },
     PERSONAL_GROUP,
